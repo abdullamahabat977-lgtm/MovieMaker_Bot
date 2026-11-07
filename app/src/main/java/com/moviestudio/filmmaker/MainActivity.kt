@@ -11,139 +11,263 @@ import androidx.appcompat.app.AppCompatActivity
 
 class MainActivity : AppCompatActivity() {
 
-    private fun dp(value: Int): Int {
-        return (value * resources.displayMetrics.density).toInt()
+    private fun dp(value: Int): Int =
+        (value * resources.displayMetrics.density).toInt()
+
+    private fun rounded(
+        colors: IntArray,
+        radius: Int,
+        vertical: Boolean = false
+    ): GradientDrawable {
+        return GradientDrawable(
+            if (vertical) GradientDrawable.Orientation.TOP_BOTTOM
+            else GradientDrawable.Orientation.LEFT_RIGHT,
+            colors
+        ).apply { cornerRadius = dp(radius).toFloat() }
     }
 
-    private fun background(color: Int, radius: Int): GradientDrawable {
-        return GradientDrawable().apply {
-            setColor(color)
-            cornerRadius = dp(radius).toFloat()
+    private fun label(
+        text: String,
+        size: Float,
+        color: Int,
+        bold: Boolean = false
+    ): TextView {
+        return TextView(this).apply {
+            this.text = text
+            textSize = size
+            setTextColor(color)
+            gravity = Gravity.CENTER
+            if (bold) typeface = Typeface.DEFAULT_BOLD
         }
+    }
+
+    private fun toolCard(
+        icon: String,
+        title: String,
+        description: String,
+        accent: Int,
+        message: String
+    ): LinearLayout {
+        val card = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            gravity = Gravity.CENTER
+            layoutDirection = View.LAYOUT_DIRECTION_RTL
+            setPadding(dp(10), dp(16), dp(10), dp(14))
+            background = rounded(
+                intArrayOf(Color.rgb(31, 37, 57), Color.rgb(25, 30, 47)),
+                18,
+                true
+            )
+            isClickable = true
+            isFocusable = true
+            setOnClickListener {
+                Toast.makeText(
+                    this@MainActivity,
+                    "$message برخه به په راتلونکې مرحله کې فعاله شي",
+                    Toast.LENGTH_SHORT
+                ).show()
+            }
+        }
+
+        val iconView = label(icon, 30f, accent, true)
+        iconView.background = rounded(
+            intArrayOf(Color.rgb(45, 53, 79), Color.rgb(38, 45, 68)),
+            16
+        )
+        iconView.setPadding(dp(13), dp(8), dp(13), dp(8))
+        card.addView(iconView)
+
+        val titleView = label(title, 15f, Color.WHITE, true)
+        val titleParams = LinearLayout.LayoutParams(
+            LinearLayout.LayoutParams.MATCH_PARENT,
+            LinearLayout.LayoutParams.WRAP_CONTENT
+        )
+        titleParams.topMargin = dp(12)
+        card.addView(titleView, titleParams)
+
+        val descView = label(description, 11f, Color.rgb(174, 184, 205))
+        val descParams = LinearLayout.LayoutParams(
+            LinearLayout.LayoutParams.MATCH_PARENT,
+            LinearLayout.LayoutParams.WRAP_CONTENT
+        )
+        descParams.topMargin = dp(5)
+        card.addView(descView, descParams)
+
+        return card
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        window.statusBarColor = Color.rgb(13, 15, 28)
-        window.navigationBarColor = Color.rgb(13, 15, 28)
+        window.statusBarColor = Color.rgb(13, 17, 31)
+        window.navigationBarColor = Color.rgb(13, 17, 31)
 
-        val scroll = ScrollView(this)
-        scroll.setBackgroundColor(Color.rgb(13, 15, 28))
-        scroll.layoutDirection = View.LAYOUT_DIRECTION_RTL
-
-        val main = LinearLayout(this)
-        main.orientation = LinearLayout.VERTICAL
-        main.setPadding(dp(18), dp(22), dp(18), dp(25))
-
-        val title = TextView(this)
-        title.text = "🎬 د فلم جوړولو سټوډیو"
-        title.textSize = 25f
-        title.setTextColor(Color.WHITE)
-        title.typeface = Typeface.DEFAULT_BOLD
-        title.gravity = Gravity.CENTER
-        title.setPadding(0, dp(10), 0, dp(18))
-        main.addView(title)
-
-        val banner = LinearLayout(this)
-        banner.orientation = LinearLayout.VERTICAL
-        banner.gravity = Gravity.CENTER
-        banner.setPadding(dp(18), dp(25), dp(18), dp(25))
-        banner.background = GradientDrawable(
-            GradientDrawable.Orientation.LEFT_RIGHT,
-            intArrayOf(Color.rgb(75, 45, 170), Color.rgb(20, 125, 170))
-        ).apply {
-            cornerRadius = dp(22).toFloat()
+        val scroll = ScrollView(this).apply {
+            setBackgroundColor(Color.rgb(13, 17, 31))
+            layoutDirection = View.LAYOUT_DIRECTION_RTL
+            isFillViewport = true
         }
 
-        val bannerIcon = TextView(this)
-        bannerIcon.text = "🎥"
-        bannerIcon.textSize = 48f
-        bannerIcon.gravity = Gravity.CENTER
-        banner.addView(bannerIcon)
+        val main = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            layoutDirection = View.LAYOUT_DIRECTION_RTL
+            setPadding(dp(18), dp(18), dp(18), dp(26))
+        }
 
-        val bannerTitle = TextView(this)
-        bannerTitle.text = "خپل فلم پخپله جوړ کړئ"
-        bannerTitle.textSize = 23f
-        bannerTitle.setTextColor(Color.WHITE)
-        bannerTitle.typeface = Typeface.DEFAULT_BOLD
-        bannerTitle.gravity = Gravity.CENTER
-        bannerTitle.setPadding(0, dp(10), 0, dp(8))
-        banner.addView(bannerTitle)
+        // د اپلیکیشن سرپاڼه
+        val topBar = LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+            gravity = Gravity.CENTER_VERTICAL
+            layoutDirection = View.LAYOUT_DIRECTION_RTL
+        }
 
-        val bannerSubtitle = TextView(this)
-        bannerSubtitle.text = "کرکټرونه، صحنې، حرکتونه او بشپړ فلم"
-        bannerSubtitle.textSize = 14f
-        bannerSubtitle.setTextColor(Color.WHITE)
-        bannerSubtitle.gravity = Gravity.CENTER
-        banner.addView(bannerSubtitle)
+        val brand = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            layoutDirection = View.LAYOUT_DIRECTION_RTL
+        }
 
-        val bannerParams = LinearLayout.LayoutParams(
+        val brandTitle = label("🎬  فلم سټوډیو", 21f, Color.WHITE, true)
+        brandTitle.gravity = Gravity.RIGHT
+        brand.addView(brandTitle)
+
+        val brandSub = label("د خپل فلم جوړولو ځای", 12f, Color.rgb(155, 169, 195))
+        brandSub.gravity = Gravity.RIGHT
+        val subParams = LinearLayout.LayoutParams(
+            LinearLayout.LayoutParams.WRAP_CONTENT,
+            LinearLayout.LayoutParams.WRAP_CONTENT
+        )
+        subParams.topMargin = dp(3)
+        brand.addView(brandSub, subParams)
+
+        topBar.addView(
+            brand,
+            LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
+        )
+
+        val offline = label("● آفلاین", 12f, Color.rgb(112, 232, 177), true)
+        offline.background = rounded(
+            intArrayOf(Color.rgb(28, 62, 57), Color.rgb(24, 51, 52)),
+            30
+        )
+        offline.setPadding(dp(13), dp(8), dp(13), dp(8))
+        topBar.addView(offline)
+        main.addView(topBar)
+
+        // لوی معرفتي بینر
+        val hero = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            gravity = Gravity.CENTER
+            layoutDirection = View.LAYOUT_DIRECTION_RTL
+            setPadding(dp(20), dp(23), dp(20), dp(22))
+            background = rounded(
+                intArrayOf(Color.rgb(91, 61, 190), Color.rgb(26, 112, 151)),
+                24
+            )
+        }
+
+        val heroIcon = label("🎥", 48f, Color.WHITE)
+        hero.addView(heroIcon)
+
+        val heroTitle = label("خپل فلم، په خپل لاس جوړ کړه", 22f, Color.WHITE, true)
+        val heroTitleParams = LinearLayout.LayoutParams(
             LinearLayout.LayoutParams.MATCH_PARENT,
             LinearLayout.LayoutParams.WRAP_CONTENT
         )
-        bannerParams.bottomMargin = dp(22)
-        main.addView(banner, bannerParams)
+        heroTitleParams.topMargin = dp(8)
+        hero.addView(heroTitle, heroTitleParams)
 
-        val sectionTitle = TextView(this)
-        sectionTitle.text = "🛠️ د فلم جوړولو وسایل"
-        sectionTitle.textSize = 19f
-        sectionTitle.setTextColor(Color.WHITE)
-        sectionTitle.typeface = Typeface.DEFAULT_BOLD
-        sectionTitle.gravity = Gravity.RIGHT
-        sectionTitle.setPadding(0, dp(5), 0, dp(15))
-        main.addView(sectionTitle)
+        val heroText = label(
+            "کرکټرونه جوړ کړه، صحنې برابرې کړه او خپله کیسه فلم کړه.",
+            13f,
+            Color.rgb(239, 243, 255)
+        )
+        val heroTextParams = LinearLayout.LayoutParams(
+            LinearLayout.LayoutParams.MATCH_PARENT,
+            LinearLayout.LayoutParams.WRAP_CONTENT
+        )
+        heroTextParams.topMargin = dp(8)
+        hero.addView(heroText, heroTextParams)
 
-        val buttons = listOf(
-            "👤 کرکټر جوړول",
-            "🏞️ د فلم صحنې",
-            "🎭 د کرکټر حرکتونه",
-            "🗣️ خبرې او ډیالوګونه",
-            "🎥 د کامرې تنظیمات",
-            "🎵 غږ او موسیقي",
-            "✂️ د فلم ایډیټ",
-            "📁 زما فلمونه"
+        val heroParams = LinearLayout.LayoutParams(
+            LinearLayout.LayoutParams.MATCH_PARENT,
+            LinearLayout.LayoutParams.WRAP_CONTENT
+        )
+        heroParams.topMargin = dp(22)
+        main.addView(hero, heroParams)
+
+        // د جوړولو طریقه
+        val info = label(
+            "✦  لاسي فلم جوړونه  •  بې له AI ویډیو جوړولو",
+            12f,
+            Color.rgb(174, 190, 216),
+            true
+        )
+        info.setPadding(0, dp(15), 0, dp(20))
+        main.addView(info)
+
+        val section = label("د فلم جوړولو وسایل", 19f, Color.WHITE, true)
+        section.gravity = Gravity.RIGHT
+        main.addView(section)
+
+        val sectionHint = label(
+            "د خپلې پروژې لپاره یوه برخه وټاکه",
+            12f,
+            Color.rgb(145, 158, 183)
+        )
+        sectionHint.gravity = Gravity.RIGHT
+        val hintParams = LinearLayout.LayoutParams(
+            LinearLayout.LayoutParams.MATCH_PARENT,
+            LinearLayout.LayoutParams.WRAP_CONTENT
+        )
+        hintParams.topMargin = dp(5)
+        hintParams.bottomMargin = dp(12)
+        main.addView(sectionHint, hintParams)
+
+        val tools = listOf(
+            arrayOf("👤", "کرکټر جوړول", "څېرې او بڼه جوړه کړه", "#72C7FF"),
+            arrayOf("🏞️", "د فلم صحنې", "د کیسې ځایونه برابر کړه", "#79D6B0"),
+            arrayOf("🎭", "حرکتونه", "د کرکټر کړنې وټاکه", "#D7A5FF"),
+            arrayOf("🗣️", "ډیالوګونه", "خبرې او متن ولیکه", "#FFC47D"),
+            arrayOf("🎥", "کمره", "زاویه او نږدېوالی وټاکه", "#82B7FF"),
+            arrayOf("🎵", "غږ او موسیقي", "غږونه او شالیدي موسیقي", "#F2A1C2"),
+            arrayOf("✂️", "فلم ایډیټ", "برخې سره ونښلوه", "#FFB18C"),
+            arrayOf("📁", "زما فلمونه", "خپلې پروژې وګوره", "#A9C0FF")
         )
 
-        for (i in buttons.indices step 2) {
-            val row = LinearLayout(this)
-            row.orientation = LinearLayout.HORIZONTAL
-            row.layoutDirection = View.LAYOUT_DIRECTION_RTL
+        for (i in tools.indices step 2) {
+            val row = LinearLayout(this).apply {
+                orientation = LinearLayout.HORIZONTAL
+                layoutDirection = View.LAYOUT_DIRECTION_RTL
+            }
 
-            for (j in i until minOf(i + 2, buttons.size)) {
-                val button = Button(this)
-                button.text = buttons[j]
-                button.textSize = 15f
-                button.isAllCaps = false
-                button.setTextColor(Color.WHITE)
-                button.typeface = Typeface.DEFAULT_BOLD
-                button.gravity = Gravity.CENTER
-                button.background = background(Color.rgb(35, 42, 65), 16)
-                button.setPadding(dp(5), dp(12), dp(5), dp(12))
-
-                val params = LinearLayout.LayoutParams(0, dp(105), 1f)
-                params.setMargins(dp(5), dp(6), dp(5), dp(6))
-
-                button.setOnClickListener {
-                    Toast.makeText(
-                        this,
-                        "${buttons[j]} برخه به په راتلونکو مرحلو کې فعاله شي",
-                        Toast.LENGTH_SHORT
-                    ).show()
-                }
-
-                row.addView(button, params)
+            for (j in i until minOf(i + 2, tools.size)) {
+                val item = tools[j]
+                val accent = Color.parseColor(item[3])
+                val card = toolCard(item[0], item[1], item[2], accent, item[1])
+                val params = LinearLayout.LayoutParams(
+                    0,
+                    dp(150),
+                    1f
+                )
+                params.setMargins(dp(5), dp(5), dp(5), dp(5))
+                row.addView(card, params)
             }
             main.addView(row)
         }
 
-        val footer = TextView(this)
-        footer.text = "🎬 ستا خیال، ستا فلم، ستا سټوډیو"
-        footer.textSize = 14f
-        footer.setTextColor(Color.LTGRAY)
-        footer.gravity = Gravity.CENTER
-        footer.setPadding(0, dp(25), 0, dp(10))
-        main.addView(footer)
+        // لاندې یادونه
+        val footer = label(
+            "ستا خیال  •  ستا کیسه  •  ستا فلم",
+            13f,
+            Color.rgb(133, 148, 176),
+            true
+        )
+        val footerParams = LinearLayout.LayoutParams(
+            LinearLayout.LayoutParams.MATCH_PARENT,
+            LinearLayout.LayoutParams.WRAP_CONTENT
+        )
+        footerParams.topMargin = dp(24)
+        main.addView(footer, footerParams)
 
         scroll.addView(main)
         setContentView(scroll)
