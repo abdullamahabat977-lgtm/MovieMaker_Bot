@@ -1,6 +1,7 @@
 package com.moviestudio.filmmaker
 
 import android.os.Bundle
+import android.app.AlertDialog
 import android.graphics.Color
 import android.graphics.Typeface
 import android.graphics.drawable.GradientDrawable
@@ -24,6 +25,28 @@ class MainActivity : AppCompatActivity() {
             else GradientDrawable.Orientation.LEFT_RIGHT,
             colors
         ).apply { cornerRadius = dp(radius).toFloat() }
+    }
+
+    private fun darken(color: Int): Int = Color.rgb(
+        (Color.red(color) * 0.42f).toInt(),
+        (Color.green(color) * 0.42f).toInt(),
+        (Color.blue(color) * 0.42f).toInt()
+    )
+
+    private fun showGuide() {
+        AlertDialog.Builder(this)
+            .setTitle("د فلم جوړولو لارښوونې")
+            .setMessage("۱. لومړی نوې 3D پروژه جوړه کړه.\n\n۲. خپل 3D کرکټرونه او ماډلونه ورزیات کړه.\n\n۳. د فلم لپاره 3D چاپېریال او صحنې برابرې کړه.\n\n۴. کرکټرونو ته حرکتونه او انیمېشن ورکړه.\n\n۵. کمره، رڼا، رنګونه، غږ او ډیالوګ تنظیم کړه.\n\n۶. په مهال‌وېش کې صحنې سره ونښلوه، مخکتنه یې وکړه او وروسته فلم صادر کړه.\n\nیادونه: دا د لاسي فلم جوړولو سټوډیو ده؛ فلم د کاروونکي په لاس جوړېږي، نه د AI ویډیو جوړولو له لارې.")
+            .setPositiveButton("سمه ده", null)
+            .show()
+    }
+
+    private fun showAbout() {
+        AlertDialog.Builder(this)
+            .setTitle("زموږ په اړه")
+            .setMessage("فلم سټوډیو د دې لپاره جوړېږي چې کاروونکي وکولای شي خپل 3D کرکټرونه، چاپېریالونه، حرکتونه، کمرې او غږونه پخپله تنظیم او خپل فلم جوړ کړي.\n\nموخه: لاسي 3D فلم جوړونه، د پروژو خوندي ساتل او د فلم ویډیو صادرول.\n\nدا پروژه لا د جوړېدو په حال کې ده.")
+            .setPositiveButton("بند", null)
+            .show()
     }
 
     private fun label(
@@ -54,24 +77,28 @@ class MainActivity : AppCompatActivity() {
             layoutDirection = View.LAYOUT_DIRECTION_RTL
             setPadding(dp(10), dp(16), dp(10), dp(14))
             background = rounded(
-                intArrayOf(Color.rgb(31, 37, 57), Color.rgb(25, 30, 47)),
+                intArrayOf(darken(accent), accent),
                 18,
                 true
             )
             isClickable = true
             isFocusable = true
             setOnClickListener {
-                Toast.makeText(
-                    this@MainActivity,
-                    "$message برخه به په راتلونکې مرحله کې فعاله شي",
-                    Toast.LENGTH_SHORT
-                ).show()
+                when (message) {
+                    "لارښوونې" -> showGuide()
+                    "زموږ په اړه" -> showAbout()
+                    else -> Toast.makeText(
+                        this@MainActivity,
+                        "$message برخه به د 3D سټوډیو په راتلونکو مرحلو کې فعاله شي",
+                        Toast.LENGTH_SHORT
+                    ).show()
+                }
             }
         }
 
-        val iconView = label(icon, 30f, accent, true)
+        val iconView = label(icon, 30f, Color.WHITE, true)
         iconView.background = rounded(
-            intArrayOf(Color.rgb(45, 53, 79), Color.rgb(38, 45, 68)),
+            intArrayOf(Color.argb(95, 15, 20, 38), Color.argb(65, 15, 20, 38)),
             16
         )
         iconView.setPadding(dp(13), dp(8), dp(13), dp(8))
@@ -169,7 +196,7 @@ class MainActivity : AppCompatActivity() {
         val heroIcon = label("🎥", 48f, Color.WHITE)
         hero.addView(heroIcon)
 
-        val heroTitle = label("خپل فلم، په خپل لاس جوړ کړه", 22f, Color.WHITE, true)
+        val heroTitle = label("خپل 3D فلم، په خپل لاس جوړ کړه", 22f, Color.WHITE, true)
         val heroTitleParams = LinearLayout.LayoutParams(
             LinearLayout.LayoutParams.MATCH_PARENT,
             LinearLayout.LayoutParams.WRAP_CONTENT
@@ -178,7 +205,7 @@ class MainActivity : AppCompatActivity() {
         hero.addView(heroTitle, heroTitleParams)
 
         val heroText = label(
-            "کرکټرونه جوړ کړه، صحنې برابرې کړه او خپله کیسه فلم کړه.",
+            "3D کرکټرونه، چاپېریالونه او حرکتونه جوړ کړه؛ خپله کیسه په فلم بدله کړه.",
             13f,
             Color.rgb(239, 243, 255)
         )
@@ -197,7 +224,7 @@ class MainActivity : AppCompatActivity() {
         main.addView(hero, heroParams)
 
         val info = label(
-            "✦  لاسي فلم جوړونه  •  بې له AI ویډیو جوړولو",
+            "✦  بشپړه لاسي 3D فلم جوړونه  •  بې له AI ویډیو جوړولو",
             12f,
             Color.rgb(235, 240, 255),
             true
@@ -205,12 +232,12 @@ class MainActivity : AppCompatActivity() {
         info.setPadding(0, dp(15), 0, dp(20))
         main.addView(info)
 
-        val section = label("د فلم جوړولو وسایل", 19f, Color.WHITE, true)
+        val section = label("د 3D فلم جوړولو وسایل", 19f, Color.WHITE, true)
         section.gravity = Gravity.RIGHT
         main.addView(section)
 
         val sectionHint = label(
-            "د خپلې پروژې لپاره یوه برخه وټاکه",
+            "د فلم د جوړولو لپاره یوه برخه وټاکه",
             12f,
             Color.rgb(220, 228, 245)
         )
@@ -224,14 +251,21 @@ class MainActivity : AppCompatActivity() {
         main.addView(sectionHint, hintParams)
 
         val tools = listOf(
-            arrayOf("👤", "کرکټر جوړول", "څېرې او بڼه جوړه کړه", "#72C7FF"),
-            arrayOf("🏞️", "د فلم صحنې", "د کیسې ځایونه برابر کړه", "#79D6B0"),
-            arrayOf("🎭", "حرکتونه", "د کرکټر کړنې وټاکه", "#D7A5FF"),
-            arrayOf("🗣️", "ډیالوګونه", "خبرې او متن ولیکه", "#FFC47D"),
-            arrayOf("🎥", "کمره", "زاویه او نږدېوالی وټاکه", "#82B7FF"),
-            arrayOf("🎵", "غږ او موسیقي", "غږونه او شالیدي موسیقي", "#F2A1C2"),
-            arrayOf("✂️", "فلم ایډیټ", "برخې سره ونښلوه", "#FFB18C"),
-            arrayOf("📁", "زما فلمونه", "خپلې پروژې وګوره", "#A9C0FF")
+            arrayOf("🆕", "نوې 3D پروژه", "نوی فلم له صفره پیل کړه", "#48C6EF"),
+            arrayOf("🧍", "3D کرکټرونه", "کرکټرونه جوړ او تنظیم کړه", "#FF8A65"),
+            arrayOf("🌄", "3D چاپېریال", "ځایونه او صحنې جوړې کړه", "#66BB6A"),
+            arrayOf("🧩", "3D ماډلونه", "خپل ماډلونه ورزیات کړه", "#AB8BFF"),
+            arrayOf("🏃", "حرکت او انیمېشن", "کرکټرونو ته حرکت ورکړه", "#EC6FA9"),
+            arrayOf("🎥", "کمره", "زاویه، زوم او حرکت تنظیم کړه", "#42A5F5"),
+            arrayOf("💡", "رڼا", "د صحنې رڼا برابره کړه", "#FFD54F"),
+            arrayOf("🎨", "مواد او رنګونه", "سطحې او بڼې بدلې کړه", "#26C6DA"),
+            arrayOf("🎙️", "غږ او ډیالوګ", "خبرې، موسیقي او غږونه", "#F06292"),
+            arrayOf("🎞️", "مهال‌وېش او ایډیټ", "صحنې او غږونه سره ونښلوه", "#7E9BFF"),
+            arrayOf("▶️", "مخکتنه", "د فلم پایله وګوره", "#4DB6AC"),
+            arrayOf("📤", "فلم صادرول", "وروستی فلم ویډیو کړه", "#FFA726"),
+            arrayOf("📁", "زما فلمونه", "خوندي شوې پروژې پرانیزه", "#90A4AE"),
+            arrayOf("📘", "لارښوونې", "د کارولو مرحلې زده کړه", "#5C9DED"),
+            arrayOf("ℹ️", "زموږ په اړه", "د اپلیکیشن موخه او معلومات", "#9575CD")
         )
 
         for (i in tools.indices step 2) {
@@ -244,7 +278,7 @@ class MainActivity : AppCompatActivity() {
                 val item = tools[j]
                 val accent = Color.parseColor(item[3])
                 val card = toolCard(item[0], item[1], item[2], accent, item[1])
-                val params = LinearLayout.LayoutParams(0, dp(150), 1f)
+                val params = LinearLayout.LayoutParams(0, dp(146), 1f)
                 params.setMargins(dp(5), dp(5), dp(5), dp(5))
                 row.addView(card, params)
             }
@@ -252,7 +286,7 @@ class MainActivity : AppCompatActivity() {
         }
 
         val footer = label(
-            "ستا خیال  •  ستا کیسه  •  ستا فلم",
+            "ستا 3D نړۍ  •  ستا کیسه  •  ستا فلم",
             13f,
             Color.rgb(220, 228, 245),
             true
