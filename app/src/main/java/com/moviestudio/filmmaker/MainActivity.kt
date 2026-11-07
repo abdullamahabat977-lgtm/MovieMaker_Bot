@@ -103,7 +103,7 @@ class MainActivity : AppCompatActivity() {
         window.navigationBarColor = Color.rgb(13, 17, 31)
 
         val scroll = ScrollView(this).apply {
-            // د res/drawable/poster_background.webp عکس د اپ شالید دی
+            // د res/drawable/poster_background.jpg عکس د اپ شالید دی
             setBackgroundResource(R.drawable.poster_background)
             layoutDirection = View.LAYOUT_DIRECTION_RTL
             isFillViewport = true
@@ -113,7 +113,7 @@ class MainActivity : AppCompatActivity() {
             orientation = LinearLayout.VERTICAL
             layoutDirection = View.LAYOUT_DIRECTION_RTL
             setPadding(dp(18), dp(18), dp(18), dp(26))
-            // د پوسټر پر سر تیاره شفاف پوښ، څو لیکنې لوستل اسانه وي
+            // د JPG پوسټر پر سر تیاره شفاف پوښ، څو لیکنې لوستل اسانه وي
             setBackgroundColor(Color.argb(105, 7, 11, 25))
         }
 
