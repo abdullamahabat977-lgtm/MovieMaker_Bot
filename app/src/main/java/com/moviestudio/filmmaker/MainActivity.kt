@@ -168,13 +168,47 @@ class MainActivity : AppCompatActivity() {
         }.setNegativeButton("بند", null).show()
     }
 
+    private fun show3DPreview(title: String, sceneType: String) {
+        val glView = Scene3DView(this, sceneType)
+        val panel = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(dp(10), dp(8), dp(10), dp(8))
+            setBackgroundColor(Color.rgb(20, 27, 43))
+        }
+        panel.addView(TextView(this).apply {
+            text = "دا ژوندۍ 3D صحنه ده. د ګوتې په کشولو کمره وڅرخوه."
+            textSize = 13f
+            setTextColor(Color.WHITE)
+            gravity = Gravity.CENTER
+            setPadding(dp(4), dp(8), dp(4), dp(8))
+        })
+        panel.addView(glView, LinearLayout.LayoutParams(
+            LinearLayout.LayoutParams.MATCH_PARENT, dp(340)
+        ))
+        val dialog = AlertDialog.Builder(this)
+            .setTitle(title)
+            .setView(panel)
+            .setPositiveButton("بند", null)
+            .create()
+        dialog.setOnShowListener {
+            dialog.window?.setLayout(
+                (resources.displayMetrics.widthPixels * 0.94f).toInt(),
+                LinearLayout.LayoutParams.WRAP_CONTENT
+            )
+            glView.onResume()
+        }
+        dialog.setOnDismissListener { glView.onPause() }
+        dialog.show()
+    }
+
     private fun showCharacterStudio() {
-        val choices = arrayOf("نوی کرکټر جوړول", "چمتو 3D کرکټرونه", "زما خوندي کرکټرونه")
+        val choices = arrayOf("ژوندی 3D کرکټر وګوره", "نوی کرکټر جوړول", "چمتو کرکټرونه", "زما خوندي کرکټرونه")
         AlertDialog.Builder(this).setTitle("د 3D کرکټرونو سټوډیو").setItems(choices) { _, which ->
             when (which) {
-                0 -> createCharacterForm()
-                1 -> chooseReadyCharacter()
-                2 -> showLibrary("characters", "زما کرکټرونه")
+                0 -> show3DPreview("ژوندی 3D کرکټر", "character")
+                1 -> createCharacterForm()
+                2 -> chooseReadyCharacter()
+                3 -> showLibrary("characters", "زما کرکټرونه")
             }
         }.setNegativeButton("بند", null).show()
     }
@@ -224,13 +258,22 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun showEnvironmentStudio() {
-        val choices = arrayOf("نوی 3D چاپېریال جوړول", "چمتو 3D چاپېریالونه", "زما خوندي چاپېریالونه")
+        val choices = arrayOf("ژوندۍ 3D صحنې وګوره", "نوی 3D چاپېریال جوړول", "چمتو 3D چاپېریالونه", "زما خوندي چاپېریالونه")
         AlertDialog.Builder(this).setTitle("د 3D چاپېریال سټوډیو").setItems(choices) { _, which ->
             when (which) {
-                0 -> createEnvironmentForm()
-                1 -> chooseReadyEnvironment()
-                2 -> showLibrary("environments", "زما چاپېریالونه")
+                0 -> showEnvironmentPreviewPicker()
+                1 -> createEnvironmentForm()
+                2 -> chooseReadyEnvironment()
+                3 -> showLibrary("environments", "زما چاپېریالونه")
             }
+        }.setNegativeButton("بند", null).show()
+    }
+
+    private fun showEnvironmentPreviewPicker() {
+        val names = arrayOf("افغانی کلی", "عصري ښار", "ځنګل", "دښته", "د کور دننه کوټه")
+        val types = arrayOf("environment_village", "environment_city", "environment_forest", "environment_desert", "environment_room")
+        AlertDialog.Builder(this).setTitle("د 3D صحنې انتخاب").setItems(names) { _, which ->
+            show3DPreview(names[which], types[which])
         }.setNegativeButton("بند", null).show()
     }
 
