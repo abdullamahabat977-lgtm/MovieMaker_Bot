@@ -158,7 +158,20 @@ class MainActivity : AppCompatActivity() {
             val details = item.keys().asSequence().filter { it != "name" }
                 .joinToString("\\n") { k -> k + ": " + item.optString(k) }
             AlertDialog.Builder(this).setTitle(item.optString("name")).setMessage(details)
-                .setPositiveButton("سمه ده", null)
+                .setPositiveButton("په 3D کې وګوره") { _, _ ->
+                    if (key == "characters") {
+                        show3DPreview(item.optString("name"), "character")
+                    } else {
+                        val scene = when (item.optString("ځای")) {
+                            "ښار" -> "environment_city"
+                            "ځنګل" -> "environment_forest"
+                            "دښته" -> "environment_desert"
+                            "کور/کوټه" -> "environment_room"
+                            else -> "environment_village"
+                        }
+                        show3DPreview(item.optString("name"), scene)
+                    }
+                }
                 .setNegativeButton("حذف") { _, _ ->
                     val updated = JSONArray()
                     for (i in 0 until items.length()) if (i != which) updated.put(items.get(i))
@@ -221,6 +234,7 @@ class MainActivity : AppCompatActivity() {
             item.put("ډول", "چمتو نمونه"); item.put("حالت", "د تنظیم لپاره خوندي شوی")
             saveLibraryItem("characters", item)
             Toast.makeText(this, "چمتو نمونه ستا په کرکټرونو کې خوندي شوه", Toast.LENGTH_SHORT).show()
+            show3DPreview(templates[which], "character")
         }.setNegativeButton("بند", null).show()
     }
 
@@ -285,6 +299,14 @@ class MainActivity : AppCompatActivity() {
             item.put("ډول", "چمتو نمونه"); item.put("حالت", "د صحنې لپاره خوندي شوی")
             saveLibraryItem("environments", item)
             Toast.makeText(this, "چمتو چاپېریال ستا په کتابتون کې خوندي شو", Toast.LENGTH_SHORT).show()
+            val scene = when (which) {
+                1 -> "environment_city"
+                2 -> "environment_forest"
+                4 -> "environment_desert"
+                5 -> "environment_room"
+                else -> "environment_village"
+            }
+            show3DPreview(templates[which], scene)
         }.setNegativeButton("بند", null).show()
     }
 
