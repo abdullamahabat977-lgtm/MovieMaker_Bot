@@ -103,7 +103,8 @@ class MainActivity : AppCompatActivity() {
         window.navigationBarColor = Color.rgb(13, 17, 31)
 
         val scroll = ScrollView(this).apply {
-            setBackgroundColor(Color.rgb(13, 17, 31))
+            // د res/drawable/poster_background.webp عکس د اپ شالید دی
+            setBackgroundResource(R.drawable.poster_background)
             layoutDirection = View.LAYOUT_DIRECTION_RTL
             isFillViewport = true
         }
@@ -112,9 +113,10 @@ class MainActivity : AppCompatActivity() {
             orientation = LinearLayout.VERTICAL
             layoutDirection = View.LAYOUT_DIRECTION_RTL
             setPadding(dp(18), dp(18), dp(18), dp(26))
+            // د پوسټر پر سر تیاره شفاف پوښ، څو لیکنې لوستل اسانه وي
+            setBackgroundColor(Color.argb(105, 7, 11, 25))
         }
 
-        // د اپلیکیشن سرپاڼه
         val topBar = LinearLayout(this).apply {
             orientation = LinearLayout.HORIZONTAL
             gravity = Gravity.CENTER_VERTICAL
@@ -130,7 +132,7 @@ class MainActivity : AppCompatActivity() {
         brandTitle.gravity = Gravity.RIGHT
         brand.addView(brandTitle)
 
-        val brandSub = label("د خپل فلم جوړولو ځای", 12f, Color.rgb(155, 169, 195))
+        val brandSub = label("د خپل فلم جوړولو ځای", 12f, Color.rgb(220, 228, 245))
         brandSub.gravity = Gravity.RIGHT
         val subParams = LinearLayout.LayoutParams(
             LinearLayout.LayoutParams.WRAP_CONTENT,
@@ -153,7 +155,6 @@ class MainActivity : AppCompatActivity() {
         topBar.addView(offline)
         main.addView(topBar)
 
-        // لوی معرفتي بینر
         val hero = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
             gravity = Gravity.CENTER
@@ -195,11 +196,10 @@ class MainActivity : AppCompatActivity() {
         heroParams.topMargin = dp(22)
         main.addView(hero, heroParams)
 
-        // د جوړولو طریقه
         val info = label(
             "✦  لاسي فلم جوړونه  •  بې له AI ویډیو جوړولو",
             12f,
-            Color.rgb(174, 190, 216),
+            Color.rgb(235, 240, 255),
             true
         )
         info.setPadding(0, dp(15), 0, dp(20))
@@ -212,7 +212,7 @@ class MainActivity : AppCompatActivity() {
         val sectionHint = label(
             "د خپلې پروژې لپاره یوه برخه وټاکه",
             12f,
-            Color.rgb(145, 158, 183)
+            Color.rgb(220, 228, 245)
         )
         sectionHint.gravity = Gravity.RIGHT
         val hintParams = LinearLayout.LayoutParams(
@@ -244,22 +244,17 @@ class MainActivity : AppCompatActivity() {
                 val item = tools[j]
                 val accent = Color.parseColor(item[3])
                 val card = toolCard(item[0], item[1], item[2], accent, item[1])
-                val params = LinearLayout.LayoutParams(
-                    0,
-                    dp(150),
-                    1f
-                )
+                val params = LinearLayout.LayoutParams(0, dp(150), 1f)
                 params.setMargins(dp(5), dp(5), dp(5), dp(5))
                 row.addView(card, params)
             }
             main.addView(row)
         }
 
-        // لاندې یادونه
         val footer = label(
             "ستا خیال  •  ستا کیسه  •  ستا فلم",
             13f,
-            Color.rgb(133, 148, 176),
+            Color.rgb(220, 228, 245),
             true
         )
         val footerParams = LinearLayout.LayoutParams(
