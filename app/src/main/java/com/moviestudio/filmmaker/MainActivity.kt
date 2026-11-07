@@ -198,7 +198,7 @@ class MainActivity : AppCompatActivity() {
                 gravity = Gravity.RIGHT; setPadding(0, dp(8), 0, dp(3))
             })
         }
-        val name = EditText(this).apply { hint = "د کرکټر نوم"; textSize = 15f; singleLine = true }
+        val name = EditText(this).apply { hint = "د کرکټر نوم"; textSize = 15f; setSingleLine(true) }
         caption("د کرکټر نوم"); box.addView(name)
         caption("د بدن جوړښت")
         val body = makeSpinner(arrayOf("عادي", "لوړ قد", "لنډ قد", "عضلاتي", "ماشومانه")); box.addView(body)
@@ -253,7 +253,7 @@ class MainActivity : AppCompatActivity() {
                 gravity = Gravity.RIGHT; setPadding(0, dp(8), 0, dp(3))
             })
         }
-        val name = EditText(this).apply { hint = "د چاپېریال نوم"; textSize = 15f; singleLine = true }
+        val name = EditText(this).apply { hint = "د چاپېریال نوم"; textSize = 15f; setSingleLine(true) }
         caption("د چاپېریال نوم"); box.addView(name)
         caption("د ځای ډول")
         val place = makeSpinner(arrayOf("کلی", "ښار", "کور/کوټه", "ځنګل", "غرونه", "دښته", "سمندر", "د جګړې میدان")); box.addView(place)
