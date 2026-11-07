@@ -9,6 +9,8 @@ import android.view.Gravity
 import android.view.View
 import android.widget.*
 import androidx.appcompat.app.AppCompatActivity
+import org.json.JSONArray
+import org.json.JSONObject
 
 class MainActivity : AppCompatActivity() {
 
@@ -87,9 +89,11 @@ class MainActivity : AppCompatActivity() {
                 when (message) {
                     "لارښوونې" -> showGuide()
                     "زموږ په اړه" -> showAbout()
+                    "3D کرکټرونه" -> showCharacterStudio()
+                    "3D چاپېریال" -> showEnvironmentStudio()
                     else -> Toast.makeText(
                         this@MainActivity,
-                        "$message برخه به د 3D سټوډیو په راتلونکو مرحلو کې فعاله شي",
+                        "$message برخه به په راتلونکو مرحلو کې فعاله شي",
                         Toast.LENGTH_SHORT
                     ).show()
                 }
@@ -121,6 +125,155 @@ class MainActivity : AppCompatActivity() {
         card.addView(descView, descParams)
 
         return card
+    }
+
+
+    private fun library(key: String): JSONArray {
+        val raw = getSharedPreferences("movie_studio_data", MODE_PRIVATE).getString(key, "[]") ?: "[]"
+        return try { JSONArray(raw) } catch (_: Exception) { JSONArray() }
+    }
+
+    private fun saveLibraryItem(key: String, item: JSONObject) {
+        val items = library(key)
+        items.put(item)
+        getSharedPreferences("movie_studio_data", MODE_PRIVATE).edit().putString(key, items.toString()).apply()
+    }
+
+    private fun makeSpinner(options: Array<String>): Spinner =
+        Spinner(this).apply {
+            adapter = ArrayAdapter(this@MainActivity, android.R.layout.simple_spinner_dropdown_item, options)
+        }
+
+    private fun showLibrary(key: String, title: String) {
+        val items = library(key)
+        if (items.length() == 0) {
+            AlertDialog.Builder(this).setTitle(title)
+                .setMessage("تر اوسه هېڅ شی نه دی خوندي شوی. لومړی نوی جوړ کړه یا چمتو نمونه وټاکه.")
+                .setPositiveButton("سمه ده", null).show()
+            return
+        }
+        val names = Array(items.length()) { i -> items.optJSONObject(i)?.optString("name", "بې نومه") ?: "بې نومه" }
+        AlertDialog.Builder(this).setTitle(title).setItems(names) { _, which ->
+            val item = items.optJSONObject(which) ?: JSONObject()
+            val details = item.keys().asSequence().filter { it != "name" }
+                .joinToString("\\n") { k -> k + ": " + item.optString(k) }
+            AlertDialog.Builder(this).setTitle(item.optString("name")).setMessage(details)
+                .setPositiveButton("سمه ده", null)
+                .setNegativeButton("حذف") { _, _ ->
+                    val updated = JSONArray()
+                    for (i in 0 until items.length()) if (i != which) updated.put(items.get(i))
+                    getSharedPreferences("movie_studio_data", MODE_PRIVATE).edit().putString(key, updated.toString()).apply()
+                    Toast.makeText(this, "توکی حذف شو", Toast.LENGTH_SHORT).show()
+                }.show()
+        }.setNegativeButton("بند", null).show()
+    }
+
+    private fun showCharacterStudio() {
+        val choices = arrayOf("نوی کرکټر جوړول", "چمتو 3D کرکټرونه", "زما خوندي کرکټرونه")
+        AlertDialog.Builder(this).setTitle("د 3D کرکټرونو سټوډیو").setItems(choices) { _, which ->
+            when (which) {
+                0 -> createCharacterForm()
+                1 -> chooseReadyCharacter()
+                2 -> showLibrary("characters", "زما کرکټرونه")
+            }
+        }.setNegativeButton("بند", null).show()
+    }
+
+    private fun chooseReadyCharacter() {
+        val templates = arrayOf("ځوان نارینه کرکټر", "بالغ نارینه کرکټر", "ځوانه ښځینه کرکټر", "ماشوم کرکټر", "د مشر عمر کرکټر", "خیالي اتل")
+        AlertDialog.Builder(this).setTitle("چمتو کرکټر وټاکه").setItems(templates) { _, which ->
+            val item = JSONObject()
+            item.put("name", templates[which]); item.put("بڼه", templates[which])
+            item.put("ډول", "چمتو نمونه"); item.put("حالت", "د تنظیم لپاره خوندي شوی")
+            saveLibraryItem("characters", item)
+            Toast.makeText(this, "چمتو نمونه ستا په کرکټرونو کې خوندي شوه", Toast.LENGTH_SHORT).show()
+        }.setNegativeButton("بند", null).show()
+    }
+
+    private fun createCharacterForm() {
+        val box = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; setPadding(dp(20), dp(8), dp(20), dp(4)) }
+        fun caption(text: String) {
+            box.addView(TextView(this).apply {
+                this.text = text; textSize = 14f; setTextColor(Color.WHITE)
+                gravity = Gravity.RIGHT; setPadding(0, dp(8), 0, dp(3))
+            })
+        }
+        val name = EditText(this).apply { hint = "د کرکټر نوم"; textSize = 15f; singleLine = true }
+        caption("د کرکټر نوم"); box.addView(name)
+        caption("د بدن جوړښت")
+        val body = makeSpinner(arrayOf("عادي", "لوړ قد", "لنډ قد", "عضلاتي", "ماشومانه")); box.addView(body)
+        caption("د پوستکي رنګ")
+        val skin = makeSpinner(arrayOf("روښانه", "غنم رنګ", "نسواري", "تور")); box.addView(skin)
+        caption("د جامو ډول")
+        val clothes = makeSpinner(arrayOf("عادي کالي", "افغاني کالي", "رسمي کالي", "ورزشي کالي", "خیالي لباس")); box.addView(clothes)
+        caption("د ویښتانو ډول")
+        val hair = makeSpinner(arrayOf("لنډ", "اوږده", "منځني", "بې ویښتانو")); box.addView(hair)
+        AlertDialog.Builder(this).setTitle("نوی 3D کرکټر").setView(box)
+            .setPositiveButton("کرکټر خوندي کړه") { _, _ ->
+                val n = name.text.toString().trim()
+                if (n.isBlank()) Toast.makeText(this, "د کرکټر نوم ولیکه", Toast.LENGTH_SHORT).show()
+                else {
+                    val item = JSONObject()
+                    item.put("name", n); item.put("بدن", body.selectedItem.toString())
+                    item.put("پوستکی", skin.selectedItem.toString()); item.put("جامې", clothes.selectedItem.toString())
+                    item.put("ویښتان", hair.selectedItem.toString()); item.put("ډول", "د کاروونکي جوړ کړی")
+                    saveLibraryItem("characters", item)
+                    Toast.makeText(this, "کرکټر خوندي شو", Toast.LENGTH_SHORT).show()
+                }
+            }.setNegativeButton("لغوه", null).show()
+    }
+
+    private fun showEnvironmentStudio() {
+        val choices = arrayOf("نوی 3D چاپېریال جوړول", "چمتو 3D چاپېریالونه", "زما خوندي چاپېریالونه")
+        AlertDialog.Builder(this).setTitle("د 3D چاپېریال سټوډیو").setItems(choices) { _, which ->
+            when (which) {
+                0 -> createEnvironmentForm()
+                1 -> chooseReadyEnvironment()
+                2 -> showLibrary("environments", "زما چاپېریالونه")
+            }
+        }.setNegativeButton("بند", null).show()
+    }
+
+    private fun chooseReadyEnvironment() {
+        val templates = arrayOf("افغانی کلی", "عصري ښار", "شنه ځنګل", "لوړ غرونه", "شګلنه دښته", "د کور دننه کوټه", "د جګړې میدان", "د سمندر غاړه")
+        AlertDialog.Builder(this).setTitle("چمتو چاپېریال وټاکه").setItems(templates) { _, which ->
+            val item = JSONObject()
+            item.put("name", templates[which]); item.put("ځای", templates[which])
+            item.put("ډول", "چمتو نمونه"); item.put("حالت", "د صحنې لپاره خوندي شوی")
+            saveLibraryItem("environments", item)
+            Toast.makeText(this, "چمتو چاپېریال ستا په کتابتون کې خوندي شو", Toast.LENGTH_SHORT).show()
+        }.setNegativeButton("بند", null).show()
+    }
+
+    private fun createEnvironmentForm() {
+        val box = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; setPadding(dp(20), dp(8), dp(20), dp(4)) }
+        fun caption(text: String) {
+            box.addView(TextView(this).apply {
+                this.text = text; textSize = 14f; setTextColor(Color.WHITE)
+                gravity = Gravity.RIGHT; setPadding(0, dp(8), 0, dp(3))
+            })
+        }
+        val name = EditText(this).apply { hint = "د چاپېریال نوم"; textSize = 15f; singleLine = true }
+        caption("د چاپېریال نوم"); box.addView(name)
+        caption("د ځای ډول")
+        val place = makeSpinner(arrayOf("کلی", "ښار", "کور/کوټه", "ځنګل", "غرونه", "دښته", "سمندر", "د جګړې میدان")); box.addView(place)
+        caption("د ورځې وخت")
+        val time = makeSpinner(arrayOf("سهار", "غرمه", "ماښام", "شپه")); box.addView(time)
+        caption("د هوا حالت")
+        val weather = makeSpinner(arrayOf("صافه هوا", "وریځ", "باران", "واوره", "دوړې")); box.addView(weather)
+        AlertDialog.Builder(this).setTitle("نوی 3D چاپېریال").setView(box)
+            .setPositiveButton("چاپېریال خوندي کړه") { _, _ ->
+                val n = name.text.toString().trim()
+                if (n.isBlank()) Toast.makeText(this, "د چاپېریال نوم ولیکه", Toast.LENGTH_SHORT).show()
+                else {
+                    val item = JSONObject()
+                    item.put("name", n); item.put("ځای", place.selectedItem.toString())
+                    item.put("وخت", time.selectedItem.toString()); item.put("هوا", weather.selectedItem.toString())
+                    item.put("ډول", "د کاروونکي جوړ کړی")
+                    saveLibraryItem("environments", item)
+                    Toast.makeText(this, "چاپېریال خوندي شو", Toast.LENGTH_SHORT).show()
+                }
+            }.setNegativeButton("لغوه", null).show()
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
