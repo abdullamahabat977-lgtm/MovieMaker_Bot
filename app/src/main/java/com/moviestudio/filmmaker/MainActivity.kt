@@ -14,6 +14,8 @@ import org.json.JSONObject
 
 class MainActivity : AppCompatActivity() {
 
+    private var activePreview: Scene3DView? = null
+
     private fun dp(value: Int): Int =
         (value * resources.displayMetrics.density).toInt()
 
@@ -133,10 +135,15 @@ class MainActivity : AppCompatActivity() {
         return try { JSONArray(raw) } catch (_: Exception) { JSONArray() }
     }
 
-    private fun saveLibraryItem(key: String, item: JSONObject) {
-        val items = library(key)
-        items.put(item)
-        getSharedPreferences("movie_studio_data", MODE_PRIVATE).edit().putString(key, items.toString()).apply()
+    private fun saveLibraryItem(key: String, item: JSONObject): Boolean {
+        return try {
+            val items = library(key)
+            items.put(item)
+            getSharedPreferences("movie_studio_data", MODE_PRIVATE)
+                .edit().putString(key, items.toString()).commit()
+        } catch (_: Exception) {
+            false
+        }
     }
 
     private fun makeSpinner(options: Array<String>): Spinner =
@@ -162,11 +169,12 @@ class MainActivity : AppCompatActivity() {
                     if (key == "characters") {
                         show3DPreview(item.optString("name"), "character")
                     } else {
-                        val scene = when (item.optString("ځای")) {
-                            "ښار" -> "environment_city"
-                            "ځنګل" -> "environment_forest"
-                            "دښته" -> "environment_desert"
-                            "کور/کوټه" -> "environment_room"
+                        val place = item.optString("ځای")
+                        val scene = when {
+                            place.contains("ښار") -> "environment_city"
+                            place.contains("ځنګل") -> "environment_forest"
+                            place.contains("دښته") -> "environment_desert"
+                            place.contains("کوټه") || place.contains("کور") -> "environment_room"
                             else -> "environment_village"
                         }
                         show3DPreview(item.optString("name"), scene)
@@ -208,9 +216,13 @@ class MainActivity : AppCompatActivity() {
                 (resources.displayMetrics.widthPixels * 0.94f).toInt(),
                 LinearLayout.LayoutParams.WRAP_CONTENT
             )
+            activePreview = glView
             glView.onResume()
         }
-        dialog.setOnDismissListener { glView.onPause() }
+        dialog.setOnDismissListener {
+            glView.onPause()
+            if (activePreview === glView) activePreview = null
+        }
         dialog.show()
     }
 
@@ -232,7 +244,10 @@ class MainActivity : AppCompatActivity() {
             val item = JSONObject()
             item.put("name", templates[which]); item.put("بڼه", templates[which])
             item.put("ډول", "چمتو نمونه"); item.put("حالت", "د تنظیم لپاره خوندي شوی")
-            saveLibraryItem("characters", item)
+            if (!saveLibraryItem("characters", item)) {
+                Toast.makeText(this, "خوندي کول ناکام شول؛ بیا هڅه وکړه", Toast.LENGTH_LONG).show()
+                return@setItems
+            }
             Toast.makeText(this, "چمتو نمونه ستا په کرکټرونو کې خوندي شوه", Toast.LENGTH_SHORT).show()
             show3DPreview(templates[which], "character")
         }.setNegativeButton("بند", null).show()
@@ -265,8 +280,10 @@ class MainActivity : AppCompatActivity() {
                     item.put("name", n); item.put("بدن", body.selectedItem.toString())
                     item.put("پوستکی", skin.selectedItem.toString()); item.put("جامې", clothes.selectedItem.toString())
                     item.put("ویښتان", hair.selectedItem.toString()); item.put("ډول", "د کاروونکي جوړ کړی")
-                    saveLibraryItem("characters", item)
-                    Toast.makeText(this, "کرکټر خوندي شو", Toast.LENGTH_SHORT).show()
+                    if (saveLibraryItem("characters", item))
+                        Toast.makeText(this, "کرکټر خوندي شو", Toast.LENGTH_SHORT).show()
+                    else
+                        Toast.makeText(this, "خوندي کول ناکام شول؛ بیا هڅه وکړه", Toast.LENGTH_LONG).show()
                 }
             }.setNegativeButton("لغوه", null).show()
     }
@@ -297,7 +314,10 @@ class MainActivity : AppCompatActivity() {
             val item = JSONObject()
             item.put("name", templates[which]); item.put("ځای", templates[which])
             item.put("ډول", "چمتو نمونه"); item.put("حالت", "د صحنې لپاره خوندي شوی")
-            saveLibraryItem("environments", item)
+            if (!saveLibraryItem("environments", item)) {
+                Toast.makeText(this, "خوندي کول ناکام شول؛ بیا هڅه وکړه", Toast.LENGTH_LONG).show()
+                return@setItems
+            }
             Toast.makeText(this, "چمتو چاپېریال ستا په کتابتون کې خوندي شو", Toast.LENGTH_SHORT).show()
             val scene = when (which) {
                 1 -> "environment_city"
@@ -335,8 +355,10 @@ class MainActivity : AppCompatActivity() {
                     item.put("name", n); item.put("ځای", place.selectedItem.toString())
                     item.put("وخت", time.selectedItem.toString()); item.put("هوا", weather.selectedItem.toString())
                     item.put("ډول", "د کاروونکي جوړ کړی")
-                    saveLibraryItem("environments", item)
-                    Toast.makeText(this, "چاپېریال خوندي شو", Toast.LENGTH_SHORT).show()
+                    if (saveLibraryItem("environments", item))
+                        Toast.makeText(this, "چاپېریال خوندي شو", Toast.LENGTH_SHORT).show()
+                    else
+                        Toast.makeText(this, "خوندي کول ناکام شول؛ بیا هڅه وکړه", Toast.LENGTH_LONG).show()
                 }
             }.setNegativeButton("لغوه", null).show()
     }
@@ -518,5 +540,15 @@ class MainActivity : AppCompatActivity() {
 
         scroll.addView(main)
         setContentView(scroll)
+    }
+
+    override fun onPause() {
+        activePreview?.onPause()
+        super.onPause()
+    }
+
+    override fun onResume() {
+        super.onResume()
+        activePreview?.onResume()
     }
 }
