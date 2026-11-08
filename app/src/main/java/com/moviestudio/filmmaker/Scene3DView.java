@@ -26,7 +26,8 @@ public final class Scene3DView extends GLSurfaceView {
     public Scene3DView(Context context, String sceneType) {
         super(context);
         setEGLContextClientVersion(2);
-        setEGLConfigChooser(8, 8, 8, 8, 16, 0);
+        // Opaque preview: avoid requiring an alpha EGL channel on older GPUs.
+        setEGLConfigChooser(8, 8, 8, 0, 16, 0);
         renderer = new SceneRenderer(sceneType == null ? "environment_village" : sceneType);
         setRenderer(renderer);
         setRenderMode(GLSurfaceView.RENDERMODE_WHEN_DIRTY);
@@ -68,6 +69,7 @@ public final class Scene3DView extends GLSurfaceView {
         private final float[] model = new float[16];
         private final float[] mvp = new float[16];
         private volatile float yaw = -18f, pitch = 8f;
+        private volatile boolean failed = false;
 
         SceneRenderer(String type) { sceneType = type; }
 
@@ -77,6 +79,8 @@ public final class Scene3DView extends GLSurfaceView {
         }
 
         @Override public void onSurfaceCreated(GL10 gl, EGLConfig config) {
+            failed = false;
+            try {
             GLES20.glClearColor(0.48f, 0.68f, 0.88f, 1f);
             GLES20.glEnable(GLES20.GL_DEPTH_TEST);
             // Disable face culling: keeps every generated low-poly mesh visible
@@ -109,6 +113,11 @@ public final class Scene3DView extends GLSurfaceView {
             normalHandle = GLES20.glGetAttribLocation(program, "aNormal");
             mvpHandle = GLES20.glGetUniformLocation(program, "uMvp");
             colorHandle = GLES20.glGetUniformLocation(program, "uColor");
+            } catch (Throwable error) {
+                failed = true;
+                android.util.Log.e("MovieStudio3D", "3D preview initialization failed", error);
+                GLES20.glClearColor(0.16f, 0.20f, 0.29f, 1f);
+            }
         }
 
         @Override public void onSurfaceChanged(GL10 gl, int width, int height) {
@@ -118,6 +127,7 @@ public final class Scene3DView extends GLSurfaceView {
 
         @Override public void onDrawFrame(GL10 gl) {
             GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT | GLES20.GL_DEPTH_BUFFER_BIT);
+            if (failed) return;
             Matrix.setLookAtM(view, 0, 0f, 3.4f, 8.5f, 0f, 1f, 0f, 0f, 1f, 0f);
             float[] rotation = new float[16];
             Matrix.setIdentityM(rotation, 0);
@@ -126,6 +136,13 @@ public final class Scene3DView extends GLSurfaceView {
             float[] camera = new float[16];
             Matrix.multiplyMM(camera, 0, view, 0, rotation, 0);
             Matrix.multiplyMM(vp, 0, projection, 0, camera, 0);
+            if (program == 0 || positionHandle < 0 || normalHandle < 0 ||
+                mvpHandle < 0 || colorHandle < 0) {
+                failed = true;
+                GLES20.glClearColor(0.16f, 0.20f, 0.29f, 1f);
+                GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT | GLES20.GL_DEPTH_BUFFER_BIT);
+                return;
+            }
             GLES20.glUseProgram(program);
 
             // Broad ground plane and a distant sun.
