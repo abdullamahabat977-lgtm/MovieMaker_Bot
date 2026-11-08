@@ -22,6 +22,7 @@ import javax.microedition.khronos.opengles.GL10;
 public final class Scene3DView extends GLSurfaceView {
     private final SceneRenderer renderer;
     private float lastX, lastY;
+    private boolean resumed = false;
 
     public Scene3DView(Context context, String sceneType) {
         super(context);
@@ -54,8 +55,18 @@ public final class Scene3DView extends GLSurfaceView {
     }
 
     @Override public void onResume() {
-        super.onResume();
-        requestRender();
+        if (!resumed) {
+            resumed = true;
+            super.onResume();
+            requestRender();
+        }
+    }
+
+    @Override public void onPause() {
+        if (resumed) {
+            resumed = false;
+            super.onPause();
+        }
     }
 
     private static final class SceneRenderer implements GLSurfaceView.Renderer {
@@ -68,6 +79,8 @@ public final class Scene3DView extends GLSurfaceView {
         private final float[] vp = new float[16];
         private final float[] model = new float[16];
         private final float[] mvp = new float[16];
+        private final float[] rotation = new float[16];
+        private final float[] camera = new float[16];
         private volatile float yaw = -18f, pitch = 8f;
         private volatile boolean failed = false;
 
@@ -130,11 +143,9 @@ public final class Scene3DView extends GLSurfaceView {
             if (failed) return;
             try {
                 Matrix.setLookAtM(view, 0, 0f, 3.4f, 8.5f, 0f, 1f, 0f, 0f, 1f, 0f);
-                float[] rotation = new float[16];
                 Matrix.setIdentityM(rotation, 0);
                 Matrix.rotateM(rotation, 0, pitch, 1f, 0f, 0f);
                 Matrix.rotateM(rotation, 0, yaw, 0f, 1f, 0f);
-                float[] camera = new float[16];
                 Matrix.multiplyMM(camera, 0, view, 0, rotation, 0);
                 Matrix.multiplyMM(vp, 0, projection, 0, camera, 0);
                 if (program == 0 || positionHandle < 0 || normalHandle < 0 ||
