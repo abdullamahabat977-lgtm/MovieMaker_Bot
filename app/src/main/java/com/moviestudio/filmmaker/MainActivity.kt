@@ -15,6 +15,8 @@ import org.json.JSONObject
 class MainActivity : AppCompatActivity() {
 
     private var activePreview: Scene3DView? = null
+    private var previewDialog: AlertDialog? = null
+    private var activityResumed = false
 
     private fun dp(value: Int): Int =
         (value * resources.displayMetrics.density).toInt()
@@ -163,7 +165,7 @@ class MainActivity : AppCompatActivity() {
         AlertDialog.Builder(this).setTitle(title).setItems(names) { _, which ->
             val item = items.optJSONObject(which) ?: JSONObject()
             val details = item.keys().asSequence().filter { it != "name" }
-                .joinToString("\\n") { k -> k + ": " + item.optString(k) }
+                .joinToString("\n") { k -> k + ": " + item.optString(k) }
             AlertDialog.Builder(this).setTitle(item.optString("name")).setMessage(details)
                 .setPositiveButton("په 3D کې وګوره") { _, _ ->
                     if (key == "characters") {
@@ -190,6 +192,9 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun show3DPreview(title: String, sceneType: String) {
+        if (isFinishing || isDestroyed) return
+        previewDialog?.dismiss()
+
         val glView = Scene3DView(this, sceneType)
         val panel = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
@@ -212,16 +217,22 @@ class MainActivity : AppCompatActivity() {
             .setPositiveButton("بند", null)
             .create()
         dialog.setOnShowListener {
+            if (isFinishing || isDestroyed) {
+                dialog.dismiss()
+                return@setOnShowListener
+            }
             dialog.window?.setLayout(
                 (resources.displayMetrics.widthPixels * 0.94f).toInt(),
                 LinearLayout.LayoutParams.WRAP_CONTENT
             )
+            previewDialog = dialog
             activePreview = glView
-            glView.onResume()
+            if (activityResumed) glView.onResume()
         }
         dialog.setOnDismissListener {
             glView.onPause()
             if (activePreview === glView) activePreview = null
+            if (previewDialog === dialog) previewDialog = null
         }
         dialog.show()
     }
@@ -543,12 +554,23 @@ class MainActivity : AppCompatActivity() {
     }
 
     override fun onPause() {
+        activityResumed = false
         activePreview?.onPause()
         super.onPause()
     }
 
     override fun onResume() {
         super.onResume()
-        activePreview?.onResume()
+        activityResumed = true
+        if (previewDialog?.isShowing == true) activePreview?.onResume()
+    }
+
+    override fun onDestroy() {
+        previewDialog?.setOnDismissListener(null)
+        previewDialog?.dismiss()
+        activePreview?.onPause()
+        activePreview = null
+        previewDialog = null
+        super.onDestroy()
     }
 }
