@@ -128,28 +128,31 @@ public final class Scene3DView extends GLSurfaceView {
         @Override public void onDrawFrame(GL10 gl) {
             GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT | GLES20.GL_DEPTH_BUFFER_BIT);
             if (failed) return;
-            Matrix.setLookAtM(view, 0, 0f, 3.4f, 8.5f, 0f, 1f, 0f, 0f, 1f, 0f);
-            float[] rotation = new float[16];
-            Matrix.setIdentityM(rotation, 0);
-            Matrix.rotateM(rotation, 0, pitch, 1f, 0f, 0f);
-            Matrix.rotateM(rotation, 0, yaw, 0f, 1f, 0f);
-            float[] camera = new float[16];
-            Matrix.multiplyMM(camera, 0, view, 0, rotation, 0);
-            Matrix.multiplyMM(vp, 0, projection, 0, camera, 0);
-            if (program == 0 || positionHandle < 0 || normalHandle < 0 ||
-                mvpHandle < 0 || colorHandle < 0) {
+            try {
+                Matrix.setLookAtM(view, 0, 0f, 3.4f, 8.5f, 0f, 1f, 0f, 0f, 1f, 0f);
+                float[] rotation = new float[16];
+                Matrix.setIdentityM(rotation, 0);
+                Matrix.rotateM(rotation, 0, pitch, 1f, 0f, 0f);
+                Matrix.rotateM(rotation, 0, yaw, 0f, 1f, 0f);
+                float[] camera = new float[16];
+                Matrix.multiplyMM(camera, 0, view, 0, rotation, 0);
+                Matrix.multiplyMM(vp, 0, projection, 0, camera, 0);
+                if (program == 0 || positionHandle < 0 || normalHandle < 0 ||
+                    mvpHandle < 0 || colorHandle < 0) {
+                    throw new IllegalStateException("3D shader handles are unavailable");
+                }
+                GLES20.glUseProgram(program);
+                // Broad ground plane and a distant sun.
+                sphere(-0.3f, -0.10f, -0.8f, 8.2f, 0.10f, 8.2f, 0.24f, 0.48f, 0.22f);
+                sphere(0f, 4.2f, -8f, 0.55f, 0.55f, 0.55f, 1f, 0.78f, 0.22f);
+                drawEnvironment();
+                drawCharacter();
+            } catch (Throwable error) {
                 failed = true;
+                android.util.Log.e("MovieStudio3D", "3D preview frame failed", error);
                 GLES20.glClearColor(0.16f, 0.20f, 0.29f, 1f);
                 GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT | GLES20.GL_DEPTH_BUFFER_BIT);
-                return;
             }
-            GLES20.glUseProgram(program);
-
-            // Broad ground plane and a distant sun.
-            sphere(-0.3f, -0.10f, -0.8f, 8.2f, 0.10f, 8.2f, 0.24f, 0.48f, 0.22f);
-            sphere(0f, 4.2f, -8f, 0.55f, 0.55f, 0.55f, 1f, 0.78f, 0.22f);
-            drawEnvironment();
-            drawCharacter();
         }
 
         private void drawEnvironment() {
