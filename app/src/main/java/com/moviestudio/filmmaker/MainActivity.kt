@@ -183,7 +183,7 @@ class MainActivity : AppCompatActivity() {
                 .setNegativeButton("حذف") { _, _ ->
                     val updated = JSONArray()
                     for (i in 0 until items.length()) if (i != which) updated.put(items.get(i))
-                    getSharedPreferences("movie_studio_data", MODE_PRIVATE).edit().putString(key, updated.toString()).apply()
+                    getSharedPreferences("movie_studio_data", MODE_PRIVATE).edit().putString(key, updated.toString()).commit()
                     Toast.makeText(this, "توکی حذف شو", Toast.LENGTH_SHORT).show()
                 }.show()
         }.setNegativeButton("بند", null).show()
