@@ -63,6 +63,9 @@ public final class Scene3DView extends GLSurfaceView {
         private final float[] rotation = new float[16];
         private final float[] model = new float[16];
         private final float[] vp = new float[16];
+        private final float[] camera = new float[16];
+        private static final float[] FLOOR_COLOR = {0.22f,0.48f,0.28f,1f};
+        private static final float[] CUBE_COLOR = {0.92f,0.55f,0.22f,1f};
         private final float[] mvp = new float[16];
         private FloatBuffer cubeBuffer, floorBuffer;
         private int program, positionHandle, matrixHandle, colorHandle;
@@ -157,12 +160,12 @@ public final class Scene3DView extends GLSurfaceView {
                 Matrix.setIdentityM(rotation, 0);
                 Matrix.rotateM(rotation, 0, pitch, 1f, 0f, 0f);
                 Matrix.rotateM(rotation, 0, yaw, 0f, 1f, 0f);
-                Matrix.multiplyMM(vp, 0, projection, 0, view, 0);
-                Matrix.multiplyMM(vp, 0, vp, 0, rotation, 0);
+                Matrix.multiplyMM(camera, 0, view, 0, rotation, 0);
+                Matrix.multiplyMM(vp, 0, projection, 0, camera, 0);
                 GLES20.glUseProgram(program);
                 GLES20.glEnableVertexAttribArray(positionHandle);
-                draw(floorBuffer, 6, new float[]{0.22f,0.48f,0.28f,1f}, 0f,-1.15f,0f,1f,1f,1f);
-                draw(cubeBuffer, 36, new float[]{0.92f,0.55f,0.22f,1f}, 0f,0f,0f,0.85f,0.85f,0.85f);
+                draw(floorBuffer, 6, FLOOR_COLOR, 0f,-1.15f,0f,1f,1f,1f);
+                draw(cubeBuffer, 36, CUBE_COLOR, 0f,0f,0f,0.85f,0.85f,0.85f);
                 GLES20.glDisableVertexAttribArray(positionHandle);
             } catch (Throwable error) {
                 failed = true;
