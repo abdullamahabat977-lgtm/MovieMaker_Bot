@@ -93,10 +93,10 @@ public final class Scene3DView extends GLSurfaceView {
             -8,-1.16f,-8, 8,-1.16f,-8, 8,-1.16f,8,
             -8,-1.16f,-8, 8,-1.16f,8, -8,-1.16f,8
         };
-        private static final float[] FACE_COLORS = {
-            0.95f,0.43f,0.16f,1f, 0.58f,0.24f,0.12f,1f,
-            0.18f,0.55f,0.78f,1f, 0.20f,0.38f,0.64f,1f,
-            0.98f,0.68f,0.20f,1f, 0.45f,0.31f,0.18f,1f
+        private static final float[][] FACE_COLORS = {
+            {0.95f,0.43f,0.16f,1f}, {0.58f,0.24f,0.12f,1f},
+            {0.18f,0.55f,0.78f,1f}, {0.20f,0.38f,0.64f,1f},
+            {0.98f,0.68f,0.20f,1f}, {0.45f,0.31f,0.18f,1f}
         };
         private static final float[] FLOOR_COLOR = {0.19f,0.34f,0.25f,1f};
         private static final float[] GRID_COLOR = {0.48f,0.61f,0.52f,1f};
@@ -244,11 +244,7 @@ public final class Scene3DView extends GLSurfaceView {
                 draw(gridBuffer, GLES20.GL_LINES, 0, 17 * 4, GRID_COLOR,
                         0f, 0f, 0f, 1f, 1f, 1f);
                 for (int face = 0; face < 6; face++) {
-                    float[] color = new float[] {
-                        FACE_COLORS[face * 4], FACE_COLORS[face * 4 + 1],
-                        FACE_COLORS[face * 4 + 2], FACE_COLORS[face * 4 + 3]
-                    };
-                    draw(cubeBuffer, GLES20.GL_TRIANGLES, face * 6, 6, color,
+                    draw(cubeBuffer, GLES20.GL_TRIANGLES, face * 6, 6, FACE_COLORS[face],
                             0f, 0f, 0f, 0.85f, 0.85f, 0.85f);
                 }
                 GLES20.glDisableVertexAttribArray(positionHandle);
