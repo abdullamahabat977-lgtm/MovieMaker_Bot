@@ -43,7 +43,7 @@ class ProjectStore(context: Context) {
                     .put("width", JSONObject.NULL)
                     .put("height", JSONObject.NULL)
                     .put("fps", JSONObject.NULL)
-                    .put("renderMode", "3d"))
+                    .put("renderMode", "3d")))
             .put("assets", JSONArray())
             .put("scenes", JSONArray())
             .put("timeline", JSONObject().put("sceneOrder", JSONArray()))
