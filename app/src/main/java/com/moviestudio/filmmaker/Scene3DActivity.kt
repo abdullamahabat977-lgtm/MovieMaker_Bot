@@ -123,12 +123,11 @@ class Scene3DActivity : Activity() {
     }
 
     override fun onPause() {
-        sceneView?.onPause()
         super.onPause()
+        sceneView?.onPause()
     }
 
     override fun onDestroy() {
-        sceneView?.onPause()
         sceneView = null
         super.onDestroy()
     }
