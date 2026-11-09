@@ -1,190 +1,41 @@
-# د Movie Studio د پروژې د JSON معلوماتي بڼه
+# د Movie Studio v2 د پروژې د معلوماتو بڼه
 
-## د نن ورځې عملي پړاو
+## موخه
+د فلم ټول معلومات په یوه نسخه لرونکي JSON فایل کې ساتل کېږي. فایل او اړوند assets یوازې د موبایل په داخلي ذخیره کې پاتې کېږي.
 
-**موخه:** د یوه فلم ټول مهم معلومات په یوه منظم، نسخه لرونکي فایل کې تعریفول، څو اپلیکیشن وکولای شي پروژه په موبایل کې خوندي، بېرته پرانیزي او وروسته یې صحنې سره ونښلوي.
+## د فولډر جوړښت
+MovieProjects/project_<id>/project.json
+MovieProjects/project_<id>/assets/characters/
+MovieProjects/project_<id>/assets/environments/
+MovieProjects/project_<id>/assets/props/
+MovieProjects/project_<id>/assets/images/
+MovieProjects/project_<id>/assets/audio/
+MovieProjects/project_<id>/exports/
 
-**مهم:** دا سند د معلوماتو ډیزاین دی. تر اوسه د دې بڼې د لوستلو او لیکلو Kotlin کوډ نه دی ورزیات شوی او APK پرې نه دی ازمویل شوی.
-
-## ۱. د فایل ځای
-
-د هر فلم لپاره به د موبایل په داخلي ذخیره کې جلا فولډر وي:
-
-```text
-MovieProjects/
-  MyFirstMovie/
-    project.json
-    assets/
-      characters/
-      environments/
-      props/
-      images/
-      audio/
-    exports/
-```
-
-- `project.json` د فلم نوم، تنظیمات، صحنې او مهال‌وېش ساتي.
-- د عکسونو، ماډلونو او غږونو اصلي فایلونه د `assets` دننه ساتل کېږي. د فایل بڼه او پسوند به د کاروونکي له وارد شوي توکي سره سم وي؛ تر هغه مخکې `file` تش یا `null` پاتې کېدای شي.
-- صادر شوی MP4 د `exports` دننه یا د کاروونکي په ټاکلي ځای کې خوندي کېږي.
-- د پروژې د فایلونو لپاره انټرنېټ ته اړتیا نشته.
-- د فایل لارې باید د پروژې دننه نسبي لارې وي؛ د موبایل مطلقې لارې یا ویب URL مه ساتئ.
-
-## ۲. د نمونې project.json
-
-دا یوه کوچنۍ نمونه ده. د تصویر پلنوالی، لوړوالی او FPS قصداً `null` دي، ځکه وروستي ارزښتونه لا نه دي ټاکل شوي. د لید یا رینډر ډول هم نه دی ټاکل شوی.
-
-```json
+## د پروژې د JSON لومړنی جوړښت
 {
   "schemaVersion": 1,
   "project": {
     "id": "project_001",
     "name": "زما لومړی فلم",
-    "createdAt": "2026-11-09T00:00:00Z",
-    "updatedAt": "2026-11-09T00:00:00Z",
-    "settings": {
-      "width": null,
-      "height": null,
-      "fps": null
-    }
+    "createdAt": "ISO-8601",
+    "updatedAt": "ISO-8601",
+    "settings": { "width": null, "height": null, "fps": null, "renderMode": "3d" }
   },
-  "assets": [
-    {
-      "id": "asset_character_001",
-      "kind": "character",
-      "name": "اصلي کرکټر",
-      "file": null,
-      "metadata": {}
-    },
-    {
-      "id": "asset_audio_001",
-      "kind": "audio",
-      "name": "د شالید غږ",
-      "file": "assets/audio/background_music.mp3",
-      "metadata": {}
-    }
-  ],
-  "scenes": [
-    {
-      "id": "scene_001",
-      "name": "لومړۍ صحنه",
-      "durationFrames": 120,
-      "backgroundAssetId": null,
-      "objects": [
-        {
-          "id": "object_001",
-          "assetId": "asset_character_001",
-          "properties": {}
-        }
-      ],
-      "tracks": [
-        {
-          "id": "track_motion_001",
-          "type": "motion",
-          "targetId": "object_001",
-          "keyframes": [
-            {
-              "frame": 0,
-              "values": {}
-            },
-            {
-              "frame": 60,
-              "values": {}
-            }
-          ]
-        },
-        {
-          "id": "track_dialogue_001",
-          "type": "dialogue",
-          "clips": [
-            {
-              "id": "dialogue_001",
-              "startFrame": 10,
-              "durationFrames": 45,
-              "text": "سلام، دا زما لومړۍ صحنه ده.",
-              "audioAssetId": null
-            }
-          ]
-        },
-        {
-          "id": "track_camera_001",
-          "type": "camera",
-          "keyframes": [
-            {
-              "frame": 0,
-              "values": {}
-            }
-          ]
-        },
-        {
-          "id": "track_audio_001",
-          "type": "audio",
-          "clips": [
-            {
-              "id": "audio_clip_001",
-              "assetId": "asset_audio_001",
-              "startFrame": 0,
-              "durationFrames": 120,
-              "volume": 1.0
-            }
-          ]
-        }
-      ]
-    }
-  ],
-  "timeline": {
-    "sceneOrder": [
-      "scene_001"
-    ]
-  }
+  "assets": [],
+  "scenes": [],
+  "timeline": { "sceneOrder": [] }
 }
-```
 
-## ۳. د هرې برخې دنده
+## د اصولو لنډیز
+1. هر Project، Asset، Scene، Object، Track او Clip ځانګړی ID لري.
+2. د مهال‌وېش وخت په فریمونو ساتل کېږي.
+3. د فایل لارې د پروژې دننه نسبي لارې وي؛ مطلق Android paths یا web URLs مه ساتئ.
+4. د assets فایلونه د موبایل په پروژه فولډر کې وي.
+5. د اصلي اپ 3D ماډلونه د APK دننه ساتل کېږي؛ د کاروونکي خپل فایلونه په موبایل کې پاتې کېږي.
+6. د فلمونو او صادر شوو ویډیوګانو Cloud upload نشته.
+7. د خوندي کولو پر مهال د موقتي فایل او backup په وسیله د پخوانیو معلوماتو د له منځه تلو مخه ونیسئ.
+8. د schemaVersion بدلون باید د پخوانیو پروژو د migration لاره ولري.
 
-| برخه | دنده |
-|---|---|
-| `schemaVersion` | د فایل د معلوماتي بڼې نسخه؛ د راتلونکو بدلونونو لپاره |
-| `project` | د فلم نوم، پېژند او عمومي تنظیمات |
-| `assets` | د کرکټرونو، چاپېریالونو، شیانو، انځورونو او غږونو پېژند |
-| `scenes` | د فلم صحنې او د هرې صحنې موده |
-| `objects` | هغه توکي چې په یوه صحنه کې ځای پر ځای شوي |
-| `tracks` | حرکت، ډیالوګ، کامره او غږیز مهال‌وېش |
-| `keyframes` | د ټاکلي فریم پر وخت د ځانګړنو ارزښتونه |
-| `timeline.sceneOrder` | د فلم په وروستي ترتیب کې د صحنو لړۍ |
-
-## ۴. مهم اصول
-
-1. د هرې پروژې، صحنې، توکي، ټریک او کلیپ لپاره ځانګړی `id` وکاروئ.
-2. د وخت بنسټ فریمونه دي؛ د ثانیو پر ځای `startFrame` او `durationFrames` وساتئ.
-3. د `fps` ارزښت باید د پروژې له تنظیماتو څخه واخیستل شي؛ تر ټاکلو مخکې یې مه اټکل کوئ.
-4. د `file` لارې دې نسبي او د پروژې دننه وي.
-5. د `metadata`، `properties` او `values` برخې د راتلونکو بڼو لپاره تشې پرېښودل کېدای شي.
-6. د 2D، 3D یا ګډ شکل انتخاب په دې عمومي معلوماتي بڼه کې نه دی تثبیت شوی. د هرې بڼې ځانګړي معلومات به وروسته په جلا مشخصاتو کې ورزیاتېږي.
-7. د خوندي کولو پر مهال لومړی لنډمهاله فایل ولیکئ، بیا یې پر اصلي فایل بدل کړئ؛ که لیکل ناکام شي، پخوانۍ پروژه مه له منځه وړئ.
-8. د کاروونکي فلمونه او صادر شوي ویډیوګانې په موبایل کې محلي وساتئ. د دې سند له مخې هېڅ آنلاین ذخیره لازمي نه ده.
-
-## ۵. د نن ورځې د ازموینې ساده ګام
-
-1. د دې سند د JSON نمونې برخه وګورئ.
-2. د `schemaVersion` ارزښت باید `1` وي.
-3. د `sceneOrder` دننه `scene_001` باید په `scenes` کې موجوده صحنه وي.
-4. د `asset_character_001` پېژند باید د صحنې د `object_001` له `assetId` سره برابر وي.
-
-دا د معلوماتو د اړیکو لوستلو ازموینه ده؛ د اپلیکیشن دننه د JSON د لوستلو/خوندي کولو ازموینه لا نه ده ترسره شوې.
-
-## ۶. د Kotlin کوډ لیکلو مخکې اړین شرط
-
-د Code on the Go د اصلي محلي پروژې دا فایلونه باید وکتل شي:
-
-- `settings.gradle.kts`
-- د پروژې اصلي `build.gradle.kts`
-- `app/build.gradle.kts`
-- `app/src/main/AndroidManifest.xml`
-- د `app/src/main/res` اړوند فایلونه
-- اوسنی `MainActivity.kt` او `Scene3DView.java`
-
-د GitHub اوسنی ذخیره د بشپړې Android پروژې ټول فایلونه نه لري. نو د دې سند له جوړېدو څخه د Kotlin تطبیق، APK جوړېدل یا د موبایل د محلي خوندي کولو بشپړوالی مه اټکل کوئ.
-
-## ۷. راتلونکی عملي پړاو
-
-د محلي پروژې جوړښتي فایلونه تاییدول، بیا د `Project` او `Scene` لپاره د Kotlin معلوماتي ټولګي جوړول او د یوې نمونې پروژې د خوندي کولو/بېرته پرانیستلو ازموینه کول. تر دې مخکې به د 2D/3D انتخاب نه کوو.
+## د تطبیق حالت
+دا سند د معلوماتو قرارداد دی. د بشپړ Scene editor، rig، animation او exporter کوډ لا په راتلونکو پړاوونو کې جوړېږي. یوازې د دې سند له شتون څخه د بشپړ فلم جوړولو وړتیا مه اټکل کوئ.
