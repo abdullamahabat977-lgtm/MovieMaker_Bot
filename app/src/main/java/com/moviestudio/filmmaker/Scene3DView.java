@@ -24,7 +24,8 @@ public final class Scene3DView extends GLSurfaceView {
     public Scene3DView(Context context) {
         super(context);
         setEGLContextClientVersion(2);
-        // Avoid requiring an alpha channel; this is more compatible with older mobile GPUs.\n        setEGLConfigChooser(8, 8, 8, 0, 16, 0);
+        // Avoid requiring an alpha channel; this is more compatible with older mobile GPUs.
+        setEGLConfigChooser(8, 8, 8, 0, 16, 0);
         setPreserveEGLContextOnPause(false);
         previewRenderer = new PreviewRenderer();
         setRenderer(previewRenderer);
