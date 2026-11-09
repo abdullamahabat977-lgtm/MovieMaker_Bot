@@ -203,13 +203,36 @@ class MainActivity : Activity() {
     private fun show3DPreview() {
         val view = Scene3DView(this)
         activePreview = view
-        val dialog = AlertDialog.Builder(this).setTitle("د 3D مخکتنه").setView(view)
-            .setNegativeButton("بند", null).create()
+
+        val previewPanel = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            setBackgroundColor(Color.rgb(20, 28, 43))
+            setPadding(dp(8), dp(8), dp(8), dp(8))
+        }
+        previewPanel.addView(text(
+            "یو ګوته کش کړه: کمره تاوېږي  •  دوه ګوتې سره نږدې/لرې کړه: زوم",
+            13, Color.WHITE, true
+        ))
+        previewPanel.addView(view, LinearLayout.LayoutParams(
+            LinearLayout.LayoutParams.MATCH_PARENT, dp(350)
+        ))
+        previewPanel.addView(text(
+            "دا اوس د 3D صحنې د ازموینې مکعب او ځمکنۍ شبکه ده؛ د کرکټرونو او GLB ماډلونو واردول لا نه دي بشپړ شوي.",
+            12, 0xFFD7DCEF.toInt()
+        ))
+
+        val dialog = AlertDialog.Builder(this).setTitle("د 3D مخکتنه")
+            .setView(previewPanel).setNegativeButton("بند", null).create()
         dialog.setOnShowListener {
-            dialog.window?.setLayout((resources.displayMetrics.widthPixels * 0.94f).toInt(), dp(430))
+            dialog.window?.setLayout(
+                (resources.displayMetrics.widthPixels * 0.94f).toInt(), dp(470)
+            )
             view.onResume()
         }
-        dialog.setOnDismissListener { view.onPause(); if (activePreview === view) activePreview = null }
+        dialog.setOnDismissListener {
+            view.onPause()
+            if (activePreview === view) activePreview = null
+        }
         dialog.show()
     }
 
