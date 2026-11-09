@@ -21,6 +21,7 @@ class MainActivity : Activity() {
     private val mainHandler = Handler(Looper.getMainLooper())
     private lateinit var accountStatus: TextView
     private lateinit var projectStore: ProjectStore
+    private var activePreview: Scene3DView? = null
     private val prefs by lazy { getSharedPreferences("movie_studio_account", MODE_PRIVATE) }
 
     private fun dp(value: Int) = (value * resources.displayMetrics.density).toInt()
@@ -201,17 +202,30 @@ class MainActivity : Activity() {
 
     private fun show3DPreview() {
         val view = Scene3DView(this)
+        activePreview = view
         val dialog = AlertDialog.Builder(this).setTitle("د 3D مخکتنه").setView(view)
             .setNegativeButton("بند", null).create()
         dialog.setOnShowListener {
             dialog.window?.setLayout((resources.displayMetrics.widthPixels * 0.94f).toInt(), dp(430))
             view.onResume()
         }
-        dialog.setOnDismissListener { view.onPause() }
+        dialog.setOnDismissListener { view.onPause(); if (activePreview === view) activePreview = null }
         dialog.show()
     }
 
+    override fun onPause() {
+        activePreview?.onPause()
+        super.onPause()
+    }
+
+    override fun onResume() {
+        super.onResume()
+        activePreview?.onResume()
+    }
+
     override fun onDestroy() {
+        activePreview?.onPause()
+        activePreview = null
         worker.shutdown()
         super.onDestroy()
     }
