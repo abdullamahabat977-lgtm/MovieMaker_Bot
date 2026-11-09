@@ -52,11 +52,19 @@ class ProjectStore(context: Context) {
 
     private fun writeSafely(target: File, content: String) {
         val temp = File(target.parentFile, target.name + ".tmp")
+        val backup = File(target.parentFile, target.name + ".bak")
         temp.writeText(content)
-        if (target.exists() && !target.delete()) throw IllegalStateException("د پروژې پخوانی فایل نه حذفېږي")
+        if (backup.exists()) backup.delete()
+        val hadOriginal = target.exists()
+        if (hadOriginal && !target.renameTo(backup)) {
+            temp.delete()
+            throw IllegalStateException("د پخوانۍ پروژې خوندي کاپي نه جوړېږي")
+        }
         if (!temp.renameTo(target)) {
+            if (hadOriginal && backup.exists()) backup.renameTo(target)
             temp.delete()
             throw IllegalStateException("د پروژې خوندي کول ناکام شول")
         }
+        if (backup.exists()) backup.delete()
     }
 }
