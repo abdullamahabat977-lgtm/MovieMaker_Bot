@@ -117,15 +117,15 @@ class Scene3DActivity : Activity() {
         setContentView(page)
     }
 
-    // Follow GLSurfaceView guidance: resume on Activity start and pause on stop.
-    override fun onStart() {
-        super.onStart()
+    // Match the GL surface lifecycle to the Activity's visible/resumed state.
+    override fun onResume() {
+        super.onResume()
         sceneView?.onResume()
     }
 
-    override fun onStop() {
+    override fun onPause() {
         sceneView?.onPause()
-        super.onStop()
+        super.onPause()
     }
 
     override fun onDestroy() {
