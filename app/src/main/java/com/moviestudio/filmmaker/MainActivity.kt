@@ -171,7 +171,6 @@ class MainActivity : Activity() {
                             val profile = ApiClient.me(token)
                             mainHandler.post { 
                                 prefs.edit().putString("cached_profile", profile.toString()).apply()
-                                updateAccountText(profile)
                                 dialog.dismiss()
                                 buildHome()
                             }
