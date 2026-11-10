@@ -44,7 +44,7 @@ class MainActivity : Activity() {
             setPadding(dp(20), dp(28), dp(20), dp(30))
         }
 
-        page.addView(text("🎬 MOVIE STUDIO", 25, Color.WHITE, true))
+        page.addView(text("🎬 د فلم سټوډیو", 25, Color.WHITE, true))
         page.addView(text("د خپل فلم جوړولو سټوډیو", 19, 0xFFBFCBFF.toInt(), true))
         page.addView(text(
             if (linked) "ښه راغلاست! ستا حساب په دې موبایل کې خوندي دی."
@@ -57,7 +57,7 @@ class MainActivity : Activity() {
             addButton(page, "♻️  ټېلېګرام بوټ ونښلوه") { showAccountDialog() }
             addButton(page, "📖  د کارولو لارښود") { showInfo(
                 "د کارولو لارښود",
-                "۱. لومړی له @AI_MovieMaker_Bot سره په ټېلېګرام کې /start وکړه.\n\n۲. دلته د ټېلېګرام بوټ ونښلوه وټاکه او خپل عددي Telegram ID ولیکه.\n\n۳. د کوډ غوښتنه وکړه؛ شپږ عددي کوډ به په ټېلېګرام کې درولېږل شي.\n\n۴. کوډ تایید کړه. له بریالي تایید وروسته به وړیا امکانات فعال او د ځانګړو امکاناتو اجازه به ستا د حساب له شرایطو سره سم وکتل شي.\n\n۵. پروژې او فلمونه ستا په موبایل کې ساتل کېږي."
+                "۱. لومړی له @AI_MovieMaker_Bot سره په ټېلېګرام کې /start وکړه.\n\n۲. دلته د ټېلېګرام بوټ ونښلوه وټاکه او خپل عددي د ټېلېګرام پېژندشمېره ولیکه.\n\n۳. د کوډ غوښتنه وکړه؛ شپږ عددي کوډ به په ټېلېګرام کې درولېږل شي.\n\n۴. کوډ تایید کړه. له بریالي تایید وروسته به وړیا امکانات فعال او د ځانګړو امکاناتو اجازه به ستا د حساب له شرایطو سره سم وکتل شي.\n\n۵. پروژې او فلمونه ستا په موبایل کې ساتل کېږي."
             ) }
             addButton(page, "🔒  محرمیت او معلومات") { showInfo(
                 "محرمیت او معلومات",
@@ -65,7 +65,7 @@ class MainActivity : Activity() {
             ) }
             addButton(page, "💚  زموږ په اړه") { showInfo(
                 "زموږ په اړه",
-                "Movie Studio د لاسي 3D فلم جوړولو اپلیکیشن دی. موخه یې دا ده چې کارن خپل کرکټرونه، چاپېریالونه، حرکتونه، کمره، غږ او فلمونه پخپله جوړ او تنظیم کړي. دا اپلیکیشن د AI په وسیله فلم نه جوړوي."
+                "د فلم سټوډیو د لاسي درې‌بعدي فلم جوړولو اپلیکیشن دی. موخه یې دا ده چې کارن خپل کرکټرونه، چاپېریالونه، حرکتونه، کمره، غږ او فلمونه پخپله جوړ او تنظیم کړي. دا اپلیکیشن د AI په وسیله فلم نه جوړوي."
             ) }
         } else {
             accountStatus = text("حساب په دې موبایل کې خوندي دی. د بیلانس او اجازو تازه معلومات د انټرنېټ په وصلېدو ترلاسه کېږي.", 13, 0xFFB9C5DE.toInt())
@@ -81,11 +81,11 @@ class MainActivity : Activity() {
             addButton(page, "🛒  د امکاناتو پلورنځی") { showInfo("د امکاناتو پلورنځی", "د پلورنځي او پېرودلو خوندي سیستم به د پیکونو او تادیاتو له بشپړېدو وروسته فعال شي.") }
             addButton(page, "＋  نوې پروژه جوړه کړه") { createProjectDialog() }
             addButton(page, "📁  زما فلمونه او پروژې") { showProjects() }
-            addButton(page, "🧊  3D مخکتنه") { show3DPreview() }
+            addButton(page, "🧊  درې‌بعدي مخکتنه") { show3DPreview() }
             addButton(page, "⚙️  تنظیمات") { showInfo("تنظیمات", "د اپلیکیشن نور تنظیمات به په راتلونکو پړاوونو کې ورزیاتېږي.") }
         }
 
-        page.addView(text("Movie Studio • لاسي 3D فلم جوړول", 12, 0xFF8996B2.toInt()).apply {
+        page.addView(text("د فلم سټوډیو • لاسي درې‌بعدي فلم جوړول", 12, 0xFF8996B2.toInt()).apply {
             gravity = android.view.Gravity.CENTER
             setPadding(0, dp(26), 0, 0)
         })
@@ -128,7 +128,7 @@ class MainActivity : Activity() {
         }
         box.addView(text("د ټېلېګرام عددي ID ولیکه. لومړی باید له @AI_MovieMaker_Bot سره /start وکړې.", 14, Color.DKGRAY))
         val idInput = EditText(this).apply {
-            hint = "Telegram ID"
+            hint = "عددي پېژندشمېره"
             inputType = android.text.InputType.TYPE_CLASS_NUMBER
             setSingleLine(true)
         }
@@ -142,7 +142,7 @@ class MainActivity : Activity() {
             dialog.getButton(AlertDialog.BUTTON_NEUTRAL).setOnClickListener {
                 val id = idInput.text.toString().trim()
                 if (!id.matches(Regex("[0-9]{5,20}"))) {
-                    status.text = "سم عددي Telegram ID ولیکه."
+                    status.text = "سمه عددي پېژندشمېره ولیکه."
                     return@setOnClickListener
                 }
                 status.text = "کوډ غوښتل کېږي..."
@@ -277,7 +277,7 @@ class MainActivity : Activity() {
         val user = result.optJSONObject("user") ?: JSONObject()
         val balance = result.optJSONObject("balance") ?: JSONObject()
         val state = if (offline) "نښلول شوی ✅ • آفلاین" else "نښلول شوی ✅ • تازه"
-        accountStatus.text = "حساب: $state\nTelegram ID: ${user.optString("telegram_id")}\nPoints: ${balance.optLong("points")}  |  USDT: ${balance.optDouble("usdt")}\n" +
+        accountStatus.text = "حساب: $state\nد ټېلېګرام پېژندشمېره: ${user.optString("telegram_id")}\nپواینټونه: ${balance.optLong("points")}  |  یو اېس ډي ټي: ${balance.optDouble("usdt")}\n" +
             if (offline) "دا وروستي خوندي شوي معلومات دي؛ د بیلانس تازه کولو لپاره انټرنېټ ته اړتیا ده." else "معلومات تازه شول."
     }
 
