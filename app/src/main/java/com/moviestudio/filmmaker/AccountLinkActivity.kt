@@ -81,6 +81,10 @@ class AccountLinkActivity : Activity() {
             setSingleLine(true)
             textSize = 18f
             gravity = Gravity.CENTER
+            setTextColor(Color.WHITE)
+            setHintTextColor(0xFF8996B2.toInt())
+            setBackgroundColor(0xFF26324A.toInt())
+            setPadding(dp(14), dp(12), dp(14), dp(12))
             setText(telegramId)
         }
         page.addView(idInput, params())
