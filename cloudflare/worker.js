@@ -112,8 +112,9 @@ const usdtText=Number.isInteger(usdt)?String(usdt):usdt.toFixed(6).replace(/0+$/
 const display=String(row.display_name||(row.username?"@"+row.username:"کارن")).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
 const botPoints=Number(row.bot_points||0),botUsdt=Number(row.bot_usdt||0)/1000000;
 const botUsdtText=Number.isInteger(botUsdt)?String(botUsdt):botUsdt.toFixed(6).replace(/0+$/,'').replace(/\.$/,'');
-const appText=row.app_linked?"اپک بیلانس — ⭐ "+(row.points_balance||0)+" | USDT "+usdtText:"اپک حساب: لا نه دی نښلول شوی؛ د لېږد لپاره اپک وصل کړه.";
-await tg(env,"sendMessage",{chat_id:chatId,text:"👤 ستا حساب\n\nنوم: "+display+"\nد ټېلېګرام پېژندشمېره: <code>"+row.telegram_id+"</code>\n\n🤖 د بوټ بیلانس — ⭐ "+botPoints+" | USDT 💲 "+botUsdtText+"\n"+appText+"\n\n👥 ټول بلل شوي ملګري: "+(row.invited_total||0)+"\nتایید شوي: "+(row.invited_count||0),parse_mode:"HTML"})
+const botBalanceText="🤖 د بوټ بیلانس:\n⭐ امتیازات: "+botPoints+"\nUSDT 💲: "+botUsdtText;
+const appBalanceText=row.app_linked?"📱 د اپک بیلانس:\n⭐ امتیازات: "+(row.points_balance||0)+"\nUSDT 💲: "+usdtText:"📱 د اپک حساب: لا نه دی نښلول شوی؛ د لېږد لپاره اپک وصل کړه.";
+await tg(env,"sendMessage",{chat_id:chatId,text:"👤 ستا حساب\n\nنوم: "+display+"\nد ټېلېګرام پېژندشمېره: <code>"+row.telegram_id+"</code>\n\n"+botBalanceText+"\n\n"+appBalanceText+"\n\n👥 ټول بلل شوي ملګري: "+(row.invited_total||0)+"\nتایید شوي: "+(row.invited_count||0),parse_mode:"HTML"})
 }
 
 }
