@@ -29,39 +29,75 @@ class MainActivity : Activity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         projectStore = ProjectStore(this)
-        window.statusBarColor = Color.rgb(16, 21, 37)
-        window.navigationBarColor = Color.rgb(16, 21, 37)
+        window.statusBarColor = Color.rgb(12, 18, 34)
+        window.navigationBarColor = Color.rgb(12, 18, 34)
         buildHome()
         refreshAccount()
     }
 
     private fun buildHome() {
-        val scroll = ScrollView(this).apply { setBackgroundColor(Color.rgb(16, 21, 37)) }
+        val linked = !prefs.getString("session_token", null).isNullOrBlank()
+        val scroll = ScrollView(this).apply { setBackgroundColor(Color.rgb(12, 18, 34)) }
         val page = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
             layoutDirection = View.LAYOUT_DIRECTION_RTL
-            setPadding(dp(18), dp(24), dp(18), dp(28))
+            setPadding(dp(20), dp(28), dp(20), dp(30))
         }
-        page.addView(text("🎬 فلم سټوډیو", 25, Color.WHITE, true))
-        page.addView(text("خپل فلم په خپل لاس جوړ کړه؛ فلمونه او پروژې دې په همدې موبایل کې خوندي کېږي.", 14, 0xFFD7DCEF.toInt()))
-        accountStatus = text("د حساب حالت: نه دی نښلول شوی", 14, 0xFFB9C5DE.toInt(), true)
-        accountStatus.setPadding(dp(12), dp(14), dp(12), dp(14))
-        page.addView(accountStatus, marginParams(top = 18, bottom = 8))
-        addButton(page, "ټیلیګرام حساب ونښلوه / بیلانس وګوره") { showAccountDialog() }
-        addButton(page, "＋ نوې پروژه جوړه کړه") { createProjectDialog() }
-        addButton(page, "📁 زما فلمونه او پروژې") { showProjects() }
-        addButton(page, "🧊 3D مخکتنه") { show3DPreview() }
-        addButton(page, "د فلم جوړولو نور وسایل") {
-            AlertDialog.Builder(this).setTitle("د جوړولو پړاو")
-                .setMessage("اوس د نوې نسخې بنسټ جوړېږي. د کرکټرونو، صحنو، حرکتونو، کمرې، غږ او MP4 صادرولو وسایل به په جلا ازمویل کېدونکو پړاوونو کې ورزیاتېږي.")
-                .setPositiveButton("سمه ده", null).show()
+
+        page.addView(text("🎬 MOVIE STUDIO", 25, Color.WHITE, true))
+        page.addView(text("د خپل فلم جوړولو سټوډیو", 19, 0xFFBFCBFF.toInt(), true))
+        page.addView(text(
+            if (linked) "ښه راغلاست! ستا حساب په دې موبایل کې خوندي دی."
+            else "خپل فلم په خپل لاس جوړ کړه؛ د پیل لپاره خپل ټېلېګرام بوټ ونښلوه.",
+            14, 0xFFD7DCEF.toInt()
+        ).apply { setPadding(dp(8), dp(10), dp(8), dp(18)) })
+
+        if (!linked) {
+            // Before account linking, show exactly the four approved entry buttons.
+            addButton(page, "♻️  ټېلېګرام بوټ ونښلوه") { showAccountDialog() }
+            addButton(page, "📖  د کارولو لارښود") { showInfo(
+                "د کارولو لارښود",
+                "۱. لومړی له @AI_MovieMaker_Bot سره په ټېلېګرام کې /start وکړه.\n\n۲. دلته د ټېلېګرام بوټ ونښلوه وټاکه او خپل عددي Telegram ID ولیکه.\n\n۳. د کوډ غوښتنه وکړه؛ شپږ عددي کوډ به په ټېلېګرام کې درولېږل شي.\n\n۴. کوډ تایید کړه. له بریالي تایید وروسته به وړیا امکانات فعال او د ځانګړو امکاناتو اجازه به ستا د حساب له شرایطو سره سم وکتل شي.\n\n۵. پروژې او فلمونه ستا په موبایل کې ساتل کېږي."
+            ) }
+            addButton(page, "🔒  محرمیت او معلومات") { showInfo(
+                "محرمیت او معلومات",
+                "ستاسې فلمونه، پروژې، کرکټرونه، ماډلونه او صادر شوي ویډیوګانې یوازې د موبایل په داخلي ذخیره کې ساتل کېږي او زموږ کلاوډ ته نه پورته کېږي.\n\nکلاوډ یوازې د حساب، د Points او USDT بیلانسونو، پلورنځي، پېرودونو او د امکاناتو د اجازو اړوند محدود معلومات ساتي. د حساب د تایید لپاره د ټېلېګرام له لارې یو ځل کارېدونکی کوډ کارول کېږي."
+            ) }
+            addButton(page, "💚  زموږ په اړه") { showInfo(
+                "زموږ په اړه",
+                "Movie Studio د لاسي 3D فلم جوړولو اپلیکیشن دی. موخه یې دا ده چې کارن خپل کرکټرونه، چاپېریالونه، حرکتونه، کمره، غږ او فلمونه پخپله جوړ او تنظیم کړي. دا اپلیکیشن د AI په وسیله فلم نه جوړوي."
+            ) }
+        } else {
+            val cached = prefs.getString("cached_profile", null)
+            if (cached != null) {
+                try { updateAccountText(JSONObject(cached), false) }
+                catch (_: Exception) { accountStatus = text("حساب په دې موبایل کې خوندي دی؛ د معلوماتو تازه کولو لپاره انټرنېټ ته اړتیا ده.", 13, 0xFFB9C5DE.toInt()) }
+            } else {
+                accountStatus = text("حساب په دې موبایل کې خوندي دی. د بیلانس او اجازو تازه معلومات د انټرنېټ په وصلېدو ترلاسه کېږي.", 13, 0xFFB9C5DE.toInt())
+            }
+            accountStatus.setPadding(dp(12), dp(14), dp(12), dp(14))
+            page.addView(accountStatus, marginParams(top = 8, bottom = 10))
+            addButton(page, "👤  زما حساب او بیلانس") { showAccountDialog() }
+            addButton(page, "⭐  وړیا امکانات") { showInfo("وړیا امکانات", "د حساب له تایید وروسته وړیا امکانات په اتومات ډول فعالېږي. د دغو امکاناتو لپاره Points نه لګېږي.") }
+            addButton(page, "💎  ځانګړي امکانات") { showInfo("ځانګړي امکانات", "ځانګړي امکانات د هر پیک د شرایطو، د سرور له اجازې او د اړوند بیلانس له مخې فعالېږي. Points او USDT جلا حسابېږي.") }
+            addButton(page, "🛒  د امکاناتو پلورنځی") { showInfo("د امکاناتو پلورنځی", "د پلورنځي او پېرودلو خوندي سیستم به د پیکونو او تادیاتو له بشپړېدو وروسته فعال شي.") }
+            addButton(page, "＋  نوې پروژه جوړه کړه") { createProjectDialog() }
+            addButton(page, "📁  زما فلمونه او پروژې") { showProjects() }
+            addButton(page, "🧊  3D مخکتنه") { show3DPreview() }
+            addButton(page, "⚙️  تنظیمات") { showInfo("تنظیمات", "د اپلیکیشن نور تنظیمات به په راتلونکو پړاوونو کې ورزیاتېږي.") }
         }
-        page.addView(text("نسخه 2.0.0 • لومړی بنسټیز پړاو", 12, 0xFF8996B2.toInt()).apply {
+
+        page.addView(text("Movie Studio • لاسي 3D فلم جوړول", 12, 0xFF8996B2.toInt()).apply {
             gravity = android.view.Gravity.CENTER
-            setPadding(0, dp(24), 0, 0)
+            setPadding(0, dp(26), 0, 0)
         })
         scroll.addView(page)
         setContentView(scroll)
+    }
+
+    private fun showInfo(title: String, message: String) {
+        AlertDialog.Builder(this).setTitle(title).setMessage(message)
+            .setPositiveButton("سمه ده", null).show()
     }
 
     private fun text(value: String, size: Int, color: Int, bold: Boolean = false) =
@@ -135,7 +171,12 @@ class MainActivity : Activity() {
                             val token = result.optString("session_token")
                             prefs.edit().putString("session_token", token).apply()
                             val profile = ApiClient.me(token)
-                            mainHandler.post { updateAccountText(profile); dialog.dismiss() }
+                            mainHandler.post { 
+                                prefs.edit().putString("cached_profile", profile.toString()).apply()
+                                updateAccountText(profile)
+                                dialog.dismiss()
+                                buildHome()
+                            }
                         } else mainHandler.post { status.text = result.optString("error", "حساب ونه نښلول شو.") }
                     } catch (_: Exception) {
                         mainHandler.post { status.text = "له سرور سره اړیکه ناکامه شوه؛ بیا هڅه وکړه." }
@@ -154,11 +195,23 @@ class MainActivity : Activity() {
             try {
                 val result = ApiClient.me(token)
                 mainHandler.post {
-                    if (result.optBoolean("ok")) updateAccountText(result)
-                    else { prefs.edit().remove("session_token").apply(); accountStatus.text = "د حساب حالت: بیا نښلول اړین دي" }
+                    if (result.optBoolean("ok")) {
+                        prefs.edit().putString("cached_profile", result.toString()).apply()
+                        updateAccountText(result)
+                        buildHome()
+                    } else {
+                        prefs.edit().remove("session_token").remove("cached_profile").apply()
+                        buildHome()
+                    }
                 }
             } catch (_: Exception) {
-                mainHandler.post { accountStatus.text = "حساب نه دی تازه شوی؛ آفلاین کار دوام لري." }
+                mainHandler.post {
+                    val cached = prefs.getString("cached_profile", null)
+                    if (cached != null) {
+                        try { updateAccountText(JSONObject(cached), true) }
+                        catch (_: Exception) { accountStatus.text = "آفلاین حالت: حساب په موبایل کې خوندي دی." }
+                    } else accountStatus.text = "آفلاین حالت: حساب په موبایل کې خوندي دی؛ د بیلانس معلومات لا نه دي زېرمه شوي."
+                }
             }
         }
     }
