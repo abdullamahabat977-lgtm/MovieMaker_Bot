@@ -16,12 +16,14 @@ import android.widget.TextView
  */
 class Scene3DActivity : Activity() {
     private var sceneView: Scene3DView? = null
+    private var glViewResumed = false
 
     private fun dp(value: Int): Int =
         (value * resources.displayMetrics.density).toInt()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        android.util.Log.i("MovieStudio3D", "Activity onCreate")
         window.statusBarColor = Color.rgb(16, 21, 37)
         window.navigationBarColor = Color.rgb(16, 21, 37)
 
@@ -71,11 +73,17 @@ class Scene3DActivity : Activity() {
         }
         root.addView(instructions)
 
-        val renderer = Scene3DView(this)
-        sceneView = renderer
-        root.addView(renderer, LinearLayout.LayoutParams(
-            LinearLayout.LayoutParams.MATCH_PARENT, 0, 1f
-        ))
+        try {
+            val renderer = Scene3DView(this)
+            sceneView = renderer
+            root.addView(renderer, LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT, 0, 1f
+            ))
+        } catch (error: RuntimeException) {
+            android.util.Log.e("MovieStudio3D", "Could not create GLSurfaceView", error)
+            showRendererFailure()
+            return
+        }
 
         val footer = TextView(this).apply {
             text = "اوس د ازموینې مکعب او ځمکنۍ شبکه ښکاري؛ د کرکټرونو او GLB ماډلونو واردول لا د جوړولو په پړاو کې دي."
@@ -117,19 +125,64 @@ class Scene3DActivity : Activity() {
         setContentView(page)
     }
 
-    // Match the GL surface lifecycle to the Activity's visible/resumed state.
+    private fun pauseGlViewIfNeeded() {
+        if (!glViewResumed) return
+        try {
+            sceneView?.onPause()
+        } catch (error: RuntimeException) {
+            android.util.Log.e("MovieStudio3D", "GLSurfaceView pause failed", error)
+        } finally {
+            glViewResumed = false
+        }
+    }
+
+    // GLSurfaceView owns its SurfaceHolder callbacks; the Activity owns thread pause/resume.
     override fun onResume() {
         super.onResume()
-        sceneView?.onResume()
+        android.util.Log.i("MovieStudio3D", "Activity onResume")
+        try {
+            sceneView?.onResume()
+            glViewResumed = sceneView != null
+        } catch (error: RuntimeException) {
+            android.util.Log.e("MovieStudio3D", "GLSurfaceView resume failed", error)
+            showRendererFailure()
+        }
     }
 
     override fun onPause() {
-        sceneView?.onPause()
+        android.util.Log.i("MovieStudio3D", "Activity onPause")
+        pauseGlViewIfNeeded()
         super.onPause()
     }
 
     override fun onDestroy() {
+        android.util.Log.i("MovieStudio3D", "Activity onDestroy")
+        // Defensive fallback if destruction occurs while the GL view is still resumed.
+        pauseGlViewIfNeeded()
         sceneView = null
         super.onDestroy()
+    }
+
+    private fun showRendererFailure() {
+        val message = TextView(this).apply {
+            text = "د 3D چاپېریال پیل نه شو. اپلیکیشن بند نه شو؛ بېرته لاړ شه او بیا هڅه وکړه."
+            textSize = 16f
+            setTextColor(Color.WHITE)
+            gravity = Gravity.CENTER
+            setPadding(dp(24), dp(24), dp(24), dp(24))
+        }
+        val back = Button(this).apply {
+            text = "شاته"
+            isAllCaps = false
+            setOnClickListener { finish() }
+        }
+        val page = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            gravity = Gravity.CENTER
+            setBackgroundColor(Color.rgb(20, 28, 43))
+            addView(message)
+            addView(back)
+        }
+        setContentView(page)
     }
 }
