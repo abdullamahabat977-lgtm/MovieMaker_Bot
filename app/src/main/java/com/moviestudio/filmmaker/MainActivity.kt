@@ -248,13 +248,69 @@ class MainActivity : Activity() {
             AlertDialog.Builder(this).setTitle("زما پروژې").setMessage("تر اوسه پروژه نشته. لومړی نوې پروژه جوړه کړه.")
                 .setPositiveButton("سمه ده", null).show(); return
         }
-        val names = projects.map { it.optJSONObject("project")?.optString("name", "بې نومه") ?: "بې نومه" }.toTypedArray()
-        AlertDialog.Builder(this).setTitle("زما پروژې").setItems(names) { _, which ->
-            val project = projects[which].optJSONObject("project") ?: JSONObject()
-            AlertDialog.Builder(this).setTitle(project.optString("name"))
-                .setMessage("د پروژې فایل په موبایل کې خوندي دی. د صحنو او ایډیټ وسایل به په راتلونکو پړاوونو کې ورزیاتېږي.")
-                .setPositiveButton("سمه ده", null).show()
+        val names = projects.map { item ->
+            val details = item.optJSONObject("project") ?: JSONObject()
+            val title = details.optString("name", "بې نومه")
+            val updated = details.optString("updatedAt", "")
+            "$" + "title  •  $" + "{" + "updated.take(10)" + "}"
+        }.toTypedArray()
+        AlertDialog.Builder(this).setTitle("زما فلمونه او پروژې").setItems(names) { _, which ->
+            showProjectActions(projects[which])
+        }.setPositiveButton("＋ نوې پروژه") { _, _ -> createProjectDialog() }
+            .setNegativeButton("بند", null).show()
+    }
+
+    private fun showProjectActions(projectData: JSONObject) {
+        val details = projectData.optJSONObject("project") ?: JSONObject()
+        val id = details.optString("id")
+        val name = details.optString("name", "بې نومه")
+        val created = details.optString("createdAt", "نامعلوم")
+        val updated = details.optString("updatedAt", "نامعلوم")
+        val options = arrayOf("📂 د پروژې معلومات", "✏️ نوم بدلول", "🗑️ پروژه حذفول")
+        AlertDialog.Builder(this).setTitle(name).setItems(options) { _, which ->
+            when (which) {
+                0 -> AlertDialog.Builder(this).setTitle("د پروژې معلومات")
+                    .setMessage("نوم: $" + "name\n\nجوړه شوې: $" + "created\n\nوروستی بدلون: $" + "updated\n\nپروژه او اړوند فایلونه یوازې په همدې موبایل کې ساتل کېږي. د 3D صحنې ایډیټر لا د جوړولو په پړاو کې دی.")
+                    .setPositiveButton("سمه ده", null).show()
+                1 -> renameProjectDialog(id, name)
+                2 -> confirmDeleteProject(id, name)
+            }
         }.setNegativeButton("بند", null).show()
+    }
+
+    private fun renameProjectDialog(projectId: String, oldName: String) {
+        val input = EditText(this).apply {
+            setSingleLine(true)
+            setText(oldName)
+            setSelection(text.length)
+        }
+        AlertDialog.Builder(this).setTitle("د پروژې نوم بدلول")
+            .setView(input).setNegativeButton("لغوه", null)
+            .setPositiveButton("خوندي کول") { _, _ ->
+                try {
+                    projectStore.rename(projectId, input.text.toString())
+                    Toast.makeText(this, "د پروژې نوم بدل او خوندي شو.", Toast.LENGTH_SHORT).show()
+                    showProjects()
+                } catch (error: Exception) {
+                    Toast.makeText(this, error.message ?: "نوم بدل نه شو.", Toast.LENGTH_LONG).show()
+                }
+            }.show()
+    }
+
+    private fun confirmDeleteProject(projectId: String, name: String) {
+        AlertDialog.Builder(this).setTitle("پروژه حذفول؟")
+            .setMessage("ایا «$" + "name» او د هغې ټول محلي فایلونه حذف کړې؟ دا کار بېرته نه راګرځي.")
+            .setNegativeButton("نه", null)
+            .setPositiveButton("هو، حذف یې کړه") { _, _ ->
+                try {
+                    projectStore.delete(projectId)
+                    Toast.makeText(this, "پروژه حذف شوه.", Toast.LENGTH_SHORT).show()
+                    showProjects()
+                } catch (error: Exception) {
+                    Toast.makeText(this, error.message ?: "پروژه حذف نه شوه.", Toast.LENGTH_LONG).show()
+                }
+            }.show()
+    }
     }
 
     private fun show3DPreview() {
