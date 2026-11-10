@@ -75,7 +75,12 @@ class MainActivity : Activity() {
             if (cached != null) {
                 try { updateAccountText(JSONObject(cached), false) } catch (_: Exception) { }
             }
-            accountStatus.setPadding(dp(12), dp(14), dp(12), dp(14))
+            accountStatus.setPadding(dp(16), dp(16), dp(16), dp(16))
+            accountStatus.background = android.graphics.drawable.GradientDrawable().apply {
+                setColor(0xFF202E49.toInt())
+                setStroke(dp(1), 0xFF526B9A.toInt())
+                cornerRadius = dp(16).toFloat()
+            }
             page.addView(accountStatus, marginParams(top = 8, bottom = 10))
             addButton(page, "👤  زما حساب") { showLinkedAccount() }
             addButton(page, "⭐  وړیا امکانات") { showInfo("وړیا امکانات", "د حساب له تایید وروسته وړیا امکانات په اتومات ډول فعالېږي. د دغو امکاناتو لپاره امتيازات نه لګېږي.") }
@@ -133,38 +138,23 @@ class MainActivity : Activity() {
             val result = JSONObject(raw)
             val user = result.optJSONObject("user") ?: JSONObject()
             val balance = result.optJSONObject("balance") ?: JSONObject()
-            val id = user.optString("telegram_id")
             val amount = java.math.BigDecimal.valueOf(balance.optDouble("usdt")).stripTrailingZeros().toPlainString()
             val content = android.text.SpannableStringBuilder()
-            content.append("حساب: نښلول شوی ✅\\n")
-            content.append("نوم: ").append(user.optString("display_name").ifBlank { "—" }).append("\\n")
-            content.append("د ټېلېګرام پېژندشمېره: ")
-            val start = content.length
-            content.append(id)
-            val end = content.length
-            content.append("\\n\\n⭐ امتيازات: ").append(balance.optLong("points").toString())
-            content.append("\\nUSDT 💲: ").append(amount)
-            content.append("\\n\\n👥 ټول بلل شوي ملګري: ").append(result.optInt("referral_count").toString())
-            content.append("\\nتایید شوي: ").append(result.optInt("verified_referral_count").toString())
+            content.append("💼 زما د اپک حساب: نښلول شوی ✅\\n\\n")
+            content.append("⭐ د اپک امتیازات: ").append(balance.optLong("points").toString())
+            content.append("\\n💵 د اپک USDT بیلانس: ").append(amount)
+            content.append("\\n\\n👥 زما دعوتونه: ").append(result.optInt("referral_count").toString())
+            content.append("\\n✅ تایید شوي دعوتونه: ").append(result.optInt("verified_referral_count").toString())
             val view = TextView(this).apply {
                 text = content
                 textSize = 16f
-                setTextColor(Color.WHITE)
-                setPadding(dp(22), dp(14), dp(22), dp(14))
-            }
-            if (id.isNotBlank() && end > start) {
-                content.setSpan(object : android.text.style.ClickableSpan() {
-                    override fun onClick(widget: View) {
-                        val clipboard = getSystemService(CLIPBOARD_SERVICE) as android.content.ClipboardManager
-                        clipboard.setPrimaryClip(android.content.ClipData.newPlainText("د ټېلېګرام پېژندشمېره", id))
-                        Toast.makeText(this@MainActivity, "د ټېلېګرام پېژندشمېره کاپي شوه.", Toast.LENGTH_SHORT).show()
-                    }
-                    override fun updateDrawState(ds: android.text.TextPaint) {
-                        ds.color = 0xFF62C7FF.toInt()
-                        ds.isUnderlineText = false
-                        ds.isFakeBoldText = true
-                    }
-                }, start, end, android.text.Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
+                setTextColor(0xFFF1F5FF.toInt())
+                setPadding(dp(22), dp(18), dp(22), dp(18))
+                background = android.graphics.drawable.GradientDrawable().apply {
+                    setColor(0xFF202E49.toInt())
+                    setStroke(dp(1), 0xFF526B9A.toInt())
+                    cornerRadius = dp(16).toFloat()
+                }
             }
             view.text = content
             view.movementMethod = android.text.method.LinkMovementMethod.getInstance()
@@ -219,32 +209,17 @@ class MainActivity : Activity() {
         val user = result.optJSONObject("user") ?: JSONObject()
         val balance = result.optJSONObject("balance") ?: JSONObject()
         val state = if (offline) "نښلول شوی ✅ • آفلاین" else "نښلول شوی ✅ • تازه"
-        val telegramId = user.optString("telegram_id")
         val invitedCount = result.optInt("referral_count", 0)
         val verifiedCount = result.optInt("verified_referral_count", invitedCount)
         val amount = java.math.BigDecimal.valueOf(balance.optDouble("usdt")).stripTrailingZeros().toPlainString()
         val accountText = android.text.SpannableStringBuilder()
-        accountText.append("حساب: $state\nد ټېلېګرام پېژندشمېره: ")
-        val idStart = accountText.length
-        accountText.append(telegramId)
-        val idEnd = accountText.length
-        accountText.append("\nامتيازات: ${balance.optLong("points")}  |  USDT 💲: $amount")
-        accountText.append("\nټول بلل شوي ملګري: $invitedCount  |  تایید شوي: $verifiedCount\n")
-        accountText.append(if (offline) "دا وروستي خوندي شوي معلومات دي؛ د بیلانس تازه کولو لپاره انټرنېټ ته اړتیا ده." else "معلومات تازه شول.")
-        if (telegramId.isNotBlank() && idEnd > idStart) {
-            accountText.setSpan(object : android.text.style.ClickableSpan() {
-                override fun onClick(widget: View) {
-                    val clipboard = getSystemService(CLIPBOARD_SERVICE) as android.content.ClipboardManager
-                    clipboard.setPrimaryClip(android.content.ClipData.newPlainText("د ټېلېګرام پېژندشمېره", telegramId))
-                    Toast.makeText(this@MainActivity, "د ټېلېګرام پېژندشمېره کاپي شوه.", Toast.LENGTH_SHORT).show()
-                }
-                override fun updateDrawState(ds: android.text.TextPaint) {
-                    ds.color = 0xFF62C7FF.toInt()
-                    ds.isUnderlineText = false
-                    ds.isFakeBoldText = true
-                }
-            }, idStart, idEnd, android.text.Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
-        }
+        accountText.append("💼 زما د اپک حساب\n")
+        accountText.append("حالت: $state\n\n")
+        accountText.append("⭐ د اپک امتیازات: ${balance.optLong("points")}\n")
+        accountText.append("💵 د اپک USDT بیلانس: $amount\n\n")
+        accountText.append("👥 زما دعوتونه: $invitedCount\n")
+        accountText.append("✅ تایید شوي دعوتونه: $verifiedCount\n\n")
+        accountText.append(if (offline) "دا د اپک وروستي خوندي شوي بیلانسونه دي؛ د تازه کولو لپاره انټرنېټ ته اړتیا ده." else "د اپک بیلانسونه تازه شول.")
         accountStatus.text = accountText
         accountStatus.movementMethod = android.text.method.LinkMovementMethod.getInstance()
         accountStatus.highlightColor = Color.TRANSPARENT
