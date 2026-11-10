@@ -112,6 +112,10 @@ class AccountLinkActivity : Activity() {
                         prefs.edit().putString("pending_telegram_id", telegramId).apply()
                         secondsLeft = result.optInt("expires_in_seconds", 300).coerceAtLeast(1)
                         showCodePage()
+                    } else if (result.optBoolean("code_active")) {
+                        secondsLeft = result.optInt("expires_in_seconds", 300).coerceAtLeast(1)
+                        showCodePage()
+                        status.text = result.optString("error", "پخوانی کوډ لا اعتبار لري.")
                     } else {
                         status.text = result.optString("error", "کوډ ونه لېږل شو.")
                         if (result.optBoolean("bot_not_started")) {
