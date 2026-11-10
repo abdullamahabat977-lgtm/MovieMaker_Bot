@@ -51,6 +51,40 @@ class ProjectStore(context: Context) {
         return project
     }
 
+    fun rename(projectId: String, newName: String): JSONObject {
+        val folder = projectFolder(projectId)
+        val file = File(folder, "project.json")
+        require(file.isFile) { "پروژه ونه موندل شوه" }
+        val safeName = newName.trim()
+        require(safeName.isNotEmpty()) { "د پروژې نوم تش نه شي پاتې کېدای" }
+        require(safeName.length <= 60) { "د پروژې نوم ډېر اوږد دی" }
+        val project = JSONObject(file.readText())
+        val details = project.optJSONObject("project")
+            ?: throw IllegalStateException("د پروژې معلومات خراب دي")
+        details.put("name", safeName)
+        details.put("updatedAt", timestamp())
+        writeSafely(file, project.toString(2))
+        return project
+    }
+
+    fun delete(projectId: String) {
+        val folder = projectFolder(projectId)
+        require(File(folder, "project.json").isFile) { "پروژه ونه موندل شوه" }
+        if (!folder.deleteRecursively()) {
+            throw IllegalStateException("د پروژې حذف ناکام شو")
+        }
+    }
+
+    private fun projectFolder(projectId: String): File {
+        require(projectId.matches(Regex("project_[0-9]+"))) { "د پروژې پېژندنه ناسمه ده" }
+        val folder = File(root, projectId).canonicalFile
+        require(folder.parentFile == root.canonicalFile) { "د پروژې لاره ناسمه ده" }
+        return folder
+    }
+
+    private fun timestamp(): String =
+        SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.US).format(Date())
+
     private fun writeSafely(target: File, content: String) {
         val temp = File(target.parentFile, target.name + ".tmp")
         val backup = File(target.parentFile, target.name + ".bak")
