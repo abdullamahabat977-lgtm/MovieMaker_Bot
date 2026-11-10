@@ -122,61 +122,122 @@ class MainActivity : Activity() {
 
     private fun showAccountDialog() {
         val box = LinearLayout(this).apply {
-            orientation = LinearLayout.VERTICAL; layoutDirection = View.LAYOUT_DIRECTION_RTL
+            orientation = LinearLayout.VERTICAL
+            layoutDirection = View.LAYOUT_DIRECTION_RTL
             setPadding(dp(20), dp(8), dp(20), dp(4))
         }
-        box.addView(text("۱. خپل Telegram ID ولیکه. لومړی باید بوټ ته /start استولی وي.", 14, Color.DKGRAY))
+        box.addView(text("د ټېلېګرام عددي ID ولیکه. لومړی باید له @AI_MovieMaker_Bot سره /start وکړې.", 14, Color.DKGRAY))
         val idInput = EditText(this).apply {
-            hint = "Telegram ID"; inputType = android.text.InputType.TYPE_CLASS_NUMBER; setSingleLine(true)
+            hint = "Telegram ID"
+            inputType = android.text.InputType.TYPE_CLASS_NUMBER
+            setSingleLine(true)
         }
         box.addView(idInput)
-        box.addView(text("۲. د کوډ غوښتنه وکړه؛ شپږ عددي کوډ به په ټېلېګرام کې درشي.", 13, Color.DKGRAY))
-        val codeInput = EditText(this).apply {
-            hint = "شپږ عددي تایید کوډ"; inputType = android.text.InputType.TYPE_CLASS_NUMBER; setSingleLine(true)
-        }
-        box.addView(codeInput)
         val status = text("", 13, Color.rgb(40, 80, 60))
         box.addView(status)
-        val dialog = AlertDialog.Builder(this).setTitle("د ټېلېګرام حساب نښلول")
-            .setView(box).setNegativeButton("بند", null).create()
-        dialog.setButton(AlertDialog.BUTTON_NEUTRAL, "کوډ راولېږه") { _, _ -> }
-        dialog.setButton(AlertDialog.BUTTON_POSITIVE, "حساب ونښلوه") { _, _ -> }
+        val dialog = AlertDialog.Builder(this).setTitle("۱ ـ د ټېلېګرام حساب")
+            .setView(box).setNegativeButton("بند", null)
+            .setNeutralButton("کوډ راولېږه", null).create()
         dialog.setOnShowListener {
             dialog.getButton(AlertDialog.BUTTON_NEUTRAL).setOnClickListener {
                 val id = idInput.text.toString().trim()
-                if (!id.matches(Regex("[0-9]{5,20}"))) { status.text = "سم Telegram ID ولیکه."; return@setOnClickListener }
+                if (!id.matches(Regex("[0-9]{5,20}"))) {
+                    status.text = "سم عددي Telegram ID ولیکه."
+                    return@setOnClickListener
+                }
                 status.text = "کوډ غوښتل کېږي..."
+                dialog.getButton(AlertDialog.BUTTON_NEUTRAL).isEnabled = false
                 worker.execute {
                     try {
                         val result = ApiClient.requestCode(id)
-                        mainHandler.post { status.text = if (result.optBoolean("ok")) result.optString("message") else result.optString("error", "کوډ ونه لېږل شو.") }
+                        mainHandler.post {
+                            dialog.getButton(AlertDialog.BUTTON_NEUTRAL).isEnabled = true
+                            if (result.optBoolean("ok")) {
+                                prefs.edit().putString("pending_telegram_id", id).apply()
+                                dialog.dismiss()
+                                showCodeDialog(id)
+                            } else status.text = result.optString("error", "کوډ ونه لېږل شو.")
+                        }
                     } catch (_: Exception) {
-                        mainHandler.post { status.text = "له سرور سره اړیکه ناکامه شوه؛ انټرنېټ وګوره." }
+                        mainHandler.post {
+                            dialog.getButton(AlertDialog.BUTTON_NEUTRAL).isEnabled = true
+                            status.text = "له سرور سره اړیکه ناکامه شوه؛ انټرنېټ وګوره."
+                        }
+                    }
+                }
+            }
+        }
+        dialog.show()
+    }
+
+    private fun showCodeDialog(telegramId: String) {
+        val box = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            layoutDirection = View.LAYOUT_DIRECTION_RTL
+            setPadding(dp(20), dp(8), dp(20), dp(4))
+        }
+        box.addView(text("شپږ عددي کوډ چې ستا ټېلېګرام ته استول شوی، دلته ولیکه.", 14, Color.DKGRAY))
+        val codeInput = EditText(this).apply {
+            hint = "۶ عددي تایید کوډ"
+            inputType = android.text.InputType.TYPE_CLASS_NUMBER
+            setSingleLine(true)
+        }
+        box.addView(codeInput)
+        val status = text("کوډ پنځه دقیقې اعتبار لري او یوازې یو ځل کارېږي.", 13, Color.rgb(40, 80, 60))
+        box.addView(status)
+        val dialog = AlertDialog.Builder(this).setTitle("۲ ـ د حساب تایید")
+            .setView(box).setNegativeButton("بند", null)
+            .setNeutralButton("کوډ بیا راولېږه", null)
+            .setPositiveButton("تایید او ونښلوه", null).create()
+        dialog.setOnShowListener {
+            dialog.getButton(AlertDialog.BUTTON_NEUTRAL).setOnClickListener {
+                status.text = "نوی کوډ غوښتل کېږي..."
+                worker.execute {
+                    try {
+                        val result = ApiClient.requestCode(telegramId)
+                        mainHandler.post {
+                            status.text = if (result.optBoolean("ok"))
+                                "نوی کوډ واستول شو. پخوانی کوډ مه کاروه."
+                            else result.optString("error", "کوډ بیا ونه لېږل شو.")
+                        }
+                    } catch (_: Exception) {
+                        mainHandler.post { status.text = "انټرنېټ نشته؛ کوډ بیا ونه لېږل شو." }
                     }
                 }
             }
             dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener {
-                val id = idInput.text.toString().trim()
                 val code = codeInput.text.toString().trim()
-                if (!id.matches(Regex("[0-9]{5,20}")) || !code.matches(Regex("[0-9]{6}"))) {
-                    status.text = "Telegram ID او شپږ عددي کوډ سم ولیکه."; return@setOnClickListener
+                if (!code.matches(Regex("[0-9]{6}"))) {
+                    status.text = "بشپړ شپږ عددي کوډ ولیکه."
+                    return@setOnClickListener
                 }
-                status.text = "حساب نښلول کېږي..."
+                status.text = "کوډ تاییدېږي..."
+                dialog.getButton(AlertDialog.BUTTON_POSITIVE).isEnabled = false
                 worker.execute {
                     try {
-                        val result = ApiClient.verifyCode(id, code)
+                        val result = ApiClient.verifyCode(telegramId, code)
                         if (result.optBoolean("ok")) {
                             val token = result.optString("session_token")
-                            prefs.edit().putString("session_token", token).apply()
-                            val profile = ApiClient.me(token)
-                            mainHandler.post { 
-                                prefs.edit().putString("cached_profile", profile.toString()).apply()
+                            if (token.isBlank()) throw IllegalStateException("Session token missing")
+                            prefs.edit().putString("session_token", token)
+                                .remove("pending_telegram_id").apply()
+                            val profile = try { ApiClient.me(token) } catch (_: Exception) { null }
+                            mainHandler.post {
+                                if (profile != null && profile.optBoolean("ok"))
+                                    prefs.edit().putString("cached_profile", profile.toString()).apply()
                                 dialog.dismiss()
                                 buildHome()
+                                Toast.makeText(this, "حساب په بریالیتوب ونښلول شو ✅", Toast.LENGTH_LONG).show()
                             }
-                        } else mainHandler.post { status.text = result.optString("error", "حساب ونه نښلول شو.") }
+                        } else mainHandler.post {
+                            dialog.getButton(AlertDialog.BUTTON_POSITIVE).isEnabled = true
+                            status.text = result.optString("error", "کوډ ناسم دی؛ بیا هڅه وکړه.")
+                        }
                     } catch (_: Exception) {
-                        mainHandler.post { status.text = "له سرور سره اړیکه ناکامه شوه؛ بیا هڅه وکړه." }
+                        mainHandler.post {
+                            dialog.getButton(AlertDialog.BUTTON_POSITIVE).isEnabled = true
+                            status.text = "تایید ناکام شو؛ انټرنېټ وګوره او بیا هڅه وکړه."
+                        }
                     }
                 }
             }
@@ -193,10 +254,11 @@ class MainActivity : Activity() {
                     if (result.optBoolean("ok")) {
                         prefs.edit().putString("cached_profile", result.toString()).apply()
                         updateAccountText(result)
-                        buildHome()
                     } else {
-                        prefs.edit().remove("session_token").remove("cached_profile").apply()
-                        buildHome()
+                        val cached = prefs.getString("cached_profile", null)
+                        if (cached != null) {
+                            try { updateAccountText(JSONObject(cached), true) } catch (_: Exception) { }
+                        }
                     }
                 }
             } catch (_: Exception) {
