@@ -61,7 +61,7 @@ class MainActivity : Activity() {
             ) }
             addButton(page, "🔒  محرمیت او معلومات") { showInfo(
                 "محرمیت او معلومات",
-                "ستاسې فلمونه، پروژې، کرکټرونه، ماډلونه او صادر شوي ویډیوګانې یوازې د موبایل په داخلي ذخیره کې ساتل کېږي او زموږ کلاوډ ته نه پورته کېږي.\n\nکلاوډ یوازې د حساب، د پواینټونه او یو اېس ډي ټي بیلانسونو، پلورنځي، پېرودونو او د امکاناتو د اجازو اړوند محدود معلومات ساتي. د حساب د تایید لپاره د ټېلېګرام له لارې یو ځل کارېدونکی کوډ کارول کېږي."
+                "ستاسې فلمونه، پروژې، کرکټرونه، ماډلونه او صادر شوي ویډیوګانې یوازې د موبایل په داخلي ذخیره کې ساتل کېږي او زموږ کلاوډ ته نه پورته کېږي.\n\nکلاوډ یوازې د حساب، د امتيازات او USDT 💲 بیلانسونو، پلورنځي، پېرودونو او د امکاناتو د اجازو اړوند محدود معلومات ساتي. د حساب د تایید لپاره د ټېلېګرام له لارې یو ځل کارېدونکی کوډ کارول کېږي."
             ) }
             addButton(page, "💚  زموږ په اړه") { showInfo(
                 "زموږ په اړه",
@@ -75,9 +75,9 @@ class MainActivity : Activity() {
             }
             accountStatus.setPadding(dp(12), dp(14), dp(12), dp(14))
             page.addView(accountStatus, marginParams(top = 8, bottom = 10))
-            addButton(page, "👤  زما حساب او بیلانس") { showAccountDialog() }
-            addButton(page, "⭐  وړیا امکانات") { showInfo("وړیا امکانات", "د حساب له تایید وروسته وړیا امکانات په اتومات ډول فعالېږي. د دغو امکاناتو لپاره پواینټونه نه لګېږي.") }
-            addButton(page, "💎  ځانګړي امکانات") { showInfo("ځانګړي امکانات", "ځانګړي امکانات د هر پیک د شرایطو، د سرور له اجازې او د اړوند بیلانس له مخې فعالېږي. پواینټونه او یو اېس ډي ټي جلا حسابېږي.") }
+            addButton(page, "👤  زما حساب") { showAccountDialog() }
+            addButton(page, "⭐  وړیا امکانات") { showInfo("وړیا امکانات", "د حساب له تایید وروسته وړیا امکانات په اتومات ډول فعالېږي. د دغو امکاناتو لپاره امتيازات نه لګېږي.") }
+            addButton(page, "💎  ځانګړي امکانات") { showInfo("ځانګړي امکانات", "ځانګړي امکانات د هر پیک د شرایطو، د سرور له اجازې او د اړوند بیلانس له مخې فعالېږي. امتيازات او USDT 💲 جلا حسابېږي.") }
             addButton(page, "🛒  د امکاناتو پلورنځی") { showInfo("د امکاناتو پلورنځی", "د پلورنځي او پېرودلو خوندي سیستم به د پیکونو او تادیاتو له بشپړېدو وروسته فعال شي.") }
             addButton(page, "＋  نوې پروژه جوړه کړه") { createProjectDialog() }
             addButton(page, "📁  زما فلمونه او پروژې") { showProjects() }
@@ -126,7 +126,7 @@ class MainActivity : Activity() {
             layoutDirection = View.LAYOUT_DIRECTION_RTL
             setPadding(dp(20), dp(8), dp(20), dp(4))
         }
-        box.addView(text("د ټېلېګرام عددي ID ولیکه. لومړی باید له @AI_MovieMaker_Bot سره /start وکړې.", 14, Color.DKGRAY))
+        box.addView(text("د ټېلېګرام عددي پېژندشمېره ولیکه. لومړی باید له @AI_MovieMaker_Bot سره /start وکړې.", 14, Color.DKGRAY))
         val idInput = EditText(this).apply {
             hint = "عددي پېژندشمېره"
             inputType = android.text.InputType.TYPE_CLASS_NUMBER
@@ -277,8 +277,35 @@ class MainActivity : Activity() {
         val user = result.optJSONObject("user") ?: JSONObject()
         val balance = result.optJSONObject("balance") ?: JSONObject()
         val state = if (offline) "نښلول شوی ✅ • آفلاین" else "نښلول شوی ✅ • تازه"
-        accountStatus.text = "حساب: $state\nد ټېلېګرام پېژندشمېره: ${user.optString("telegram_id")}\nپواینټونه: ${balance.optLong("points")}  |  یو اېس ډي ټي: ${balance.optDouble("usdt")}\n" +
-            if (offline) "دا وروستي خوندي شوي معلومات دي؛ د بیلانس تازه کولو لپاره انټرنېټ ته اړتیا ده." else "معلومات تازه شول."
+        val telegramId = user.optString("telegram_id")
+        val invitedCount = result.optInt("referral_count", 0)
+        val amount = java.math.BigDecimal.valueOf(balance.optDouble("usdt")).stripTrailingZeros().toPlainString()
+        val accountText = android.text.SpannableStringBuilder()
+        accountText.append("حساب: $state\nد ټېلېګرام پېژندشمېره: ")
+        val idStart = accountText.length
+        accountText.append(telegramId)
+        val idEnd = accountText.length
+        accountText.append("\nامتيازات: ${balance.optLong("points")}  |  USDT 💲: $amount")
+        accountText.append("\nد دعوت شويو ملګرو شمېر: $invitedCount\n")
+        accountText.append(if (offline) "دا وروستي خوندي شوي معلومات دي؛ د بیلانس تازه کولو لپاره انټرنېټ ته اړتیا ده." else "معلومات تازه شول.")
+        if (telegramId.isNotBlank() && idEnd > idStart) {
+            accountText.setSpan(object : android.text.style.ClickableSpan() {
+                override fun onClick(widget: View) {
+                    val clipboard = getSystemService(CLIPBOARD_SERVICE) as android.content.ClipboardManager
+                    clipboard.setPrimaryClip(android.content.ClipData.newPlainText("د ټېلېګرام پېژندشمېره", telegramId))
+                    Toast.makeText(this@MainActivity, "د ټېلېګرام پېژندشمېره کاپي شوه.", Toast.LENGTH_SHORT).show()
+                }
+                override fun updateDrawState(ds: android.text.TextPaint) {
+                    ds.color = 0xFF62C7FF.toInt()
+                    ds.isUnderlineText = false
+                    ds.isFakeBoldText = true
+                }
+            }, idStart, idEnd, android.text.Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
+        }
+        accountStatus.text = accountText
+        accountStatus.movementMethod = android.text.method.LinkMovementMethod.getInstance()
+        accountStatus.highlightColor = Color.TRANSPARENT
+        accountStatus.linksClickable = true
     }
 
     private fun createProjectDialog() {
