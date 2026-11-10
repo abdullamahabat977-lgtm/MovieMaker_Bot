@@ -149,7 +149,6 @@ class MainActivity : Activity() {
                 textSize = 16f
                 setTextColor(Color.WHITE)
                 setPadding(dp(22), dp(14), dp(22), dp(14))
-                setTextIsSelectable(true)
             }
             if (id.isNotBlank() && end > start) {
                 content.setSpan(object : android.text.style.ClickableSpan() {
