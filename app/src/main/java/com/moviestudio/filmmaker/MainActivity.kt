@@ -75,7 +75,7 @@ class MainActivity : Activity() {
             }
             accountStatus.setPadding(dp(12), dp(14), dp(12), dp(14))
             page.addView(accountStatus, marginParams(top = 8, bottom = 10))
-            addButton(page, "👤  زما حساب") { showAccountDialog() }
+            addButton(page, "👤  زما حساب") { showLinkedAccount() }
             addButton(page, "⭐  وړیا امکانات") { showInfo("وړیا امکانات", "د حساب له تایید وروسته وړیا امکانات په اتومات ډول فعالېږي. د دغو امکاناتو لپاره امتيازات نه لګېږي.") }
             addButton(page, "💎  ځانګړي امکانات") { showInfo("ځانګړي امکانات", "ځانګړي امکانات د هر پیک د شرایطو، د سرور له اجازې او د اړوند بیلانس له مخې فعالېږي. امتيازات او USDT 💲 جلا حسابېږي.") }
             addButton(page, "🛒  د امکاناتو پلورنځی") { showInfo("د امکاناتو پلورنځی", "د پلورنځي او پېرودلو خوندي سیستم به د پیکونو او تادیاتو له بشپړېدو وروسته فعال شي.") }
@@ -118,6 +118,61 @@ class MainActivity : Activity() {
             setOnClickListener { action() }
         }
         parent.addView(button, marginParams(top = 7, bottom = 5))
+    }
+
+    private fun showLinkedAccount() {
+        val raw = prefs.getString("cached_profile", null)
+        if (raw.isNullOrBlank()) {
+            showInfo("زما حساب", "د حساب معلومات لا نه دي زېرمه شوي. انټرنېټ ته وصل شه او څو شېبې وروسته بیا هڅه وکړه.")
+            refreshAccount()
+            return
+        }
+        try {
+            val result = JSONObject(raw)
+            val user = result.optJSONObject("user") ?: JSONObject()
+            val balance = result.optJSONObject("balance") ?: JSONObject()
+            val id = user.optString("telegram_id")
+            val amount = java.math.BigDecimal.valueOf(balance.optDouble("usdt")).stripTrailingZeros().toPlainString()
+            val content = android.text.SpannableStringBuilder()
+            content.append("حساب: نښلول شوی ✅\\n")
+            content.append("نوم: ").append(user.optString("display_name").ifBlank { "—" }).append("\\n")
+            content.append("د ټېلېګرام پېژندشمېره: ")
+            val start = content.length
+            content.append(id)
+            val end = content.length
+            content.append("\\n\\n⭐ امتيازات: ").append(balance.optLong("points").toString())
+            content.append("\\nUSDT 💲: ").append(amount)
+            content.append("\\n\\n👥 ټول بلل شوي ملګري: ").append(result.optInt("referral_count").toString())
+            content.append("\\nتایید شوي: ").append(result.optInt("verified_referral_count").toString())
+            val view = TextView(this).apply {
+                text = content
+                textSize = 16f
+                setTextColor(Color.WHITE)
+                setPadding(dp(22), dp(14), dp(22), dp(14))
+                setTextIsSelectable(true)
+            }
+            if (id.isNotBlank() && end > start) {
+                content.setSpan(object : android.text.style.ClickableSpan() {
+                    override fun onClick(widget: View) {
+                        val clipboard = getSystemService(CLIPBOARD_SERVICE) as ClipboardManager
+                        clipboard.setPrimaryClip(ClipData.newPlainText("د ټېلېګرام پېژندشمېره", id))
+                        Toast.makeText(this@MainActivity, "د ټېلېګرام پېژندشمېره کاپي شوه.", Toast.LENGTH_SHORT).show()
+                    }
+                    override fun updateDrawState(ds: android.text.TextPaint) {
+                        ds.color = 0xFF62C7FF.toInt()
+                        ds.isUnderlineText = false
+                        ds.isFakeBoldText = true
+                    }
+                }, start, end, android.text.Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
+            }
+            view.text = content
+            view.movementMethod = android.text.method.LinkMovementMethod.getInstance()
+            view.highlightColor = Color.TRANSPARENT
+            AlertDialog.Builder(this).setTitle("👤 زما حساب").setView(view)
+                .setPositiveButton("سمه ده", null).show()
+        } catch (_: Exception) {
+            showInfo("زما حساب", "د حساب معلومات سم نه لوستل کېږي؛ انټرنېټ ته وصل شه او بیا هڅه وکړه.")
+        }
     }
 
     private fun showAccountDialog() {
