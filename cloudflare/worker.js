@@ -110,6 +110,7 @@ await tg(env,"sendMessage",{chat_id:chatId,text:"📖 د کارولو لارښو
 
 }
 else if(t==="💸 پیسې استول"){await setSt(env,tid,"transfer_choose");await tg(env,"sendMessage",{chat_id:chatId,text:"له بوټ څخه خپل اپک حساب ته کوم بیلانس لېږې؟",reply_markup:{keyboard:[[{text:"⭐ امتيازات استول",style:"success"}],[{text:"USDT 💲 استول",style:"success"}],[{text:"⬅️ شاته",style:"primary"}]],resize_keyboard:true}})}
+else if(t==="🛠 مدير پینل"){if(await isAdmin(env,tid))await adminHome(env,chatId);else await tg(env,"sendMessage",{chat_id:chatId,text:"یوازې مدیران دې برخې ته لاسرسی لري."})}
 else if(t==="💚 زموږ په اړه"){await tg(env,"sendMessage",{chat_id:chatId,text:"💚 د فلم سټوډیو د لاسي درې‌بعدي فلم جوړولو پروژه ده. کارن خپل کرکټرونه، چاپېریالونه او فلمونه پخپله جوړوي؛ دا د AI فلم جوړولو خدمت نه دی."})}
 else if(t==="🆘 مرسته"||t==="/help"){
 await tg(env,"sendMessage",{chat_id:chatId,text:"🆘 مرسته\n\nد حساب د نښلولو لپاره د فلم سټوډیو اپ کې د ټېلېګرام پېژندشمېره ولیکه او د تایید کوډ وغواړه.\n\nد دعوت لپاره «د دعوت جایزه» او د بیلانس او پېژندشمېرې لپاره «زما حساب» وټاکه.\n\nکه ستونزه لرې، خپله ستونزه په پښتو ولیکه."});
