@@ -71,7 +71,7 @@ class MainActivity : Activity() {
             accountStatus = text("حساب په دې موبایل کې خوندي دی. د بیلانس او اجازو تازه معلومات د انټرنېټ په وصلېدو ترلاسه کېږي.", 13, 0xFFB9C5DE.toInt())
             val cached = prefs.getString("cached_profile", null)
             if (cached != null) {
-                try { updateAccountText(JSONObject(cached), true) } catch (_: Exception) { }
+                try { updateAccountText(JSONObject(cached), false) } catch (_: Exception) { }
             }
             accountStatus.setPadding(dp(12), dp(14), dp(12), dp(14))
             page.addView(accountStatus, marginParams(top = 8, bottom = 10))
