@@ -93,7 +93,7 @@ const botUser=await env.DB.prepare("SELECT id FROM users WHERE telegram_id=? AND
 if(botUser)await env.DB.prepare("INSERT OR IGNORE INTO bot_balances(user_id,points_balance,usdt_micros,updated_at) VALUES(?,0,0,?)").bind(botUser.id,now).run();
 if(m.from)await env.DB.prepare("UPDATE users SET username=?,display_name=?,updated_at=? WHERE telegram_id=?").bind(m.from.username||null,firstName||null,now,tid).run();
 if(match&&match[1]!==tid){const inviter=await env.DB.prepare("SELECT id FROM users WHERE telegram_id=? AND status='active'").bind(match[1]).first();if(inviter){await env.DB.prepare("INSERT OR IGNORE INTO referrals(id,referrer_telegram_id,invited_telegram_id,status,created_at) VALUES(?,?,?,'pending',?)").bind(crypto.randomUUID(),match[1],tid,now).run();await payInvite(env,match[1],tid,5,"ref_start:"+tid);if(await env.DB.prepare("SELECT 1 FROM users WHERE telegram_id=? AND status='active'").bind(tid).first())await qualifyInvite(env,tid);}}
-await tg(env,"sendMessage",{chat_id:chatId,text:"سلام! د فلم سټوډیو بوټ ته ښه راغلاست. 🎬\n\nد دعوت، حساب، پیسو لېږد او لارښود لپاره لاندې مېنو وکاروه.",reply_markup:menu});
+await tg(env,"sendMessage",{chat_id:chatId,text:"سلام! د فلم سټوډیو بوټ ته ښه راغلاست. 🎬\n\nستا د بوټ حساب جوړ شو؛ د دعوت جایزې ترلاسه کولای شې. د پیسو اپک ته لېږد لپاره اپک حساب ونښلوه.\n\nد دعوت، حساب، پیسو لېږد او لارښود لپاره لاندې مېنو وکاروه.",reply_markup:menu});
 
 }
 else if(t==="🎁 د دعوت جایزه"){
@@ -104,13 +104,16 @@ await tg(env,"sendMessage",{chat_id:chatId,text:"🎁 ستا د دعوت جای�
 
 }
 else if(t==="👤 زما حساب"){
-const row=await env.DB.prepare("SELECT u.telegram_id,u.username,u.display_name,b.points_balance,b.usdt_micros,bb.points_balance bot_points,bb.usdt_micros bot_usdt,(SELECT COUNT(*) FROM referrals r WHERE r.referrer_telegram_id=u.telegram_id) invited_total,(SELECT COUNT(*) FROM referrals r WHERE r.referrer_telegram_id=u.telegram_id AND r.status='qualified') invited_count FROM users u LEFT JOIN balances b ON b.user_id=u.id LEFT JOIN bot_balances bb ON bb.user_id=u.id WHERE u.telegram_id=? AND u.status='active'").bind(tid).first();
+const row=await env.DB.prepare("SELECT u.telegram_id,u.username,u.display_name,b.user_id app_linked,b.points_balance,b.usdt_micros,bb.points_balance bot_points,bb.usdt_micros bot_usdt,(SELECT COUNT(*) FROM referrals r WHERE r.referrer_telegram_id=u.telegram_id) invited_total,(SELECT COUNT(*) FROM referrals r WHERE r.referrer_telegram_id=u.telegram_id AND r.status='qualified') invited_count FROM users u LEFT JOIN balances b ON b.user_id=u.id LEFT JOIN bot_balances bb ON bb.user_id=u.id WHERE u.telegram_id=? AND u.status='active'").bind(tid).first();
 if(!row)await tg(env,"sendMessage",{chat_id:chatId,text:"ستا د فلم سټوډیو حساب لا نه دی نښلول شوی. لومړی اپ کې د ټېلېګرام پېژندشمېره تایید کړه."});
 else{
 const usdt=Number(row.usdt_micros||0)/1000000;
 const usdtText=Number.isInteger(usdt)?String(usdt):usdt.toFixed(6).replace(/0+$/,"").replace(/\.$/,"");
 const display=String(row.display_name||(row.username?"@"+row.username:"کارن")).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
-await tg(env,"sendMessage",{chat_id:chatId,text:"👤 ستا حساب\n\nنوم: "+display+"\nد ټېلېګرام پېژندشمېره: <code>"+row.telegram_id+"</code>\n\n⭐ امتيازات: "+(row.points_balance||0)+"\nUSDT 💲: "+usdtText+"\n\n👥 ټول بلل شوي ملګري: "+(row.invited_total||0)+"\nتایید شوي: "+(row.invited_count||0),parse_mode:"HTML"})
+const botPoints=Number(row.bot_points||0),botUsdt=Number(row.bot_usdt||0)/1000000;
+const botUsdtText=Number.isInteger(botUsdt)?String(botUsdt):botUsdt.toFixed(6).replace(/0+$/,'').replace(/\.$/,'');
+const appText=row.app_linked?"اپک بیلانس — ⭐ "+(row.points_balance||0)+" | USDT "+usdtText:"اپک حساب: لا نه دی نښلول شوی؛ د لېږد لپاره اپک وصل کړه.";
+await tg(env,"sendMessage",{chat_id:chatId,text:"👤 ستا حساب\n\nنوم: "+display+"\nد ټېلېګرام پېژندشمېره: <code>"+row.telegram_id+"</code>\n\n🤖 د بوټ بیلانس — ⭐ "+botPoints+" | USDT 💲 "+botUsdtText+"\n"+appText+"\n\n👥 ټول بلل شوي ملګري: "+(row.invited_total||0)+"\nتایید شوي: "+(row.invited_count||0),parse_mode:"HTML"})
 }
 
 }
