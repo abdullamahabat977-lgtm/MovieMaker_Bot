@@ -21,6 +21,7 @@ class MainActivity : Activity() {
     private val worker = Executors.newSingleThreadExecutor()
     private val mainHandler = Handler(Looper.getMainLooper())
     private lateinit var accountStatus: TextView
+    private var renderedLinkedState: Boolean? = null
     private lateinit var projectStore: ProjectStore
     private val prefs by lazy { getSharedPreferences("movie_studio_account", MODE_PRIVATE) }
 
@@ -37,6 +38,7 @@ class MainActivity : Activity() {
 
     private fun buildHome() {
         val linked = !prefs.getString("session_token", null).isNullOrBlank()
+        renderedLinkedState = linked
         val scroll = ScrollView(this).apply { setBackgroundColor(Color.rgb(12, 18, 34)) }
         val page = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
@@ -180,7 +182,9 @@ class MainActivity : Activity() {
 
     override fun onResume() {
         super.onResume()
-        if (::accountStatus.isInitialized) refreshAccount()
+        val linkedNow = !prefs.getString("session_token", null).isNullOrBlank()
+        if (renderedLinkedState != linkedNow) buildHome()
+        if (linkedNow && ::accountStatus.isInitialized) refreshAccount()
     }
 
     private fun refreshAccount() {
