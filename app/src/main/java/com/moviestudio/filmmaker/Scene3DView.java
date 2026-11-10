@@ -24,8 +24,9 @@ public final class Scene3DView extends GLSurfaceView {
     public Scene3DView(Context context) {
         super(context);
         setEGLContextClientVersion(2);
-        // Avoid requiring an alpha channel; this is more compatible with older mobile GPUs.
-        setEGLConfigChooser(5, 6, 5, 0, 16, 0);
+        // Ask Android for a depth-enabled RGB565-compatible config without requiring
+        // one exact channel layout; this is more tolerant of vendor EGL implementations.
+        setEGLConfigChooser(true);
         setPreserveEGLContextOnPause(false);
         previewRenderer = new PreviewRenderer();
         setRenderer(previewRenderer);
@@ -156,6 +157,9 @@ public final class Scene3DView extends GLSurfaceView {
         }
 
         @Override public void onSurfaceCreated(GL10 gl, EGLConfig config) {
+            android.util.Log.i("MovieStudio3D", "GL surface created; version="
+                    + GLES20.glGetString(GLES20.GL_VERSION) + "; renderer="
+                    + GLES20.glGetString(GLES20.GL_RENDERER));
             failed = false;
             program = 0;
             try {
