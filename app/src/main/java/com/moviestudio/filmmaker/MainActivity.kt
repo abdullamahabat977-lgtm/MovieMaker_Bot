@@ -153,8 +153,8 @@ class MainActivity : Activity() {
             if (id.isNotBlank() && end > start) {
                 content.setSpan(object : android.text.style.ClickableSpan() {
                     override fun onClick(widget: View) {
-                        val clipboard = getSystemService(CLIPBOARD_SERVICE) as ClipboardManager
-                        clipboard.setPrimaryClip(ClipData.newPlainText("د ټېلېګرام پېژندشمېره", id))
+                        val clipboard = getSystemService(CLIPBOARD_SERVICE) as android.content.ClipboardManager
+                        clipboard.setPrimaryClip(android.content.ClipData.newPlainText("د ټېلېګرام پېژندشمېره", id))
                         Toast.makeText(this@MainActivity, "د ټېلېګرام پېژندشمېره کاپي شوه.", Toast.LENGTH_SHORT).show()
                     }
                     override fun updateDrawState(ds: android.text.TextPaint) {
