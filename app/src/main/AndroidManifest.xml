@@ -8,6 +8,9 @@
         android:theme="@style/AppTheme"
         android:usesCleartextTraffic="false">
         <activity
+            android:name=".AccountLinkActivity"
+            android:exported="false" />
+        <activity
             android:name=".Scene3DActivity"
             android:exported="false" />
         <activity
