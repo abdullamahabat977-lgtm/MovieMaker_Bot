@@ -212,10 +212,12 @@ class MainActivity : Activity() {
         }
     }
 
-    private fun updateAccountText(result: JSONObject) {
+    private fun updateAccountText(result: JSONObject, offline: Boolean = false) {
         val user = result.optJSONObject("user") ?: JSONObject()
         val balance = result.optJSONObject("balance") ?: JSONObject()
-        accountStatus.text = "حساب: نښلول شوی\nTelegram ID: ${user.optString("telegram_id")}\nPoints: ${balance.optLong("points")}  |  USDT: ${balance.optDouble("usdt")}"
+        val state = if (offline) "نښلول شوی ✅ • آفلاین" else "نښلول شوی ✅ • تازه"
+        accountStatus.text = "حساب: $state\nTelegram ID: ${user.optString("telegram_id")}\nPoints: ${balance.optLong("points")}  |  USDT: ${balance.optDouble("usdt")}\n" +
+            if (offline) "دا وروستي خوندي شوي معلومات دي؛ د بیلانس تازه کولو لپاره انټرنېټ ته اړتیا ده." else "معلومات تازه شول."
     }
 
     private fun createProjectDialog() {
