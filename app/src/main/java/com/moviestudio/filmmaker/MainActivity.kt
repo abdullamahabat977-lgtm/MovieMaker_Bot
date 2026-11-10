@@ -61,7 +61,7 @@ class MainActivity : Activity() {
             ) }
             addButton(page, "🔒  محرمیت او معلومات") { showInfo(
                 "محرمیت او معلومات",
-                "ستاسې فلمونه، پروژې، کرکټرونه، ماډلونه او صادر شوي ویډیوګانې یوازې د موبایل په داخلي ذخیره کې ساتل کېږي او زموږ کلاوډ ته نه پورته کېږي.\n\nکلاوډ یوازې د حساب، د امتيازات او USDT 💲 بیلانسونو، پلورنځي، پېرودونو او د امکاناتو د اجازو اړوند محدود معلومات ساتي. د حساب د تایید لپاره د ټېلېګرام له لارې یو ځل کارېدونکی کوډ کارول کېږي."
+                "ستاسې فلمونه، پروژې، کرکټرونه، ماډلونه او صادر شوي ویډیوګانې یوازې د موبایل په داخلي ذخیره کې ساتل کېږي او زموږ کلاوډ ته نه پورته کېږي.\n\nکلاوډ یوازې د حساب، د امتيازاتو او USDT 💲 بیلانسونو، پلورنځي، پېرودونو او د امکاناتو د اجازو اړوند محدود معلومات ساتي. د حساب د تایید لپاره د ټېلېګرام له لارې یو ځل کارېدونکی کوډ کارول کېږي."
             ) }
             addButton(page, "💚  زموږ په اړه") { showInfo(
                 "زموږ په اړه",
@@ -279,6 +279,7 @@ class MainActivity : Activity() {
         val state = if (offline) "نښلول شوی ✅ • آفلاین" else "نښلول شوی ✅ • تازه"
         val telegramId = user.optString("telegram_id")
         val invitedCount = result.optInt("referral_count", 0)
+        val verifiedCount = result.optInt("verified_referral_count", invitedCount)
         val amount = java.math.BigDecimal.valueOf(balance.optDouble("usdt")).stripTrailingZeros().toPlainString()
         val accountText = android.text.SpannableStringBuilder()
         accountText.append("حساب: $state\nد ټېلېګرام پېژندشمېره: ")
@@ -286,7 +287,7 @@ class MainActivity : Activity() {
         accountText.append(telegramId)
         val idEnd = accountText.length
         accountText.append("\nامتيازات: ${balance.optLong("points")}  |  USDT 💲: $amount")
-        accountText.append("\nد دعوت شويو ملګرو شمېر: $invitedCount\n")
+        accountText.append("\nټول بلل شوي ملګري: $invitedCount  |  تایید شوي: $verifiedCount\n")
         accountText.append(if (offline) "دا وروستي خوندي شوي معلومات دي؛ د بیلانس تازه کولو لپاره انټرنېټ ته اړتیا ده." else "معلومات تازه شول.")
         if (telegramId.isNotBlank() && idEnd > idStart) {
             accountText.setSpan(object : android.text.style.ClickableSpan() {
