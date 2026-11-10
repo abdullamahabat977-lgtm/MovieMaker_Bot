@@ -140,11 +140,11 @@ class MainActivity : Activity() {
             val balance = result.optJSONObject("balance") ?: JSONObject()
             val amount = java.math.BigDecimal.valueOf(balance.optDouble("usdt")).stripTrailingZeros().toPlainString()
             val content = android.text.SpannableStringBuilder()
-            content.append("💼 زما د اپک حساب: نښلول شوی ✅\\n\\n")
+            content.append("💼 زما د اپک حساب: نښلول شوی ✅\n\n")
             content.append("⭐ د اپک امتیازات: ").append(balance.optLong("points").toString())
-            content.append("\\n💵 د اپک USDT بیلانس: ").append(amount)
-            content.append("\\n\\n👥 زما دعوتونه: ").append(result.optInt("referral_count").toString())
-            content.append("\\n✅ تایید شوي دعوتونه: ").append(result.optInt("verified_referral_count").toString())
+            content.append("\n💵 د اپک USDT بیلانس: ").append(amount)
+            content.append("\n\n👥 زما دعوتونه: ").append(result.optInt("referral_count").toString())
+            content.append("\n✅ تایید شوي دعوتونه: ").append(result.optInt("verified_referral_count").toString())
             val view = TextView(this).apply {
                 text = content
                 textSize = 16f
