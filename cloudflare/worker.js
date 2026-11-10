@@ -78,9 +78,9 @@ const menu={keyboard:[
 [{text:"💚 زموږ په اړه",style:"primary"},{text:"💸 پیسې استول",style:"success"}],
 [{text:"👤 زما حساب",style:"primary"},{text:"🆘 مرسته",style:"danger"}]
 ],resize_keyboard:true,is_persistent:true,input_field_placeholder:"د مېنو تڼۍ د څلورو نقطو له لارې بېرته پرانیزه"};if(await isAdmin(env,tid))menu.keyboard.push([{text:"🛠 مدير پینل",style:"success"}]);
-const sendMenu=()=>tg(env,"sendMessage",{chat_id:chatId,text:"اصلي مېنو 👇",reply_markup:menu});
 const name=[m.from?.first_name,m.from?.last_name].filter(Boolean).join(" ");
 if(m.from)await env.DB.prepare("UPDATE users SET username=?,display_name=?,updated_at=? WHERE telegram_id=?").bind(m.from.username||null,name||null,now,tid).run();
+if(t==="/refresh_webhook"&&tid===OWNER_ID){try{await tg(env,"setWebhook",{url:"https://movie-studio-api.abdullamahabat977.workers.dev/telegram/webhook",secret_token:env.TELEGRAM_WEBHOOK_SECRET,allowed_updates:["message","callback_query"],drop_pending_updates:false});await tg(env,"sendMessage",{chat_id:chatId,text:"د بوټ اتصال تازه شو؛ د مدير پینل تڼۍ اوس callback پیغامونه هم ترلاسه کوي. ✅"})}catch{await tg(env,"sendMessage",{chat_id:chatId,text:"د بوټ اتصال تازه نه شو؛ وروسته بیا هڅه وکړه."})}return json({ok:true})}
 if(t==="/start"||t.startsWith("/start ")){
 const payload=t.split(/\s+/)[1]||"",match=payload.match(/^ref_([0-9]{5,20})$/);
 if(match&&match[1]!==tid){const inviter=await env.DB.prepare("SELECT id FROM users WHERE telegram_id=? AND status='active'").bind(match[1]).first();if(inviter){await env.DB.prepare("INSERT OR IGNORE INTO referrals(id,referrer_telegram_id,invited_telegram_id,status,created_at) VALUES(?,?,?,'pending',?)").bind(crypto.randomUUID(),match[1],tid,now).run();await payInvite(env,match[1],tid,5,"ref_start:"+tid);if(await env.DB.prepare("SELECT 1 FROM users WHERE telegram_id=? AND status='active'").bind(tid).first())await qualifyInvite(env,tid);}}
