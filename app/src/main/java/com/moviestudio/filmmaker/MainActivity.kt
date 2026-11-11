@@ -88,7 +88,6 @@ class MainActivity : Activity() {
                 "📽️ نوی فلم جوړول" to { createProjectDialog() }
             )
             addHomeButtonRow(page,
-                "🧊 د 3D صحنې کاري پاڼه" to { open3DWorkspace() },
                 "🧰 د فلم لپاره کارېدونکي شیان" to { showMovieAssets() }
             )
             addHomeButtonRow(page,
@@ -142,21 +141,139 @@ class MainActivity : Activity() {
         parent.addView(row, marginParams(top = 5, bottom = 5))
     }
 
-    private fun open3DWorkspace() {
-        android.util.Log.i("MovieStudio3D", "Opening Scene3DActivity from linked home")
-        startActivity(Intent(this, Scene3DActivity::class.java))
+    private fun showMovieAssets() {
+        val categories = listOf(
+            "🧍 کرکټرونه" to "د نارینه وو، ښځو، ماشومانو، پولیسو، سرتېرو، پاچاهانو او نورو انساني کرکټرونو ماډلونه.",
+            "🐉 موجودات" to "ډریگن، حیوانات، خیالي موجودات او نور غیرانساني کرکټرونه.",
+            "🏞️ چاپېریالونه" to "ځنګلونه، غرونه، دښتې، سیندونه، ښارونه او نورې طبیعي یا ښاري صحنې.",
+            "🏠 ودانۍ" to "کورونه، ماڼۍ، دوکانونه، دفترونه، ښوونځي او نورې ودانۍ.",
+            "🪑 فرنیچر" to "چوکۍ، مېزونه، تختونه، المارۍ او د کور دننه نور شیان.",
+            "🚗 موټرونه" to "موټرونه، بسونه، لارۍ، موټرسایکلونه، الوتکې او نور وسایط.",
+            "👕 جامې" to "کالي، یونیفورمونه، بوټان، خولۍ او د کرکټرونو نور لوازم.",
+            "🗡️ وسلې" to "د فلم د صحنو لپاره تاریخي، خیالي او نورې نمایشي وسلې.",
+            "🏃 حرکتونه" to "قدم وهل، منډه، ټوپ، کښېناستل، جګړه او نور د بدن حرکتونه.",
+            "🎭 احساسات" to "خندا، غوسه، خپګان، وېره، حیرانتیا او د مخ نور حالتونه.",
+            "🎥 کمرې" to "ثابته کمره، تعقیبي کمره، نږدې او لرې شاټونه او د کمرې حرکتونه.",
+            "🔊 غږونه او موسیقي" to "د چاپېریال غږونه، د قدمونو غږ، اغېزیز غږونه، خبرې او موسیقي.",
+            "📻 مخابرې او ټیلیفونونه" to "مخابرې، ګرځنده ټیلیفونونه، پخواني ټیلیفونونه او د اړیکو وسایل.",
+            "🧰 د کار وسایل" to "هامر، پیچ‌کش، زینې، ساختماني او ترمیمي وسایل.",
+            "🩺 طبي وسایل" to "د ډاکټر وسایل، د لومړنۍ مرستې بکس، روغتون او طبي تجهیزات.",
+            "🍎 خوراک او څښاک" to "مېوې، خواړه، بوتلونه، پیالې او د پخلنځي د فلمي صحنو توکي.",
+            "💻 د دفتر توکي" to "کمپیوټرونه، کتابونه، کاغذونه، قلمونه او د دفتر وسایل.",
+            "⚽ سپورټ او لوبې" to "توپونه، د لوبو وسایل، ورزشي تجهیزات او د لوبو صحنې.",
+            "🎒 د سفر وسایل" to "بکسونه، خېمې، د کمپ وسایل او د سفر نور توکي.",
+            "🚦 د سړک توکي" to "د ترافیک نښې، څراغونه، د سړک خنډونه او د ښار د لارې وسایل.",
+            "💡 برېښنايي توکي" to "څراغونه، تلویزیونونه، سپیکرونه او نور برېښنايي وسایل.",
+            "📦 نور فلمي توکي" to "هغه نور ماډلونه او د صحنې شیان چې په نورو کټګوریو کې نه وي."
+        )
+
+        val scroll = ScrollView(this).apply { setBackgroundColor(Color.rgb(12, 18, 34)) }
+        val page = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            layoutDirection = View.LAYOUT_DIRECTION_RTL
+            setPadding(dp(16), dp(18), dp(16), dp(24))
+        }
+        addAssetPageHeader(page, "🧰 د فلم توکي") { buildHome() }
+        page.addView(text("د فلم لپاره د اړتیا وړ توکي په لاندې برخو کې وټاکه.", 14, 0xFFD7DCEF.toInt())
+            .apply { setPadding(dp(4), dp(8), dp(4), dp(14)) })
+
+        categories.forEachIndexed { index, item ->
+            if (index % 2 == 0) {
+                val row = LinearLayout(this).apply {
+                    orientation = LinearLayout.HORIZONTAL
+                    layoutDirection = View.LAYOUT_DIRECTION_RTL
+                }
+                val first = makeAssetCategoryButton(item.first, index) {
+                    showAssetCategory(item.first, item.second)
+                }
+                row.addView(first, LinearLayout.LayoutParams(0, dp(76), 1f))
+                if (index + 1 < categories.size) {
+                    val next = categories[index + 1]
+                    val second = makeAssetCategoryButton(next.first, index + 1) {
+                        showAssetCategory(next.first, next.second)
+                    }
+                    val params = LinearLayout.LayoutParams(0, dp(76), 1f).apply {
+                        marginStart = dp(8)
+                    }
+                    row.addView(second, params)
+                }
+                page.addView(row, marginParams(top = 5, bottom = 5))
+            }
+        }
+
+        scroll.addView(page)
+        setContentView(scroll)
     }
 
-    private fun showMovieAssets() {
-        val message = "د فلم جوړولو توکي به په دې برخو کې منظم وي:\n\n" +
-            "🧍 کرکټرونه او موجودات\n" +
-            "🏞️ چاپېریالونه او صحنې\n" +
-            "🪑 شیان او د صحنې وسایل\n" +
-            "🏃 حرکتونه او کړنې\n" +
-            "🎙️ غږونه، خبرې او موسیقي\n" +
-            "🎥 کمرې او د کمرې حرکتونه\n\n" +
-            "دا برخه به په راتلونکو پړاوونو کې د توکو د کتلو، انتخاب او واردولو لپاره بشپړه شي. توکي او فایلونه به د موبایل په ذخیره کې ساتل کېږي."
-        showInfo("🧰 د فلم لپاره کارېدونکي شیان", message)
+    private fun addAssetPageHeader(parent: LinearLayout, title: String, onBack: () -> Unit) {
+        val header = LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+            layoutDirection = View.LAYOUT_DIRECTION_RTL
+            gravity = android.view.Gravity.CENTER_VERTICAL
+        }
+        val back = Button(this).apply {
+            text = "⬅️ شاته"
+            isAllCaps = false
+            textSize = 14f
+            setTextColor(Color.WHITE)
+            background = android.graphics.drawable.GradientDrawable().apply {
+                setColor(0xFF475569.toInt())
+                cornerRadius = dp(12).toFloat()
+            }
+            setOnClickListener { onBack() }
+        }
+        header.addView(back, LinearLayout.LayoutParams(dp(104), dp(48)))
+        val heading = text(title, 20, Color.WHITE, true)
+        header.addView(heading, LinearLayout.LayoutParams(0, dp(52), 1f))
+        parent.addView(header, marginParams(bottom = 12))
+    }
+
+    private fun makeAssetCategoryButton(label: String, index: Int, action: () -> Unit): Button {
+        val colors = intArrayOf(
+            0xFF315B8A.toInt(), 0xFF67509A.toInt(), 0xFF28736C.toInt(),
+            0xFF8A5635.toInt(), 0xFF3D659B.toInt(), 0xFF7A4D72.toInt(),
+            0xFF456D45.toInt(), 0xFF8A4545.toInt()
+        )
+        return Button(this).apply {
+            text = label
+            isAllCaps = false
+            textSize = 14f
+            maxLines = 2
+            setTextColor(Color.WHITE)
+            gravity = android.view.Gravity.CENTER
+            setPadding(dp(6), dp(8), dp(6), dp(8))
+            background = android.graphics.drawable.GradientDrawable().apply {
+                setColor(colors[index % colors.size])
+                setStroke(dp(1), 0xFF9AAED0.toInt())
+                cornerRadius = dp(14).toFloat()
+            }
+            setOnClickListener { action() }
+        }
+    }
+
+    private fun showAssetCategory(title: String, description: String) {
+        val scroll = ScrollView(this).apply { setBackgroundColor(Color.rgb(12, 18, 34)) }
+        val page = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            layoutDirection = View.LAYOUT_DIRECTION_RTL
+            setPadding(dp(18), dp(20), dp(18), dp(24))
+        }
+        addAssetPageHeader(page, title) { showMovieAssets() }
+        page.addView(text(description, 16, 0xFFD7DCEF.toInt())
+            .apply { setPadding(dp(8), dp(16), dp(8), dp(16)) })
+        val empty = text(
+            "د دې برخې د توکو لست لا نه دی ورزیات شوی. په راتلونکي پړاو کې به دلته د توکو انځورونه، درې‌بعدي مخکتنه، معلومات او د فلم لپاره د انتخاب تڼۍ اضافه شي.",
+            14, 0xFFB9C5DE.toInt()
+        )
+        empty.background = android.graphics.drawable.GradientDrawable().apply {
+            setColor(0xFF202E49.toInt())
+            setStroke(dp(1), 0xFF526B9A.toInt())
+            cornerRadius = dp(14).toFloat()
+        }
+        empty.setPadding(dp(16), dp(18), dp(16), dp(18))
+        page.addView(empty, marginParams(top = 8))
+        scroll.addView(page)
+        setContentView(scroll)
     }
 
     private fun showAboutUs() {
