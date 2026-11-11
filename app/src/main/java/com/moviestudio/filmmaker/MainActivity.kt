@@ -264,67 +264,86 @@ class MainActivity : Activity() {
         val page = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
             layoutDirection = View.LAYOUT_DIRECTION_RTL
-            setPadding(dp(16), dp(18), dp(16), dp(24))
+            setPadding(dp(12), dp(16), dp(12), dp(24))
         }
         addAssetPageHeader(page, title) { onBackPressed() }
-        page.addView(text(description, 15, 0xFFD7DCEF.toInt())
-            .apply { setPadding(dp(6), dp(8), dp(6), dp(12)) })
         if (entries.isNotEmpty()) {
             page.addView(text(
-                "📚 ${entries.size} توکي په دې کتابتون کې",
-                17, 0xFFFFD27A.toInt(), true
-            ).apply { setPadding(dp(6), dp(8), dp(6), dp(10)) })
-            page.addView(text(
-                "دا د لومړي پړاو منظم کتالوګ دی. لاندې نومونه او تشریحات ثبت شوي؛ د هر توکي اصلي 3D ماډل، متحرک ریګ او د صحنې لپاره د ځای پر ځای کولو وسیله لا جلا جوړولو ته اړتیا لري.",
-                13, 0xFFB9C5DE.toInt()
-            ).apply { setPadding(dp(8), dp(4), dp(8), dp(14)) })
-            entries.forEachIndexed { index, entry ->
-                val card = LinearLayout(this).apply {
-                    orientation = LinearLayout.VERTICAL
+                "د توکي د انځور د لوی لیدلو او بیې لپاره پر انځور ټچ وکړه. اوس ټول توکي وړیا دي.",
+                14, 0xFFD7DCEF.toInt()
+            ).apply { setPadding(dp(6), dp(8), dp(6), dp(14)) })
+
+            entries.indices.chunked(2).forEach { pair ->
+                val row = LinearLayout(this).apply {
+                    orientation = LinearLayout.HORIZONTAL
                     layoutDirection = View.LAYOUT_DIRECTION_RTL
-                    setPadding(dp(14), dp(12), dp(14), dp(12))
-                    background = android.graphics.drawable.GradientDrawable().apply {
-                        setColor(if (index % 2 == 0) 0xFF202E49.toInt() else 0xFF263752.toInt())
-                        setStroke(dp(1), 0xFF526B9A.toInt())
-                        cornerRadius = dp(14).toFloat()
-                    }
                 }
-                card.addView(text("${index + 1}. ${entry.name}", 16, Color.WHITE, true))
-                card.addView(text(entry.description, 13, 0xFFD0D9EB.toInt())
-                    .apply { setPadding(0, dp(6), 0, dp(8)) })
-                val details = Button(this).apply {
-                    text = "د توکي معلومات"
-                    isAllCaps = false
-                    textSize = 13f
-                    setTextColor(Color.WHITE)
-                    setOnClickListener {
-                        AlertDialog.Builder(this@MainActivity)
-                            .setTitle(entry.name)
-                            .setMessage(
-                                "${entry.description}\n\nد توکي پېژند: ${entry.id}\n\nحالت: د کتالوګ ثبت شوی؛ اصلي 3D فایل لا نه دی ورزیات شوی."
-                            )
-                            .setPositiveButton("سمه ده", null)
-                            .show()
+                pair.forEach { index ->
+                    val image = AssetIllustrationView(this, categoryId!!, index).apply {
+                        contentDescription = "د وړیا فلمي توکي انځور"
+                        setOnClickListener { showAssetPreview(categoryId, index) }
                     }
+                    val tile = LinearLayout(this).apply {
+                        orientation = LinearLayout.VERTICAL
+                        setPadding(dp(5), dp(5), dp(5), dp(5))
+                        background = android.graphics.drawable.GradientDrawable().apply {
+                            setColor(0xFF202E49.toInt())
+                            setStroke(dp(1), 0xFF526B9A.toInt())
+                            cornerRadius = dp(13).toFloat()
+                        }
+                        setOnClickListener { showAssetPreview(categoryId!!, index) }
+                    }
+                    tile.addView(image, LinearLayout.LayoutParams(
+                        LinearLayout.LayoutParams.MATCH_PARENT, dp(142)
+                    ))
+                    val free = text("وړیا • ۰", 13, 0xFF8FE0B1.toInt(), true).apply {
+                        gravity = android.view.Gravity.CENTER
+                        setPadding(0, dp(6), 0, dp(4))
+                    }
+                    tile.addView(free)
+                    val params = LinearLayout.LayoutParams(0, dp(174), 1f).apply {
+                        if (row.childCount > 0) marginStart = dp(8)
+                    }
+                    row.addView(tile, params)
                 }
-                card.addView(details)
-                page.addView(card, marginParams(top = 5, bottom = 5))
+                if (pair.size == 1) {
+                    row.addView(View(this), LinearLayout.LayoutParams(0, dp(174), 1f))
+                }
+                page.addView(row, marginParams(top = 4, bottom = 4))
             }
         } else {
-            val empty = text(
-                "د دې برخې تفصیلي کتابتون به په راتلونکو پړاوونو کې جوړ شي.",
+            page.addView(text(
+                "د دې برخې انځوریز توکي به په راتلونکو پړاوونو کې ورزیات شي.",
                 14, 0xFFB9C5DE.toInt()
-            )
-            empty.background = android.graphics.drawable.GradientDrawable().apply {
-                setColor(0xFF202E49.toInt())
-                setStroke(dp(1), 0xFF526B9A.toInt())
-                cornerRadius = dp(14).toFloat()
-            }
-            empty.setPadding(dp(16), dp(18), dp(16), dp(18))
-            page.addView(empty, marginParams(top = 8))
+            ).apply { setPadding(dp(10), dp(18), dp(10), dp(18)) })
         }
         scroll.addView(page)
         setContentView(scroll)
+    }
+
+    private fun showAssetPreview(categoryId: String, index: Int) {
+        val content = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            gravity = android.view.Gravity.CENTER_HORIZONTAL
+            setPadding(dp(18), dp(14), dp(18), dp(8))
+            setBackgroundColor(0xFF17243A.toInt())
+        }
+        val preview = AssetIllustrationView(this, categoryId, index)
+        content.addView(preview, LinearLayout.LayoutParams(
+            dp(280), dp(260)
+        ))
+        content.addView(text("وړیا", 20, 0xFF8FE0B1.toInt(), true).apply {
+            gravity = android.view.Gravity.CENTER
+            setPadding(0, dp(12), 0, dp(3))
+        })
+        content.addView(text("بیه: ۰", 16, Color.WHITE, true).apply {
+            gravity = android.view.Gravity.CENTER
+            setPadding(0, dp(2), 0, dp(8))
+        })
+        AlertDialog.Builder(this)
+            .setView(content)
+            .setPositiveButton("بندول", null)
+            .show()
     }
 
     private fun showAboutUs() {
