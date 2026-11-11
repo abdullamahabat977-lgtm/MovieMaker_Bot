@@ -281,7 +281,7 @@ class MainActivity : Activity() {
                 pair.forEach { index ->
                     val image = AssetIllustrationView(this, categoryId!!, index).apply {
                         contentDescription = "د وړیا فلمي توکي انځور"
-                        setOnClickListener { showAssetPreview(categoryId, index) }
+                        setOnClickListener { showAssetPreview(categoryId!!, index) }
                     }
                     val tile = LinearLayout(this).apply {
                         orientation = LinearLayout.VERTICAL
