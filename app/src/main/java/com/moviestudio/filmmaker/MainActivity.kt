@@ -144,31 +144,34 @@ class MainActivity : Activity() {
 
     private fun showMovieAssets() {
         pageHistory.addLast { buildHome() }
+        renderMovieAssets()
+    }
+
+    private fun renderMovieAssets() {
         val categories = listOf(
-            "🧍 کرکټرونه" to "د نارینه وو، ښځو، ماشومانو، پولیسو، سرتېرو، پاچاهانو او نورو انساني کرکټرونو ماډلونه.",
-            "🐉 موجودات" to "ډریگن، حیوانات، خیالي موجودات او نور غیرانساني کرکټرونه.",
-            "🏞️ چاپېریالونه" to "ځنګلونه، غرونه، دښتې، سیندونه، ښارونه او نورې طبیعي یا ښاري صحنې.",
-            "🏠 ودانۍ" to "کورونه، ماڼۍ، دوکانونه، دفترونه، ښوونځي او نورې ودانۍ.",
+            "🧍 کرکټرونه" to "د انسانانو بېلابېل کرکټرونه.",
+            "🐉 موجودات" to "کورني او ځنګلي حیوانات، مرغان او خیالي موجودات.",
+            "🏞️ چاپېریالونه" to "ځنګلونه، غرونه، دښتې، اوبه، کلي او ښارونه.",
+            "🏠 ودانۍ" to "کورونه، ماڼۍ، عامه ودانۍ او د ځمکې بېلابېلې سطحې.",
             "🪑 فرنیچر" to "چوکۍ، مېزونه، تختونه، المارۍ او د کور دننه نور شیان.",
             "🚗 موټرونه" to "موټرونه، بسونه، لارۍ، موټرسایکلونه، الوتکې او نور وسایط.",
             "👕 جامې" to "کالي، یونیفورمونه، بوټان، خولۍ او د کرکټرونو نور لوازم.",
             "🗡️ وسلې" to "د فلم د صحنو لپاره تاریخي، خیالي او نورې نمایشي وسلې.",
-            "🏃 حرکتونه" to "قدم وهل، منډه، ټوپ، کښېناستل، جګړه او نور د بدن حرکتونه.",
-            "🎭 احساسات" to "خندا، غوسه، خپګان، وېره، حیرانتیا او د مخ نور حالتونه.",
-            "🎥 کمرې" to "ثابته کمره، تعقیبي کمره، نږدې او لرې شاټونه او د کمرې حرکتونه.",
-            "🔊 غږونه او موسیقي" to "د چاپېریال غږونه، د قدمونو غږ، اغېزیز غږونه، خبرې او موسیقي.",
-            "📻 مخابرې او ټیلیفونونه" to "مخابرې، ګرځنده ټیلیفونونه، پخواني ټیلیفونونه او د اړیکو وسایل.",
-            "🧰 د کار وسایل" to "هامر، پیچ‌کش، زینې، ساختماني او ترمیمي وسایل.",
-            "🩺 طبي وسایل" to "د ډاکټر وسایل، د لومړنۍ مرستې بکس، روغتون او طبي تجهیزات.",
-            "🍎 خوراک او څښاک" to "مېوې، خواړه، بوتلونه، پیالې او د پخلنځي د فلمي صحنو توکي.",
-            "💻 د دفتر توکي" to "کمپیوټرونه، کتابونه، کاغذونه، قلمونه او د دفتر وسایل.",
-            "⚽ سپورټ او لوبې" to "توپونه، د لوبو وسایل، ورزشي تجهیزات او د لوبو صحنې.",
-            "🎒 د سفر وسایل" to "بکسونه، خېمې، د کمپ وسایل او د سفر نور توکي.",
-            "🚦 د سړک توکي" to "د ترافیک نښې، څراغونه، د سړک خنډونه او د ښار د لارې وسایل.",
-            "💡 برېښنايي توکي" to "څراغونه، تلویزیونونه، سپیکرونه او نور برېښنايي وسایل.",
-            "📦 نور فلمي توکي" to "هغه نور ماډلونه او د صحنې شیان چې په نورو کټګوریو کې نه وي."
+            "🏃 حرکتونه" to "قدم وهل، منډه، ټوپ، کښېناستل او نور د بدن حرکتونه.",
+            "🎭 احساسات" to "خندا، غوسه، خپګان، وېره او د مخ نور حالتونه.",
+            "🎥 کمرې" to "ثابته کمره، تعقیبي کمره، نږدې او لرې شاټونه.",
+            "🔊 غږونه او موسیقي" to "د چاپېریال غږونه، اغېزیز غږونه، خبرې او موسیقي.",
+            "📻 مخابرې او ټیلیفونونه" to "مخابرې او د اړیکو وسایل.",
+            "🧰 د کار وسایل" to "هامر، پیچ‌کش، زینې او ساختماني وسایل.",
+            "🩺 طبي وسایل" to "د ډاکټر وسایل او طبي تجهیزات.",
+            "🍎 خوراک او څښاک" to "مېوې، خواړه، بوتلونه او د پخلنځي توکي.",
+            "💻 د دفتر توکي" to "کمپیوټرونه، کتابونه، کاغذونه او قلمونه.",
+            "⚽ سپورټ او لوبې" to "توپونه او ورزشي تجهیزات.",
+            "🎒 د سفر وسایل" to "بکسونه، خېمې او د سفر نور توکي.",
+            "🚦 د سړک توکي" to "د ترافیک نښې او د سړک وسایل.",
+            "💡 برېښنايي توکي" to "څراغونه، تلویزیونونه او نور برېښنايي وسایل.",
+            "📦 نور فلمي توکي" to "نور ماډلونه او د صحنې شیان."
         )
-
         val scroll = ScrollView(this).apply { setBackgroundColor(Color.rgb(12, 18, 34)) }
         val page = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
@@ -176,9 +179,10 @@ class MainActivity : Activity() {
             setPadding(dp(16), dp(18), dp(16), dp(24))
         }
         addAssetPageHeader(page, "🧰 د فلم توکي") { onBackPressed() }
-        page.addView(text("د فلم لپاره د اړتیا وړ توکي په لاندې برخو کې وټاکه.", 14, 0xFFD7DCEF.toInt())
-            .apply { setPadding(dp(4), dp(8), dp(4), dp(14)) })
-
+        page.addView(text(
+            "د فلم لپاره توکي په لاندې برخو کې وټاکه. لومړني څلور کتابتونونه د ۸۰ توکو منظم نوملړ لري.",
+            14, 0xFFD7DCEF.toInt()
+        ).apply { setPadding(dp(4), dp(8), dp(4), dp(14)) })
         categories.forEachIndexed { index, item ->
             if (index % 2 == 0) {
                 val row = LinearLayout(this).apply {
@@ -202,7 +206,6 @@ class MainActivity : Activity() {
                 page.addView(row, marginParams(top = 5, bottom = 5))
             }
         }
-
         scroll.addView(page)
         setContentView(scroll)
     }
@@ -254,27 +257,72 @@ class MainActivity : Activity() {
     }
 
     private fun showAssetCategory(title: String, description: String) {
-        pageHistory.addLast { showMovieAssets() }
+        pageHistory.addLast { renderMovieAssets() }
+        val categoryId = MovieAssetLibrary.categoryIdForTitle(title)
+        val entries = categoryId?.let { MovieAssetLibrary.forCategory(it) }.orEmpty()
         val scroll = ScrollView(this).apply { setBackgroundColor(Color.rgb(12, 18, 34)) }
         val page = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
             layoutDirection = View.LAYOUT_DIRECTION_RTL
-            setPadding(dp(18), dp(20), dp(18), dp(24))
+            setPadding(dp(16), dp(18), dp(16), dp(24))
         }
         addAssetPageHeader(page, title) { onBackPressed() }
-        page.addView(text(description, 16, 0xFFD7DCEF.toInt())
-            .apply { setPadding(dp(8), dp(16), dp(8), dp(16)) })
-        val empty = text(
-            "د دې برخې د توکو لست لا نه دی ورزیات شوی. په راتلونکي پړاو کې به دلته د توکو انځورونه، درې‌بعدي مخکتنه، معلومات او د فلم لپاره د انتخاب تڼۍ اضافه شي.",
-            14, 0xFFB9C5DE.toInt()
-        )
-        empty.background = android.graphics.drawable.GradientDrawable().apply {
-            setColor(0xFF202E49.toInt())
-            setStroke(dp(1), 0xFF526B9A.toInt())
-            cornerRadius = dp(14).toFloat()
+        page.addView(text(description, 15, 0xFFD7DCEF.toInt())
+            .apply { setPadding(dp(6), dp(8), dp(6), dp(12)) })
+        if (entries.isNotEmpty()) {
+            page.addView(text(
+                "📚 ${entries.size} توکي په دې کتابتون کې",
+                17, 0xFFFFD27A.toInt(), true
+            ).apply { setPadding(dp(6), dp(8), dp(6), dp(10)) })
+            page.addView(text(
+                "دا د لومړي پړاو منظم کتالوګ دی. لاندې نومونه او تشریحات ثبت شوي؛ د هر توکي اصلي 3D ماډل، متحرک ریګ او د صحنې لپاره د ځای پر ځای کولو وسیله لا جلا جوړولو ته اړتیا لري.",
+                13, 0xFFB9C5DE.toInt()
+            ).apply { setPadding(dp(8), dp(4), dp(8), dp(14)) })
+            entries.forEachIndexed { index, entry ->
+                val card = LinearLayout(this).apply {
+                    orientation = LinearLayout.VERTICAL
+                    layoutDirection = View.LAYOUT_DIRECTION_RTL
+                    setPadding(dp(14), dp(12), dp(14), dp(12))
+                    background = android.graphics.drawable.GradientDrawable().apply {
+                        setColor(if (index % 2 == 0) 0xFF202E49.toInt() else 0xFF263752.toInt())
+                        setStroke(dp(1), 0xFF526B9A.toInt())
+                        cornerRadius = dp(14).toFloat()
+                    }
+                }
+                card.addView(text("${index + 1}. ${entry.name}", 16, Color.WHITE, true))
+                card.addView(text(entry.description, 13, 0xFFD0D9EB.toInt())
+                    .apply { setPadding(0, dp(6), 0, dp(8)) })
+                val details = Button(this).apply {
+                    text = "د توکي معلومات"
+                    isAllCaps = false
+                    textSize = 13f
+                    setTextColor(Color.WHITE)
+                    setOnClickListener {
+                        AlertDialog.Builder(this@MainActivity)
+                            .setTitle(entry.name)
+                            .setMessage(
+                                "${entry.description}\n\nد توکي پېژند: ${entry.id}\n\nحالت: د کتالوګ ثبت شوی؛ اصلي 3D فایل لا نه دی ورزیات شوی."
+                            )
+                            .setPositiveButton("سمه ده", null)
+                            .show()
+                    }
+                }
+                card.addView(details)
+                page.addView(card, marginParams(top = 5, bottom = 5))
+            }
+        } else {
+            val empty = text(
+                "د دې برخې تفصیلي کتابتون به په راتلونکو پړاوونو کې جوړ شي.",
+                14, 0xFFB9C5DE.toInt()
+            )
+            empty.background = android.graphics.drawable.GradientDrawable().apply {
+                setColor(0xFF202E49.toInt())
+                setStroke(dp(1), 0xFF526B9A.toInt())
+                cornerRadius = dp(14).toFloat()
+            }
+            empty.setPadding(dp(16), dp(18), dp(16), dp(18))
+            page.addView(empty, marginParams(top = 8))
         }
-        empty.setPadding(dp(16), dp(18), dp(16), dp(18))
-        page.addView(empty, marginParams(top = 8))
         scroll.addView(page)
         setContentView(scroll)
     }
