@@ -88,6 +88,7 @@ class MainActivity : Activity() {
                 "📽️ نوی فلم جوړول" to { createProjectDialog() }
             )
             addHomeButtonRow(page,
+                "🧊 د 3D صحنې کاري پاڼه" to { open3DWorkspace() },
                 "🧰 د فلم لپاره کارېدونکي شیان" to { showMovieAssets() }
             )
             addHomeButtonRow(page,
@@ -139,6 +140,11 @@ class MainActivity : Activity() {
             row.addView(button, params)
         }
         parent.addView(row, marginParams(top = 5, bottom = 5))
+    }
+
+    private fun open3DWorkspace() {
+        android.util.Log.i("MovieStudio3D", "Opening Scene3DActivity from linked home")
+        startActivity(Intent(this, Scene3DActivity::class.java))
     }
 
     private fun showMovieAssets() {
