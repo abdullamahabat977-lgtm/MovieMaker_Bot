@@ -82,7 +82,7 @@ class AssetIllustrationView(
         val dark=0xFF263449.toInt()
         gradient(c,0xFF263B57.toInt(),0xFF101A2A.toInt())
         // distant atmospheric arches and floor
-        oval(c,160f,148f,116f,116f,0x222CFFFFFF)
+        oval(c,160f,148f,116f,116f,0x222CFFFF.toInt())
         rect(c,0f,265f,320f,320f,0xFF182536.toInt())
         oval(c,160f,278f,77f,12f,0x88000000.toInt())
         // legs, boots, and silhouette vary with the profession/role
