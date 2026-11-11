@@ -22,6 +22,7 @@ class MainActivity : Activity() {
     private val mainHandler = Handler(Looper.getMainLooper())
     private lateinit var accountStatus: TextView
     private var renderedLinkedState: Boolean? = null
+    private val pageHistory = java.util.ArrayDeque<() -> Unit>()
     private lateinit var projectStore: ProjectStore
     private val prefs by lazy { getSharedPreferences("movie_studio_account", MODE_PRIVATE) }
 
@@ -142,6 +143,7 @@ class MainActivity : Activity() {
     }
 
     private fun showMovieAssets() {
+        pageHistory.addLast { buildHome() }
         val categories = listOf(
             "🧍 کرکټرونه" to "د نارینه وو، ښځو، ماشومانو، پولیسو، سرتېرو، پاچاهانو او نورو انساني کرکټرونو ماډلونه.",
             "🐉 موجودات" to "ډریگن، حیوانات، خیالي موجودات او نور غیرانساني کرکټرونه.",
@@ -173,7 +175,7 @@ class MainActivity : Activity() {
             layoutDirection = View.LAYOUT_DIRECTION_RTL
             setPadding(dp(16), dp(18), dp(16), dp(24))
         }
-        addAssetPageHeader(page, "🧰 د فلم توکي") { buildHome() }
+        addAssetPageHeader(page, "🧰 د فلم توکي") { onBackPressed() }
         page.addView(text("د فلم لپاره د اړتیا وړ توکي په لاندې برخو کې وټاکه.", 14, 0xFFD7DCEF.toInt())
             .apply { setPadding(dp(4), dp(8), dp(4), dp(14)) })
 
@@ -252,13 +254,14 @@ class MainActivity : Activity() {
     }
 
     private fun showAssetCategory(title: String, description: String) {
+        pageHistory.addLast { showMovieAssets() }
         val scroll = ScrollView(this).apply { setBackgroundColor(Color.rgb(12, 18, 34)) }
         val page = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
             layoutDirection = View.LAYOUT_DIRECTION_RTL
             setPadding(dp(18), dp(20), dp(18), dp(24))
         }
-        addAssetPageHeader(page, title) { showMovieAssets() }
+        addAssetPageHeader(page, title) { onBackPressed() }
         page.addView(text(description, 16, 0xFFD7DCEF.toInt())
             .apply { setPadding(dp(8), dp(16), dp(8), dp(16)) })
         val empty = text(
@@ -381,6 +384,16 @@ class MainActivity : Activity() {
 
     private fun showAccountDialog() {
         startActivity(Intent(this, AccountLinkActivity::class.java))
+    }
+
+    @Deprecated("Deprecated in Android API; retained for Android 12 device compatibility")
+    override fun onBackPressed() {
+        if (!pageHistory.isEmpty()) {
+            val previousPage = pageHistory.removeLast()
+            previousPage.invoke()
+        } else {
+            super.onBackPressed()
+        }
     }
 
     override fun onResume() {
