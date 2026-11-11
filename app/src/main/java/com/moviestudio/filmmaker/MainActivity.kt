@@ -81,15 +81,27 @@ class MainActivity : Activity() {
                 setStroke(dp(1), 0xFF526B9A.toInt())
                 cornerRadius = dp(16).toFloat()
             }
-            page.addView(accountStatus, marginParams(top = 8, bottom = 10))
-            addButton(page, "👤  زما حساب") { showLinkedAccount() }
-            addButton(page, "⭐  وړیا امکانات") { showInfo("وړیا امکانات", "د حساب له تایید وروسته وړیا امکانات په اتومات ډول فعالېږي. د دغو امکاناتو لپاره امتيازات نه لګېږي.") }
-            addButton(page, "💎  ځانګړي امکانات") { showInfo("ځانګړي امکانات", "ځانګړي امکانات د هر پیک د شرایطو، د سرور له اجازې او د اړوند بیلانس له مخې فعالېږي. امتيازات او USDT 💲 جلا حسابېږي.") }
-            addButton(page, "🛒  د امکاناتو پلورنځی") { showInfo("د امکاناتو پلورنځی", "د پلورنځي او پېرودلو خوندي سیستم به د پیکونو او تادیاتو له بشپړېدو وروسته فعال شي.") }
-            addButton(page, "＋  نوې پروژه جوړه کړه") { createProjectDialog() }
-            addButton(page, "📁  زما فلمونه او پروژې") { showProjects() }
-            addButton(page, "🧊  درې‌بعدي مخکتنه") { show3DPreview() }
-            addButton(page, "⚙️  تنظیمات") { showInfo("تنظیمات", "د اپلیکیشن نور تنظیمات به په راتلونکو پړاوونو کې ورزیاتېږي.") }
+            page.addView(accountStatus, marginParams(top = 8, bottom = 14))
+
+            addHomeButtonRow(page,
+                "🎬 زما جوړ شوي فلمونه" to { showProjects() },
+                "📽️ نوی فلم جوړول" to { createProjectDialog() }
+            )
+            addHomeButtonRow(page,
+                "🧰 د فلم لپاره کارېدونکي شیان" to { showMovieAssets() }
+            )
+            addHomeButtonRow(page,
+                "ℹ️ زموږ په اړه" to { showAboutUs() },
+                "🔒 محرميت تګلاره" to { showPrivacyPolicy() }
+            )
+            addHomeButtonRow(page,
+                "📜 شرایط او اصول" to { showTerms() },
+                "📘 معلومات" to { showAppInformation() }
+            )
+            addHomeButtonRow(page,
+                "👤 زما حساب" to { showLinkedAccount() },
+                "⚙️ تنظیمات" to { showSettings() }
+            )
         }
 
         page.addView(text("د فلم سټوډیو • لاسي درې‌بعدي فلم جوړول", 12, 0xFF8996B2.toInt()).apply {
@@ -98,6 +110,84 @@ class MainActivity : Activity() {
         })
         scroll.addView(page)
         setContentView(scroll)
+    }
+
+    private fun addHomeButtonRow(parent: LinearLayout, vararg items: Pair<String, () -> Unit>) {
+        val row = LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+            layoutDirection = View.LAYOUT_DIRECTION_RTL
+        }
+        items.forEachIndexed { index, item ->
+            val button = Button(this).apply {
+                text = item.first
+                isAllCaps = false
+                textSize = 15f
+                setTextColor(Color.WHITE)
+                gravity = android.view.Gravity.CENTER
+                minHeight = dp(68)
+                setPadding(dp(8), dp(10), dp(8), dp(10))
+                background = android.graphics.drawable.GradientDrawable().apply {
+                    setColor(if (index % 2 == 0) 0xFF344F83.toInt() else 0xFF405D91.toInt())
+                    setStroke(dp(1), 0xFF718BB9.toInt())
+                    cornerRadius = dp(15).toFloat()
+                }
+                setOnClickListener { item.second() }
+            }
+            val params = LinearLayout.LayoutParams(0, dp(68), 1f).apply {
+                if (index > 0) marginStart = dp(8)
+            }
+            row.addView(button, params)
+        }
+        parent.addView(row, marginParams(top = 5, bottom = 5))
+    }
+
+    private fun showMovieAssets() {
+        val message = "د فلم جوړولو توکي به په دې برخو کې منظم وي:\n\n" +
+            "🧍 کرکټرونه او موجودات\n" +
+            "🏞️ چاپېریالونه او صحنې\n" +
+            "🪑 شیان او د صحنې وسایل\n" +
+            "🏃 حرکتونه او کړنې\n" +
+            "🎙️ غږونه، خبرې او موسیقي\n" +
+            "🎥 کمرې او د کمرې حرکتونه\n\n" +
+            "دا برخه به په راتلونکو پړاوونو کې د توکو د کتلو، انتخاب او واردولو لپاره بشپړه شي. توکي او فایلونه به د موبایل په ذخیره کې ساتل کېږي."
+        showInfo("🧰 د فلم لپاره کارېدونکي شیان", message)
+    }
+
+    private fun showAboutUs() {
+        showInfo("ℹ️ زموږ په اړه",
+            "Movie Studio د لاسي درې‌بعدي فلم جوړولو اپلیکیشن دی. کارن به پخپله کرکټرونه، صحنې، حرکتونه، کمره او غږونه تنظیموي او خپل فلم جوړوي. فلمونه د مصنوعي ځیرکتیا په وسیله نه جوړېږي.")
+    }
+
+    private fun showPrivacyPolicy() {
+        showInfo("🔒 محرميت تګلاره",
+            "۱. ستا جوړ شوي فلمونه، پروژې، کرکټرونه، ماډلونه، غږونه او صادرې شوې ویډیوګانې د موبایل په داخلي ذخیره کې ساتل کېږي.\n\n" +
+            "۲. دا شخصي رسنۍ زموږ کلاوډ ته نه پورته کېږي.\n\n" +
+            "۳. کلاوډ یوازې د حساب، د بیلانس، پېرودونو او د امکاناتو د اجازو لپاره اړین محدود معلومات ساتي.\n\n" +
+            "۴. د حساب د نښلولو او کارولو پر مهال د انټرنېټ اړیکه اړینه ده.\n\n" +
+            "۵. د اپلیکیشن د معلوماتو پاکول یا حذفول کېدای شي د موبایل ځینې محلي معلومات هم له منځه یوسي؛ د خپلو مهمو فایلونو بیک‌اپ وساته.")
+    }
+
+    private fun showTerms() {
+        showInfo("📜 شرایط او اصول",
+            "۱. اپلیکیشن د لاسي درې‌بعدي فلم جوړولو لپاره دی؛ د AI فلم جوړولو خدمت نه دی.\n\n" +
+            "۲. کارن د خپلو وارد شوو ماډلونو، انځورونو او غږونو د قانوني کارولو مسؤلیت لري.\n\n" +
+            "۳. د حساب، بیلانس او ځانګړو امکاناتو کارول د سرور د تایید او د هر پیک د څرګندو شرایطو تابع دي.\n\n" +
+            "۴. د موبایل د خرابېدو، ورک کېدو یا د اپلیکیشن د حذفېدو پر مهال محلي پروژې له خطر سره مخ کېدای شي؛ کارن باید خپل مهم فایلونه بیک‌اپ کړي.\n\n" +
+            "۵. د اپلیکیشن د نویو نسخو سره شرایط او امکانات بدلېدای شي. د پېرود یا تادیې ځانګړي شرایط به د فعالېدو پر وخت روښانه ښودل کېږي.")
+    }
+
+    private fun showAppInformation() {
+        showInfo("📘 د اپلیکیشن معلومات",
+            "نوم: Movie Studio\n\n" +
+            "موخه: په موبایل کې د درې‌بعدي فلمونو لاسي جوړول.\n\n" +
+            "د پروژو او فلمونو ځای: د موبایل داخلي ذخیره.\n\n" +
+            "د حساب خدمت: د انټرنېټ له لارې.\n\n" +
+            "د جوړولو اوسنی پړاو: د کور پاڼه او د پروژو بنسټیز مدیریت. د 3D کرکټرونو، حرکتونو، صحنو، مهال‌وېش او ویډیو صادرولو برخې به په جلا پړاوونو کې جوړېږي.")
+    }
+
+    private fun showSettings() {
+        showInfo("⚙️ تنظیمات",
+            "د اپلیکیشن د ژبې، کیفیت، ذخیرې، غږ او نورو تنظیماتو برخې به په راتلونکو پړاوونو کې ورزیاتې شي.")
     }
 
     private fun showInfo(title: String, message: String) {
@@ -313,11 +403,6 @@ class MainActivity : Activity() {
                 }
             }.show()
     }
-    private fun show3DPreview() {
-        // A dedicated Activity gives the OpenGL surface its own Android lifecycle.
-        startActivity(Intent(this, Scene3DActivity::class.java))
-    }
-
     override fun onDestroy() {
         worker.shutdown()
         super.onDestroy()
