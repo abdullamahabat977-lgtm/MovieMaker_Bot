@@ -49,10 +49,17 @@ class AssetIllustrationView(
         stroke(c,x,y,x+w,y,col,2.2f)
     }
     private fun scaled(canvas:Canvas,draw:(Canvas)->Unit) {
-        val side=min(width.toFloat(),height.toFloat()).coerceAtLeast(1f)
+        val w=width.toFloat().coerceAtLeast(1f)
+        val h=height.toFloat().coerceAtLeast(1f)
         val save=canvas.save()
-        canvas.translate((width-side)/2f,(height-side)/2f)
-        canvas.scale(side/320f,side/320f)
+        if (categoryId == MovieAssetLibrary.ENVIRONMENTS || categoryId == MovieAssetLibrary.BUILDINGS) {
+            // Landscape categories fill a wide cinematic frame instead of being squeezed into a square.
+            canvas.scale(w/320f,h/320f)
+        } else {
+            val side=min(w,h)
+            canvas.translate((w-side)/2f,(h-side)/2f)
+            canvas.scale(side/320f,side/320f)
+        }
         draw(canvas)
         canvas.restoreToCount(save)
     }
@@ -132,6 +139,79 @@ class AssetIllustrationView(
             19 -> { rect(c,121f,150f,199f,161f,0xFFB58C4C.toInt(),4f); stroke(c,128f,162f,191f,162f,0xFFFFD77B.toInt(),2f) }
             else -> { detail(c,133f,177f,54f,0x88FFFFFF.toInt()); detail(c,133f,185f,54f,0x66FFFFFF.toInt()) }
         }
+        // Distinct full-body silhouettes and profession-specific equipment.
+        // Every role receives its own outline, footwear and readable prop.
+        when(v) {
+            0 -> { // everyday man: broad shoulders, long trousers, open jacket
+                poly(c,floatArrayOf(118f,130f,202f,130f,211f,226f,109f,226f),0xFF31506C.toInt())
+                stroke(c,137f,222f,128f,265f,0xFF202B3B.toInt(),17f)
+                stroke(c,183f,222f,192f,265f,0xFF202B3B.toInt(),17f)
+                rect(c,111f,263f,143f,279f,0xFF171D26.toInt(),6f); rect(c,177f,263f,209f,279f,0xFF171D26.toInt(),6f)
+            }
+            1 -> { // woman: long coat and shaped silhouette
+                poly(c,floatArrayOf(137f,130f,183f,130f,214f,239f,106f,239f),0xFF8B4F72.toInt())
+                stroke(c,143f,230f,139f,267f,0xFF29283A.toInt(),15f); stroke(c,177f,230f,181f,267f,0xFF29283A.toInt(),15f)
+                rect(c,123f,263f,151f,278f,0xFF33283B.toInt(),7f); rect(c,169f,263f,197f,278f,0xFF33283B.toInt(),7f)
+                stroke(c,135f,150f,112f,204f,skin,15f); stroke(c,185f,150f,208f,204f,skin,15f)
+            }
+            2,3 -> { // children: shorter torso and shorter legs
+                oval(c,160f,180f,43f,51f,cloth)
+                stroke(c,144f,211f,141f,254f,leg,15f); stroke(c,176f,211f,179f,254f,leg,15f)
+                rect(c,126f,248f,151f,263f,0xFF171D26.toInt(),6f); rect(c,169f,248f,194f,263f,0xFF171D26.toInt(),6f)
+                stroke(c,121f,149f,105f,190f,skin,13f); stroke(c,199f,149f,215f,190f,skin,13f)
+            }
+            4,5 -> { // elders: stooped posture, shawl and walking stick
+                stroke(c,145f,147f,126f,210f,skin,15f); stroke(c,190f,147f,207f,208f,skin,15f)
+                stroke(c,206f,170f,220f,270f,0xFF9A7952.toInt(),5f)
+                poly(c,floatArrayOf(115f,133f,204f,133f,221f,231f,104f,231f),0xFF786C63.toInt())
+                stroke(c,145f,222f,139f,265f,0xFF3D3A39.toInt(),16f); stroke(c,180f,222f,185f,265f,0xFF3D3A39.toInt(),16f)
+            }
+            6,7,8 -> { // royal figures: capes, decorated hems and boots
+                poly(c,floatArrayOf(126f,131f,194f,131f,238f,239f,82f,239f),if(v==6)0xFF663F54.toInt() else if(v==7)0xFF3E557C.toInt() else 0xFF865D8D.toInt())
+                for(x in listOf(116f,132f,148f,164f,180f,196f)) oval(c,x,226f,3f,4f,0xFFFFD66F.toInt())
+                rect(c,119f,260f,151f,280f,0xFF29253A.toInt(),5f); rect(c,169f,260f,201f,280f,0xFF29253A.toInt(),5f)
+            }
+            9,10,11 -> { // public safety and military: body armor, pouches, sturdy boots
+                rect(c,120f,139f,200f,215f,0xFF455C4B.toInt(),9f)
+                for(x in listOf(128f,151f,174f)) rect(c,x,175f,x+15f,194f,0xFF263A32.toInt(),3f)
+                stroke(c,140f,216f,132f,266f,0xFF26313A.toInt(),19f); stroke(c,180f,216f,188f,266f,0xFF26313A.toInt(),19f)
+                rect(c,112f,260f,147f,281f,0xFF171D26.toInt(),5f); rect(c,175f,260f,210f,281f,0xFF171D26.toInt(),5f)
+            }
+            12,13 -> { // medical staff: coat, collar and medical emblem
+                poly(c,floatArrayOf(125f,130f,195f,130f,211f,231f,109f,231f),0xFFE7E8E1.toInt())
+                stroke(c,160f,139f,160f,220f,0xFF9FA9A7.toInt(),2f)
+                rect(c,147f,158f,173f,184f,0xFFB8474D.toInt(),4f)
+                rect(c,156f,163f,164f,179f,Color.WHITE,1f); rect(c,151f,167f,169f,175f,Color.WHITE,1f)
+            }
+            14 -> { // teacher: jacket, book and spectacles
+                rect(c,122f,137f,198f,224f,0xFF5D647B.toInt(),12f)
+                rect(c,202f,177f,230f,215f,0xFFB77E43.toInt(),3f)
+                stroke(c,143f,264f,139f,278f,0xFF171D26.toInt(),8f); stroke(c,180f,264f,184f,278f,0xFF171D26.toInt(),8f)
+            }
+            15,16,17 -> { // farmer, builder, engineer: workwear and tools
+                rect(c,119f,139f,201f,222f,0xFF786348.toInt(),8f)
+                rect(c,130f,145f,148f,190f,0xFFB8A27A.toInt(),3f); rect(c,172f,145f,190f,190f,0xFFB8A27A.toInt(),3f)
+                stroke(c,207f,155f,238f,230f,0xFF9D9A8D.toInt(),5f)
+                rect(c,115f,260f,150f,281f,0xFF352F2B.toInt(),5f); rect(c,173f,260f,208f,281f,0xFF352F2B.toInt(),5f)
+            }
+            18 -> { // hero: armored chest, shoulder guards and long boots
+                poly(c,floatArrayOf(118f,130f,202f,130f,220f,226f,100f,226f),0xFF9D343F.toInt())
+                oval(c,119f,145f,17f,17f,0xFFC5A35C.toInt()); oval(c,201f,145f,17f,17f,0xFFC5A35C.toInt())
+                poly(c,floatArrayOf(160f,153f,174f,180f,160f,205f,146f,180f),0xFFFFD36D.toInt())
+                rect(c,114f,259f,149f,282f,0xFF252B39.toInt(),5f); rect(c,171f,259f,206f,282f,0xFF252B39.toInt(),5f)
+            }
+            19 -> { // merchant: layered vest and shoulder satchel
+                rect(c,123f,138f,197f,222f,0xFF9A744B.toInt(),8f)
+                stroke(c,196f,150f,224f,196f,0xFF6B4935.toInt(),5f)
+                rect(c,211f,188f,242f,222f,0xFF8D5C3E.toInt(),5f)
+                stroke(c,140f,221f,136f,266f,0xFF34333B.toInt(),16f); stroke(c,180f,221f,184f,266f,0xFF34333B.toInt(),16f)
+            }
+        }
+        // Visible hands, fingers, separate boots and garment seams complete the full-body read.
+        oval(c,89f,210f,9f,11f,skin); oval(c,231f,210f,9f,11f,skin)
+        stroke(c,85f,211f,81f,218f,0xFF9B6B52.toInt(),1.8f)
+        stroke(c,235f,211f,239f,218f,0xFF9B6B52.toInt(),1.8f)
+        stroke(c,121f,232f,199f,232f,0x66FFFFFF.toInt(),1.5f)
         // small cinematic rim lights
         stroke(c,121f,139f,112f,185f,0x66FFFFFF.toInt(),2f)
         stroke(c,199f,139f,208f,185f,0x66FFFFFF.toInt(),2f)
@@ -169,6 +249,27 @@ class AssetIllustrationView(
                 oval(c,252f,106f,3f,3f,Color.BLACK)
             }
             else -> drawQuadruped(c,v,fur)
+        }
+        // Species-specific markings and silhouettes keep neighbouring animals visually distinct.
+        when(v) {
+            0 -> { for(i in 0..6) stroke(c,191f+i*7f,112f,184f+i*7f,178f,0xFF5B3927.toInt(),3f); oval(c,210f,120f,12f,9f,0xFF8D552E.toInt()) }
+            1 -> { for(i in 0..5) stroke(c,104f+i*19f,143f,115f+i*19f,194f,0xFF2E2525.toInt(),4f) }
+            2 -> { oval(c,151f,137f,24f,18f,0xFFB9B8B2.toInt()); stroke(c,87f,157f,48f,132f,fur,8f) }
+            3 -> { oval(c,149f,176f,18f,13f,0xFFCF9B67.toInt()); stroke(c,84f,174f,56f,151f,fur,6f) }
+            4,5 -> { oval(c,204f,143f,9f,8f,0xFFE9D7C6.toInt()); stroke(c,205f,184f,235f,195f,0xFFB7A18A.toInt(),2f) }
+            6 -> { oval(c,145f,141f,25f,9f,0xFF6D4935.toInt()); stroke(c,114f,135f,96f,117f,fur,4f) }
+            7 -> { oval(c,145f,145f,22f,15f,0xFFB68A52.toInt()); stroke(c,104f,161f,74f,145f,fur,8f) }
+            8,9,10 -> { poly(c,floatArrayOf(135f,139f,145f,104f,155f,139f),0xFFE9D8A9.toInt()); poly(c,floatArrayOf(165f,139f,177f,104f,184f,141f),0xFFE9D8A9.toInt()) }
+            11 -> { oval(c,112f,145f,30f,35f,0xFFB6A49A.toInt()); stroke(c,244f,172f,244f,222f,fur,13f) }
+            12 -> { poly(c,floatArrayOf(205f,115f,209f,72f,222f,118f),0xFF9A805F.toInt()); poly(c,floatArrayOf(224f,115f,251f,75f,242f,124f),0xFF9A805F.toInt()) }
+            13 -> { oval(c,150f,180f,35f,29f,0xFFE7D5C2.toInt()); oval(c,226f,143f,8f,8f,0xFFE7D5C2.toInt()) }
+            14 -> { stroke(c,100f,146f,84f,111f,fur,6f); stroke(c,103f,153f,75f,127f,fur,5f) }
+        }
+        // Hooves, paws, claws and feather highlights make the feet and surfaces readable.
+        if(v !in 15..19) {
+            for(x in listOf(100f,142f,183f,211f)) {
+                rect(c,x-7f,258f,x+8f,270f,if(v==6||v==7||v==8||v==9||v==10)0xFF55473B.toInt() else 0xFF2B2A2B.toInt(),3f)
+            }
         }
         // polished highlights and a soft contact shadow
         oval(c,143f,155f,35f,12f,0x22FFFFFF)
@@ -302,6 +403,30 @@ class AssetIllustrationView(
                 if(v==19) { stroke(c,250f,15f,205f,100f,0x99D9E5F0.toInt(),3f); stroke(c,205f,100f,225f,148f,0x99D9E5F0.toInt(),2f) }
             }
         }
+        // Wider cinematic depth: foreground, middle ground and distant landmarks.
+        when(v) {
+            0,1,2 -> {
+                for(i in 0..4) { val x=i*82f-12f; oval(c,x+24f,220f,35f,49f,if(v==2)0xFFB9C9D7.toInt() else 0xFF2E7651.toInt()); rect(c,x+20f,218f,x+28f,305f,0xFF604733.toInt()) }
+            }
+            3,4,14 -> {
+                poly(c,floatArrayOf(0f,258f,48f,180f,105f,251f,160f,151f,232f,249f,282f,185f,320f,255f),if(v==14)0xFF456B4E.toInt() else 0xFF687F91.toInt())
+                for(i in 0..7) stroke(c,i*47f,275f,i*47f+20f,266f,0x667E8A91.toInt(),2f)
+            }
+            5,6 -> {
+                for(i in 0..8) { val x=i*42f; oval(c,x+18f,250f,25f,11f,0x66E6C58D.toInt()) }
+            }
+            7,15,16 -> {
+                for(i in 0..10) { val x=i*34f; stroke(c,x,292f,x+9f,260f,0xFF9AB76A.toInt(),2f) }
+                if(v==15||v==16) for(i in 0..5) rect(c,i*58f+8f,196f,i*58f+38f,244f,0xFFB68A64.toInt(),3f)
+            }
+            8,9,10,11,12 -> {
+                for(i in 0..10) { val x=i*34f; stroke(c,x,252f,x+18f,246f,0x99D9F5F8.toInt(),2f); stroke(c,x+8f,277f,x+30f,271f,0x77D9F5F8.toInt(),2f) }
+                if(v==12) { oval(c,36f,229f,21f,8f,0xFFEAD5A8.toInt()); oval(c,280f,238f,29f,10f,0xFFEAD5A8.toInt()) }
+            }
+            13 -> { for(i in 0..8) poly(c,floatArrayOf(i*42f,260f,i*42f+20f,220f,i*42f+40f,260f),0xFF59636B.toInt()) }
+            17 -> { for(i in 0..5) rect(c,i*57f+5f,232f,i*57f+45f,246f,0xFF8C775E.toInt(),2f) }
+            18,19 -> { for(i in 0..35) oval(c,(i*83%320).toFloat(),(i*43%170).toFloat(),1.4f,1.4f,0xFFFFE8B1.toInt()) }
+        }
         // atmospheric foreground depth
         rect(c,0f,300f,320f,320f,0x33101B2B.toInt())
     }
@@ -373,6 +498,19 @@ class AssetIllustrationView(
             stroke(c,70f,266f,250f,266f,0x88735E49.toInt(),3f)
             for(y in listOf(137f,198f,257f)) detail(c,75f,y,170f,0x44735E49.toInt())
             if(v==8||v==13) for(x in listOf(103f,217f)) rect(c,x,161f,x+17f,184f,0xFFB6D7E5.toInt(),3f)
+        }
+        // Wider architectural setting: foreground approach, side wings and site context.
+        if(v !in 15..19) {
+            poly(c,floatArrayOf(0f,320f,38f,270f,112f,264f,160f,286f,208f,264f,282f,270f,320f,320f),0xFF8C9A79.toInt())
+            for(i in 0..5) stroke(c,i*64f,299f,i*64f+28f,286f,0x66E8DFC8.toInt(),2f)
+            if(v in 0..4) {
+                rect(c,20f,211f,56f,260f,0xFF6D8A63.toInt(),4f)
+                oval(c,38f,205f,25f,22f,0xFF3F8054.toInt())
+                rect(c,265f,211f,300f,260f,0xFF6D8A63.toInt(),4f)
+                oval(c,282f,205f,25f,22f,0xFF3F8054.toInt())
+            }
+        } else if(v==15) {
+            for(i in 0..5) stroke(c,i*60f,233f,i*60f+30f,233f,0x88D9F2F5.toInt(),2f)
         }
         oval(c,160f,283f,105f,10f,0x55000000.toInt())
     }
