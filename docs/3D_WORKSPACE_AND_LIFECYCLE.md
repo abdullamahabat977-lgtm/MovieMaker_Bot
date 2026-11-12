@@ -3,6 +3,7 @@
 ## Current architecture
 
 - `MainActivity` exposes the 3D preview from both home states (linked and not linked), so the local preview can open without an account or network connection.
+- Local project creation/listing and the built-in starter asset catalogue are also available before account linking; only account, balance and permission services need the network.
 - `Scene3DActivity` owns the 3D workspace and its `Scene3DView`.
 - The 3D workspace is a full Activity page, not an AlertDialog.
 - The Activity provides its own toolbar/back button; Android system Back finishes the Activity normally.

@@ -51,17 +51,27 @@ class MainActivity : Activity() {
         page.addView(text("د خپل فلم جوړولو سټوډیو", 19, 0xFFBFCBFF.toInt(), true))
         page.addView(text(
             if (linked) "ښه راغلاست! ستا حساب په دې موبایل کې خوندي دی."
-            else "خپل فلم په خپل لاس جوړ کړه؛ د پیل لپاره خپل ټېلېګرام بوټ ونښلوه.",
+            else "پروژې او فلمونه په موبایل کې ساتل کېږي؛ د حساب او امتیازاتو لپاره ټېلېګرام بوټ ونښلوه.",
             14, 0xFFD7DCEF.toInt()
         ).apply { setPadding(dp(8), dp(10), dp(8), dp(18)) })
 
+        // محلي فلمي وسایل د حساب له نښلولو پرته هم کار کوي.
+        addHomeButtonRow(page,
+            "🎬 زما جوړ شوي فلمونه" to { showProjects() },
+            "📽️ نوی فلم جوړول" to { createProjectDialog() }
+        )
+        addHomeButtonRow(page,
+            "🧍 د 3D کرکټر مخکتنه" to { open3DWorkspace() }
+        )
+        addHomeButtonRow(page,
+            "🧰 د فلم لپاره کارېدونکي شیان" to { showMovieAssets() }
+        )
+
         if (!linked) {
-            // د 3D مخکتنه آفلاین هم پرانیستل کېدای شي؛ حساب یوازې د حسابي خدمتونو لپاره دی.
-            addButton(page, "🧍  د 3D کرکټر مخکتنه") { open3DWorkspace() }
             addButton(page, "♻️  ټېلېګرام بوټ ونښلوه") { showAccountDialog() }
             addButton(page, "📖  د کارولو لارښود") { showInfo(
                 "د کارولو لارښود",
-                "۱. لومړی له @AI_MovieMaker_Bot سره په ټېلېګرام کې /start وکړه.\n\n۲. دلته د ټېلېګرام بوټ ونښلوه وټاکه او خپله عددي پېژندشمېره ولیکه.\n\n۳. د کوډ غوښتنه وکړه؛ شپږ عددي کوډ به په ټېلېګرام کې درولېږل شي.\n\n۴. کوډ تایید کړه. له بریالي تایید وروسته به وړیا امکانات فعال او د ځانګړو امکاناتو اجازه به ستا د حساب له شرایطو سره سم وکتل شي.\n\n۵. پروژې او فلمونه ستا په موبایل کې ساتل کېږي."
+                "۱. د فلم نوې پروژه جوړه کړه؛ پروژه او فایلونه په موبایل کې ساتل کېږي.\n\n۲. د 3D کرکټر مخکتنه پرانیزه او د پوستکي او کمیس رنګونه وازمویه.\n\n۳. د حساب، بیلانس او ځانګړو حسابي خدمتونو لپاره له @AI_MovieMaker_Bot سره /start وکړه، بیا دلته بوټ ونښلوه.\n\n۴. د فلم جوړولو محلي برخې له انټرنېټ پرته هم کار کوي."
             ) }
             addButton(page, "🔒  محرمیت او معلومات") { showInfo(
                 "محرمیت او معلومات",
@@ -85,16 +95,6 @@ class MainActivity : Activity() {
             }
             page.addView(accountStatus, marginParams(top = 8, bottom = 14))
 
-            addHomeButtonRow(page,
-                "🎬 زما جوړ شوي فلمونه" to { showProjects() },
-                "📽️ نوی فلم جوړول" to { createProjectDialog() }
-            )
-            addHomeButtonRow(page,
-                "🧍 د 3D کرکټر مخکتنه" to { open3DWorkspace() }
-            )
-            addHomeButtonRow(page,
-                "🧰 د فلم لپاره کارېدونکي شیان" to { showMovieAssets() }
-            )
             addHomeButtonRow(page,
                 "ℹ️ زموږ په اړه" to { showAboutUs() },
                 "🔒 محرميت تګلاره" to { showPrivacyPolicy() }
