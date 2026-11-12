@@ -427,6 +427,50 @@ class AssetIllustrationView(
                 else { oval(c,160f,91f,28f,29f,metal); for(i in 0..5) stroke(c,160f,58f+i*12f,160f,124f-i*5f,0xFF8796A5.toInt(),2f) }
             }
             9 -> { stroke(c,160f,89f,160f,250f,0xFF8B66C2.toInt(),12f); oval(c,160f,70f,23f,23f,0xFFB7A2F0.toInt()); oval(c,160f,70f,10f,10f,0xFFFFFFFF.toInt()); for(i in 0..5) stroke(c,160f,92f,95f+i*26f,44f,0x887FBAFF.toInt(),3f) }
+            9 -> { // compact theatrical pistol prop
+                rect(c,88f,124f,232f,155f,0xFF3A4654.toInt(),9f)
+                rect(c,181f,145f,211f,220f,wood,7f)
+                rect(c,100f,112f,226f,130f,metal,5f)
+                rect(c,218f,128f,244f,148f,0xFF26313E.toInt(),4f)
+                stroke(c,125f,155f,125f,171f,0xFFB8C4CE.toInt(),3f)
+            }
+            10 -> { // AK-style recognizable but non-functional movie prop
+                rect(c,60f,126f,248f,151f,0xFF343F4A.toInt(),6f)
+                rect(c,185f,113f,248f,126f,metal,3f)
+                poly(c,floatArrayOf(65f,128f,112f,128f,101f,174f,55f,170f),wood)
+                rect(c,143f,150f,164f,220f,wood,5f)
+                rect(c,110f,116f,170f,126f,0xFF8D989F.toInt(),3f)
+                rect(c,244f,132f,267f,145f,metal,3f)
+                stroke(c,154f,151f,171f,178f,0xFFB8C4CE.toInt(),3f)
+            }
+            11 -> { // long military rifle prop
+                rect(c,45f,129f,270f,147f,0xFF3C4854.toInt(),5f)
+                rect(c,204f,118f,276f,128f,metal,3f)
+                poly(c,floatArrayOf(48f,131f,109f,131f,99f,167f,45f,164f),wood)
+                rect(c,141f,147f,159f,204f,wood,4f)
+                rect(c,91f,117f,125f,130f,0xFF9DAAB4.toInt(),3f)
+            }
+            12 -> { // shotgun prop with twin barrel
+                rect(c,48f,130f,263f,153f,wood,5f)
+                rect(c,155f,111f,277f,124f,metal,4f)
+                rect(c,155f,127f,277f,140f,metal,4f)
+                poly(c,floatArrayOf(48f,132f,112f,132f,101f,177f,43f,170f),0xFF76523A.toInt())
+                rect(c,137f,150f,156f,190f,wood,4f)
+            }
+            13 -> { // oversized mounted movie prop
+                rect(c,50f,119f,273f,163f,0xFF374451.toInt(),8f)
+                rect(c,217f,105f,282f,121f,metal,4f)
+                rect(c,111f,157f,169f,205f,wood,5f)
+                rect(c,75f,205f,207f,220f,0xFF697989.toInt(),5f)
+                for(x in listOf(105f,145f,185f)) oval(c,x,220f,8f,8f,0xFFB8C4CE.toInt())
+            }
+            14 -> { // old field cannon
+                rect(c,62f,138f,250f,169f,0xFF485564.toInt(),10f)
+                rect(c,193f,111f,282f,139f,0xFF596777.toInt(),8f)
+                oval(c,106f,203f,32f,32f,0xFF26313D.toInt()); oval(c,215f,203f,32f,32f,0xFF26313D.toInt())
+                stroke(c,160f,166f,160f,220f,wood,12f)
+                stroke(c,75f,234f,246f,234f,0xFF7D8995.toInt(),7f)
+            }
             12,13,14,15 -> { // helmet and armor pieces
                 if(v==12) { oval(c,160f,112f,76f,61f,metal); rect(c,83f,111f,237f,137f,0xFF8999A8.toInt(),8f); stroke(c,160f,49f,160f,90f,0xFF6E7D8D.toInt(),5f) }
                 else if(v==13) { poly(c,floatArrayOf(90f,89f,230f,89f,251f,238f,160f,276f,69f,238f),metal); stroke(c,160f,103f,160f,245f,0xFF8797A6.toInt(),3f) }
