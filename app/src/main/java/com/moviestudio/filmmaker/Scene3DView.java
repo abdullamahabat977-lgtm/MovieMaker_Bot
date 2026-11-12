@@ -18,6 +18,9 @@ import javax.microedition.khronos.opengles.GL10;
  * One-finger drag orbits the camera; two-finger pinch changes camera distance.
  */
 public final class Scene3DView extends GLSurfaceView {
+    public static final int SCENE_CHARACTER = 0;
+    public static final int SCENE_CUBE = 1;
+
     private final PreviewRenderer previewRenderer;
     private float previousX, previousY, previousPinchDistance;
 
@@ -31,6 +34,12 @@ public final class Scene3DView extends GLSurfaceView {
         previewRenderer = new PreviewRenderer();
         setRenderer(previewRenderer);
         setRenderMode(GLSurfaceView.RENDERMODE_WHEN_DIRTY);
+    }
+
+    /** Selects a lightweight procedural 3D object without rebuilding the GL view. */
+    public void setSceneMode(int mode) {
+        previewRenderer.setSceneMode(mode == SCENE_CUBE ? SCENE_CUBE : SCENE_CHARACTER);
+        requestRender();
     }
 
     private static float spacing(MotionEvent event) {
@@ -91,6 +100,17 @@ public final class Scene3DView extends GLSurfaceView {
             -1,1,1,  1,1,1, 1,1,-1,  -1,1,1, 1,1,-1, -1,1,-1,
             -1,-1,-1, 1,-1,-1, 1,-1,1, -1,-1,-1, 1,-1,1, -1,-1,1
         };
+        // Eight triangular faces form a compact low-poly head mesh.
+        private static final float[] HEAD = {
+             0,1,0,  1,0,0,  0,0,1,
+             0,1,0,  0,0,-1, 1,0,0,
+             0,1,0, -1,0,0, 0,0,-1,
+             0,1,0,  0,0,1, -1,0,0,
+             0,-1,0, 0,0,1, 1,0,0,
+             0,-1,0, 1,0,0, 0,0,-1,
+             0,-1,0, 0,0,-1, -1,0,0,
+             0,-1,0, -1,0,0, 0,0,1
+        };
         private static final float[] FLOOR = {
             -8,-1.16f,-8, 8,-1.16f,-8, 8,-1.16f,8,
             -8,-1.16f,-8, 8,-1.16f,8, -8,-1.16f,8
@@ -108,9 +128,14 @@ public final class Scene3DView extends GLSurfaceView {
         private final float[] model = new float[16];
         private final float[] vp = new float[16];
         private final float[] mvp = new float[16];
-        private FloatBuffer cubeBuffer, floorBuffer, gridBuffer;
+        private FloatBuffer cubeBuffer, headBuffer, floorBuffer, gridBuffer;
         private int program, positionHandle, matrixHandle, colorHandle;
         private volatile float yaw = -25f, pitch = 18f, distance = 8.5f;
+        private volatile int sceneMode = SCENE_CHARACTER;
+
+        void setSceneMode(int mode) {
+            sceneMode = mode;
+        }
         private volatile boolean failed;
 
         void orbit(float dx, float dy) {
@@ -170,6 +195,7 @@ public final class Scene3DView extends GLSurfaceView {
                 GLES20.glDisable(GLES20.GL_CULL_FACE);
 
                 cubeBuffer = buffer(CUBE);
+                headBuffer = buffer(HEAD);
                 floorBuffer = buffer(FLOOR);
                 gridBuffer = makeGrid();
 
@@ -216,8 +242,16 @@ public final class Scene3DView extends GLSurfaceView {
         private void draw(FloatBuffer vertices, int mode, int firstVertex, int count,
                           float[] color, float x, float y, float z,
                           float sx, float sy, float sz) {
+            draw(vertices, mode, firstVertex, count, color,
+                    x, y, z, sx, sy, sz, 0f);
+        }
+
+        private void draw(FloatBuffer vertices, int mode, int firstVertex, int count,
+                          float[] color, float x, float y, float z,
+                          float sx, float sy, float sz, float rotationZ) {
             Matrix.setIdentityM(model, 0);
             Matrix.translateM(model, 0, x, y, z);
+            if (rotationZ != 0f) Matrix.rotateM(model, 0, rotationZ, 0f, 0f, 1f);
             Matrix.scaleM(model, 0, sx, sy, sz);
             Matrix.multiplyMM(mvp, 0, vp, 0, model, 0);
             GLES20.glUniformMatrix4fv(matrixHandle, 1, false, mvp, 0);
@@ -226,6 +260,68 @@ public final class Scene3DView extends GLSurfaceView {
             GLES20.glVertexAttribPointer(positionHandle, 3, GLES20.GL_FLOAT,
                     false, 12, vertices);
             GLES20.glDrawArrays(mode, 0, count);
+        }
+
+        /** Draws an actual low-poly humanoid from reusable 3D primitive meshes. */
+        private void drawCharacter() {
+            final float[] skin = {0.72f, 0.48f, 0.34f, 1f};
+            final float[] shirt = {0.16f, 0.39f, 0.69f, 1f};
+            final float[] shirtLight = {0.28f, 0.54f, 0.84f, 1f};
+            final float[] trousers = {0.13f, 0.20f, 0.32f, 1f};
+            final float[] boots = {0.07f, 0.09f, 0.13f, 1f};
+            final float[] hair = {0.13f, 0.10f, 0.09f, 1f};
+            final float[] eyes = {0.035f, 0.045f, 0.06f, 1f};
+            final int triangles = GLES20.GL_TRIANGLES;
+
+            // Legs and boots.
+            draw(cubeBuffer, triangles, 0, 36, trousers,
+                    -0.17f, -0.68f, 0f, 0.16f, 0.30f, 0.17f, 2f);
+            draw(cubeBuffer, triangles, 0, 36, trousers,
+                     0.17f, -0.68f, 0f, 0.16f, 0.30f, 0.17f, -2f);
+            draw(cubeBuffer, triangles, 0, 36, trousers,
+                    -0.17f, -0.96f, 0f, 0.135f, 0.25f, 0.145f);
+            draw(cubeBuffer, triangles, 0, 36, trousers,
+                     0.17f, -0.96f, 0f, 0.135f, 0.25f, 0.145f);
+            draw(cubeBuffer, triangles, 0, 36, boots,
+                    -0.17f, -1.105f, 0.075f, 0.18f, 0.075f, 0.27f);
+            draw(cubeBuffer, triangles, 0, 36, boots,
+                     0.17f, -1.105f, 0.075f, 0.18f, 0.075f, 0.27f);
+
+            // Waist, torso and neck.
+            draw(cubeBuffer, triangles, 0, 36, trousers,
+                    0f, -0.43f, 0f, 0.31f, 0.19f, 0.21f);
+            draw(cubeBuffer, triangles, 0, 36, shirt,
+                    0f, 0.06f, 0f, 0.38f, 0.49f, 0.23f);
+            draw(cubeBuffer, triangles, 0, 36, shirtLight,
+                    0f, 0.35f, 0.205f, 0.22f, 0.045f, 0.025f);
+            draw(cubeBuffer, triangles, 0, 36, skin,
+                    0f, 0.62f, 0f, 0.12f, 0.15f, 0.12f);
+
+            // Arms are separate 3D pieces; the rotation is around each part's centre.
+            draw(cubeBuffer, triangles, 0, 36, shirt,
+                    -0.48f, 0.08f, 0f, 0.135f, 0.36f, 0.14f, 17f);
+            draw(cubeBuffer, triangles, 0, 36, shirt,
+                     0.48f, 0.08f, 0f, 0.135f, 0.36f, 0.14f, -17f);
+            draw(cubeBuffer, triangles, 0, 36, shirt,
+                    -0.60f, -0.30f, 0f, 0.115f, 0.30f, 0.12f, 6f);
+            draw(cubeBuffer, triangles, 0, 36, shirt,
+                     0.60f, -0.30f, 0f, 0.115f, 0.30f, 0.12f, -6f);
+            draw(cubeBuffer, triangles, 0, 36, skin,
+                    -0.64f, -0.55f, 0f, 0.13f, 0.13f, 0.13f);
+            draw(cubeBuffer, triangles, 0, 36, skin,
+                     0.64f, -0.55f, 0f, 0.13f, 0.13f, 0.13f);
+
+            // Low-poly head, hair and simple facial details.
+            draw(headBuffer, triangles, 0, 24, skin,
+                    0f, 0.94f, 0f, 0.27f, 0.34f, 0.25f);
+            draw(cubeBuffer, triangles, 0, 36, hair,
+                    0f, 1.205f, -0.015f, 0.245f, 0.075f, 0.235f);
+            draw(cubeBuffer, triangles, 0, 36, eyes,
+                    -0.09f, 0.98f, 0.225f, 0.026f, 0.032f, 0.018f);
+            draw(cubeBuffer, triangles, 0, 36, eyes,
+                     0.09f, 0.98f, 0.225f, 0.026f, 0.032f, 0.018f);
+            draw(cubeBuffer, triangles, 0, 36, skin,
+                    0f, 0.91f, 0.255f, 0.035f, 0.055f, 0.035f);
         }
 
         @Override public void onDrawFrame(GL10 gl) {
@@ -248,9 +344,13 @@ public final class Scene3DView extends GLSurfaceView {
                         0f, 0f, 0f, 1f, 1f, 1f);
                 draw(gridBuffer, GLES20.GL_LINES, 0, 17 * 4, GRID_COLOR,
                         0f, 0f, 0f, 1f, 1f, 1f);
-                for (int face = 0; face < 6; face++) {
-                    draw(cubeBuffer, GLES20.GL_TRIANGLES, face * 6, 6, FACE_COLORS[face],
-                            0f, 0f, 0f, 0.85f, 0.85f, 0.85f);
+                if (sceneMode == SCENE_CHARACTER) {
+                    drawCharacter();
+                } else {
+                    for (int face = 0; face < 6; face++) {
+                        draw(cubeBuffer, GLES20.GL_TRIANGLES, face * 6, 6, FACE_COLORS[face],
+                                0f, 0f, 0f, 0.85f, 0.85f, 0.85f);
+                    }
                 }
                 GLES20.glDisableVertexAttribArray(positionHandle);
             } catch (Throwable error) {
