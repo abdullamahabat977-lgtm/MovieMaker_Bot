@@ -286,7 +286,7 @@ class MainActivity : Activity() {
                     layoutDirection = View.LAYOUT_DIRECTION_RTL
                 }
                 pair.forEach { index ->
-                    val image = AssetIllustrationView(this, categoryId!!, index).apply {
+                    val image = AssetIllustrationView(this, categoryId!!, index, entries[index].name).apply {
                         contentDescription = "د وړیا فلمي توکي انځور"
                         setOnClickListener { showAssetPreview(categoryId!!, index) }
                     }
@@ -335,7 +335,8 @@ class MainActivity : Activity() {
             setPadding(dp(18), dp(14), dp(18), dp(8))
             setBackgroundColor(0xFF17243A.toInt())
         }
-        val preview = AssetIllustrationView(this, categoryId, index)
+        val previewName = MovieAssetLibrary.forCategory(categoryId).getOrNull(index)?.name.orEmpty()
+        val preview = AssetIllustrationView(this, categoryId, index, previewName)
         val isWidePreview = categoryId == MovieAssetLibrary.ENVIRONMENTS ||
             categoryId == MovieAssetLibrary.BUILDINGS
         content.addView(preview, LinearLayout.LayoutParams(
