@@ -19,8 +19,10 @@
 
 ## د جوړولو تایید
 - ټول بدلونونه یوازې په `rebuild-v2` څانګه کې ثبت شول؛ `main` او `backup-before-rebuild-20261109` ته هېڅ بدلون ونه لېږل شو.
-- GitHub Actions run #86 د ۲۰۲۶-۱۱-۱۲ په ورځ په بریالیتوب بشپړ شو.
+- د GitHub Actions وروستی کوډي build، run #88، د ۲۰۲۶-۱۱-۱۲ په ورځ په بریالیتوب بشپړ شو.
 - د `Build debug APK` او `Upload APK` دواړه پړاوونه `success` دي.
-- APK artifact: `Movie-Studio-debug-apk`، اندازه 2,363,789 bytes.
-- د Workflow لینک: https://github.com/abdullamahabat977-lgtm/MovieMaker_Bot/actions/runs/43201042443
-- د CI بریالیتوب د کوډ جوړېدل او د APK پورته کېدل تاییدوي؛ د واقعي موبایل د پرانیستلو، رنګونو بدلولو او بیا شاته تګ ازموینه لا د کارن له خوا پاتې ده.
+- APK artifact: `Movie-Studio-debug-apk`، اندازه 2,363,691 bytes.
+- د APK ZIP د SHA-256 نښه: `7a3b375a780bc572d4fbfbb299d55311b6c72828d2f09c7c6aa9457460c200d7`.
+- د Workflow لینک: https://github.com/abdullamahabat977-lgtm/MovieMaker_Bot/actions/runs/43202051447
+- په Build کې یوازې د ځینو Android API زړو ځانګړنو د deprecated خبرتیاوې وې؛ د Kotlin/Java compilation تېروتنه نه وه.
+- CI د APK جوړېدل او پورته کېدل تاییدوي؛ د واقعي موبایل د پرانیستلو، آفلاین پروژې جوړولو، رنګونو بدلولو او شاته تګ ازموینه لا پاتې ده.
