@@ -1,7 +1,7 @@
 package com.moviestudio.filmmaker
 
 /**
- * Curated starter catalogue for the four first Movie Studio asset groups.
+ * Curated local catalogue of Movie Studio asset entries.
  * These are catalogue definitions, not bundled 3D mesh files yet.
  */
 data class MovieAssetEntry(
@@ -82,25 +82,25 @@ object MovieAssetLibrary {
         MovieAssetEntry("clothes_19", "clothes", "چرمي بوټان", "چرمي بوټان؛ د فلمي صحنو لپاره جلا توکی."),
         MovieAssetEntry("clothes_20", "clothes", "سپورتي بوټان", "سپورتي بوټان؛ د فلمي صحنو لپاره جلا توکی."),
         // وسلې — 20 جلا فلمي توکي
-        MovieAssetEntry("weapons_01", "weapons", "تاریخي توره", "تاریخي توره؛ د فلمي صحنو لپاره جلا نمایشي ماډل.")
+        MovieAssetEntry("weapons_01", "weapons", "تاریخي توره", "تاریخي توره؛ د فلمي صحنو لپاره جلا نمایشي ماډل."),
         MovieAssetEntry("weapons_02", "weapons", "لنډ خنجر", "لنډ خنجر؛ د فلمي صحنو لپاره جلا نمایشي ماډل.")
-        MovieAssetEntry("weapons_03", "weapons", "اوږده نېزه", "اوږده نېزه؛ د فلمي صحنو لپاره جلا نمایشي ماډل.")
+        MovieAssetEntry("weapons_03", "weapons", "اوږده نېزه", "اوږده نېزه؛ د فلمي صحنو لپاره جلا نمایشي ماډل."),
         MovieAssetEntry("weapons_04", "weapons", "تیر او لینده", "تیر او لینده؛ د فلمي صحنو لپاره جلا نمایشي ماډل.")
-        MovieAssetEntry("weapons_05", "weapons", "کمان", "کمان؛ د فلمي صحنو لپاره جلا نمایشي ماډل.")
+        MovieAssetEntry("weapons_05", "weapons", "کمان", "کمان؛ د فلمي صحنو لپاره جلا نمایشي ماډل."),
         MovieAssetEntry("weapons_06", "weapons", "لرګین ډال", "لرګین ډال؛ د فلمي صحنو لپاره جلا نمایشي ماډل.")
-        MovieAssetEntry("weapons_07", "weapons", "فلزي ډال", "فلزي ډال؛ د فلمي صحنو لپاره جلا نمایشي ماډل.")
+        MovieAssetEntry("weapons_07", "weapons", "فلزي ډال", "فلزي ډال؛ د فلمي صحنو لپاره جلا نمایشي ماډل."),
         MovieAssetEntry("weapons_08", "weapons", "جنګي چماق", "جنګي چماق؛ د فلمي صحنو لپاره جلا نمایشي ماډل.")
-        MovieAssetEntry("weapons_09", "weapons", "جادويي امسا", "جادويي امسا؛ د فلمي صحنو لپاره جلا نمایشي ماډل.")
+        MovieAssetEntry("weapons_09", "weapons", "جادويي امسا", "جادويي امسا؛ د فلمي صحنو لپاره جلا نمایشي ماډل."),
         MovieAssetEntry("weapons_10", "weapons", "تومانچه", "تومانچه؛ د فلمي صحنو لپاره جلا نمایشي ماډل.")
-        MovieAssetEntry("weapons_11", "weapons", "کلاشینکوف", "کلاشینکوف؛ د فلمي صحنو لپاره جلا نمایشي ماډل.")
+        MovieAssetEntry("weapons_11", "weapons", "کلاشینکوف", "کلاشینکوف؛ د فلمي صحنو لپاره جلا نمایشي ماډل."),
         MovieAssetEntry("weapons_12", "weapons", "پوځي توپک", "پوځي توپک؛ د فلمي صحنو لپاره جلا نمایشي ماډل.")
-        MovieAssetEntry("weapons_13", "weapons", "شکاری توپک", "شکاری توپک؛ د فلمي صحنو لپاره جلا نمایشي ماډل.")
+        MovieAssetEntry("weapons_13", "weapons", "شکاری توپک", "شکاری توپک؛ د فلمي صحنو لپاره جلا نمایشي ماډل."),
         MovieAssetEntry("weapons_14", "weapons", "دروند ماشیني توپک (نمایشي)", "دروند ماشیني توپک (نمایشي)؛ د فلمي صحنو لپاره جلا نمایشي ماډل.")
-        MovieAssetEntry("weapons_15", "weapons", "توپ", "توپ؛ د فلمي صحنو لپاره جلا نمایشي ماډل.")
+        MovieAssetEntry("weapons_15", "weapons", "توپ", "توپ؛ د فلمي صحنو لپاره جلا نمایشي ماډل."),
         MovieAssetEntry("weapons_16", "weapons", "د زغرو خولۍ", "د زغرو خولۍ؛ د فلمي صحنو لپاره جلا نمایشي ماډل.")
-        MovieAssetEntry("weapons_17", "weapons", "د سینې زغره", "د سینې زغره؛ د فلمي صحنو لپاره جلا نمایشي ماډل.")
+        MovieAssetEntry("weapons_17", "weapons", "د سینې زغره", "د سینې زغره؛ د فلمي صحنو لپاره جلا نمایشي ماډل."),
         MovieAssetEntry("weapons_18", "weapons", "د لاس زغره", "د لاس زغره؛ د فلمي صحنو لپاره جلا نمایشي ماډل.")
-        MovieAssetEntry("weapons_19", "weapons", "د پښو زغره", "د پښو زغره؛ د فلمي صحنو لپاره جلا نمایشي ماډل.")
+        MovieAssetEntry("weapons_19", "weapons", "د پښو زغره", "د پښو زغره؛ د فلمي صحنو لپاره جلا نمایشي ماډل."),
         MovieAssetEntry("weapons_20", "weapons", "خیالي جنګي تبر", "خیالي جنګي تبر؛ د فلمي صحنو لپاره جلا نمایشي ماډل.")
         // حرکتونه — 20 جلا فلمي توکي
         MovieAssetEntry("motions_01", "motions", "عادي قدم وهل", "عادي قدم وهل؛ د فلمي صحنو لپاره جلا توکی."),
