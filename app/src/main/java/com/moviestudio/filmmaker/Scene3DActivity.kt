@@ -65,7 +65,7 @@ class Scene3DActivity : Activity() {
         root.addView(toolbar)
 
         val instructions = TextView(this).apply {
-            text = "یوه ګوته: کمره تاوول  •  دوه ګوتې: زوم"
+            text = "یوه ګوته: کمره تاوول  •  دوه ګوتې: زوم  •  د 3D کرکټر او مکعب ترمنځ انتخاب"
             textSize = 13f
             setTextColor(0xFFD7DCEF.toInt())
             gravity = Gravity.CENTER
@@ -73,20 +73,45 @@ class Scene3DActivity : Activity() {
         }
         root.addView(instructions)
 
-        try {
-            val renderer = Scene3DView(this)
-            sceneView = renderer
-            root.addView(renderer, LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT, 0, 1f
-            ))
+        val renderer = try {
+            Scene3DView(this).also { sceneView = it }
         } catch (error: RuntimeException) {
             android.util.Log.e("MovieStudio3D", "Could not create GLSurfaceView", error)
             showRendererFailure()
             return
         }
 
+        val modeBar = LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+            layoutDirection = View.LAYOUT_DIRECTION_RTL
+            gravity = Gravity.CENTER
+            setPadding(dp(10), dp(4), dp(10), dp(4))
+        }
+        fun modeButton(label: String, mode: Int): Button = Button(this).apply {
+            text = label
+            isAllCaps = false
+            textSize = 14f
+            setTextColor(Color.WHITE)
+            minHeight = dp(44)
+            background = android.graphics.drawable.GradientDrawable().apply {
+                setColor(if (mode == Scene3DView.SCENE_CHARACTER) 0xFF315D91.toInt() else 0xFF40516C.toInt())
+                setStroke(dp(1), 0xFF8199BD.toInt())
+                cornerRadius = dp(12).toFloat()
+            }
+            setOnClickListener { renderer.setSceneMode(mode) }
+        }
+        modeBar.addView(modeButton("🧍  3D کرکټر", Scene3DView.SCENE_CHARACTER),
+            LinearLayout.LayoutParams(0, dp(48), 1f))
+        modeBar.addView(modeButton("🧊  مکعب", Scene3DView.SCENE_CUBE),
+            LinearLayout.LayoutParams(0, dp(48), 1f).apply { marginStart = dp(8) })
+        root.addView(modeBar)
+
+        root.addView(renderer, LinearLayout.LayoutParams(
+            LinearLayout.LayoutParams.MATCH_PARENT, 0, 1f
+        ))
+
         val footer = TextView(this).apply {
-            text = "اوس د ازموینې مکعب او ځمکنۍ شبکه ښکاري؛ د کرکټرونو او GLB ماډلونو واردول لا د جوړولو په پړاو کې دي."
+            text = "دا د لاسي جوړ شوي ټیټ‌پولي 3D کرکټر لومړنۍ نمونه ده؛ ریګ، انیمېشن، GLB واردول او د پروژې خوندي کول په راتلونکو پړاوونو کې جوړېږي."
             textSize = 12f
             setTextColor(0xFFD7DCEF.toInt())
             gravity = Gravity.CENTER
