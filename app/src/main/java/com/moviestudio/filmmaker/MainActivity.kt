@@ -56,7 +56,8 @@ class MainActivity : Activity() {
         ).apply { setPadding(dp(8), dp(10), dp(8), dp(18)) })
 
         if (!linked) {
-            // Before account linking, show exactly the four approved entry buttons.
+            // د 3D مخکتنه آفلاین هم پرانیستل کېدای شي؛ حساب یوازې د حسابي خدمتونو لپاره دی.
+            addButton(page, "🧍  د 3D کرکټر مخکتنه") { open3DWorkspace() }
             addButton(page, "♻️  ټېلېګرام بوټ ونښلوه") { showAccountDialog() }
             addButton(page, "📖  د کارولو لارښود") { showInfo(
                 "د کارولو لارښود",
@@ -87,6 +88,9 @@ class MainActivity : Activity() {
             addHomeButtonRow(page,
                 "🎬 زما جوړ شوي فلمونه" to { showProjects() },
                 "📽️ نوی فلم جوړول" to { createProjectDialog() }
+            )
+            addHomeButtonRow(page,
+                "🧍 د 3D کرکټر مخکتنه" to { open3DWorkspace() }
             )
             addHomeButtonRow(page,
                 "🧰 د فلم لپاره کارېدونکي شیان" to { showMovieAssets() }
@@ -447,6 +451,10 @@ class MainActivity : Activity() {
         } catch (_: Exception) {
             showInfo("زما حساب", "د حساب معلومات سم نه لوستل کېږي؛ انټرنېټ ته وصل شه او بیا هڅه وکړه.")
         }
+    }
+
+    private fun open3DWorkspace() {
+        startActivity(Intent(this, Scene3DActivity::class.java))
     }
 
     private fun showAccountDialog() {

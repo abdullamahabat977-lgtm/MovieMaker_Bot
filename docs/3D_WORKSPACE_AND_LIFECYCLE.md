@@ -2,13 +2,14 @@
 
 ## Current architecture
 
-- The 3D preview is launched from `MainActivity` with an explicit Intent.
+- `MainActivity` exposes the 3D preview from both home states (linked and not linked), so the local preview can open without an account or network connection.
 - `Scene3DActivity` owns the 3D workspace and its `Scene3DView`.
 - The 3D workspace is a full Activity page, not an AlertDialog.
 - The Activity provides its own toolbar/back button; Android system Back finishes the Activity normally.
 - `Scene3DView` uses OpenGL ES 2.0 and requests an RGB565/depth16 EGL framebuffer to improve compatibility with lower-end mobile GPUs.
 - The default scene now renders a static low-poly humanoid built from reusable cube and octahedron meshes; the toolbar controls can switch to the diagnostic cube.
 - The mannequin is a first procedural 3D mesh, not yet a rigged character: GLB import, skeletal animation, project persistence and editable transforms remain future work.
+- The preview now provides four skin-tone choices and six shirt-color choices. These change the procedural mesh preview immediately but are not yet saved to a character or project.
 - The 80-item starter catalogue currently contains metadata and 2D illustrated previews; those thumbnails are not 3D model files.
 - OpenGL ES 2.0 is declared as an optional device feature. The Activity checks runtime support before creating the renderer.
 - Projects, user-created assets and movie exports remain local to the phone.
@@ -27,6 +28,7 @@
 - Launch the app and open the 3D workspace.
 - Confirm the page fills the available screen and shows the low-poly character/grid.
 - Switch between the character and diagnostic cube controls; both should render without recreating the Activity.
+- Change each skin-tone and shirt-color swatch; verify the character updates and the cube remains unchanged.
 - Drag with one finger and pinch with two fingers.
 - Use the toolbar Back button and Android system Back; the app should return to the home screen without closing.
 - Reopen the 3D page several times.
