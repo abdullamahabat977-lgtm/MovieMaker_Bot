@@ -106,12 +106,31 @@ class Scene3DActivity : Activity() {
             LinearLayout.LayoutParams(0, dp(48), 1f).apply { marginStart = dp(8) })
         root.addView(modeBar)
 
+        // د کرکټر د بڼې ساده رنګ‌بدلوونکی؛ دا انتخابونه اوس یوازې د مخکتنې لپاره دي.
+        val palettePanel = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            layoutDirection = View.LAYOUT_DIRECTION_RTL
+            setPadding(dp(10), dp(3), dp(10), dp(3))
+            setBackgroundColor(0xFF1A263B.toInt())
+        }
+        addPaletteRow(
+            palettePanel,
+            "د پوستکي رنګ",
+            listOf("#E8B98F", "#B87A56", "#8A583C", "#5B3828")
+        ) { renderer.setSkinPalette(it) }
+        addPaletteRow(
+            palettePanel,
+            "د کمیس رنګ",
+            listOf("#2963B0", "#B63D42", "#26835A", "#7350A8", "#C58A2A", "#38465B")
+        ) { renderer.setShirtPalette(it) }
+        root.addView(palettePanel)
+
         root.addView(renderer, LinearLayout.LayoutParams(
             LinearLayout.LayoutParams.MATCH_PARENT, 0, 1f
         ))
 
         val footer = TextView(this).apply {
-            text = "دا د لاسي جوړ شوي ټیټ‌پولي 3D کرکټر لومړنۍ نمونه ده؛ ریګ، انیمېشن، GLB واردول او د پروژې خوندي کول په راتلونکو پړاوونو کې جوړېږي."
+            text = "د پوستکي او کمیس رنګونه بدل کړه. دا رنګونه اوس یوازې په مخکتنه کې ښکاري؛ د کرکټر خوندي کول، ریګ او حرکتونه په راتلونکو پړاوونو کې جوړېږي."
             textSize = 12f
             setTextColor(0xFFD7DCEF.toInt())
             gravity = Gravity.CENTER
@@ -119,6 +138,63 @@ class Scene3DActivity : Activity() {
         }
         root.addView(footer)
         setContentView(root)
+    }
+
+    private fun addPaletteRow(
+        parent: LinearLayout,
+        titleText: String,
+        colors: List<String>,
+        onSelect: (Int) -> Unit
+    ) {
+        val row = LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+            layoutDirection = View.LAYOUT_DIRECTION_RTL
+            gravity = Gravity.CENTER_VERTICAL
+        }
+        val label = TextView(this).apply {
+            text = titleText
+            textSize = 12f
+            setTextColor(Color.WHITE)
+            gravity = Gravity.CENTER_VERTICAL or Gravity.RIGHT
+            maxLines = 2
+        }
+        row.addView(label, LinearLayout.LayoutParams(dp(98), dp(42)))
+
+        val scroller = android.widget.HorizontalScrollView(this).apply {
+            isHorizontalScrollBarEnabled = false
+            layoutDirection = View.LAYOUT_DIRECTION_RTL
+        }
+        val chips = LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+            layoutDirection = View.LAYOUT_DIRECTION_RTL
+            gravity = Gravity.CENTER_VERTICAL
+        }
+        colors.forEachIndexed { index, hex ->
+            val chip = Button(this).apply {
+                text = "●"
+                textSize = 17f
+                isAllCaps = false
+                minWidth = dp(42)
+                minHeight = dp(40)
+                setPadding(0, 0, 0, 0)
+                setTextColor(Color.WHITE)
+                contentDescription = "$titleText ${index + 1}"
+                background = android.graphics.drawable.GradientDrawable().apply {
+                    setColor(Color.parseColor(hex))
+                    setStroke(dp(1), 0xFFE5EAF5.toInt())
+                    cornerRadius = dp(10).toFloat()
+                }
+                setOnClickListener { onSelect(index) }
+            }
+            chips.addView(chip, LinearLayout.LayoutParams(dp(44), dp(40)).apply {
+                marginStart = dp(5)
+            })
+        }
+        scroller.addView(chips)
+        row.addView(scroller, LinearLayout.LayoutParams(0, dp(44), 1f))
+        parent.addView(row, LinearLayout.LayoutParams(
+            LinearLayout.LayoutParams.MATCH_PARENT, dp(46)
+        ).apply { topMargin = dp(1) })
     }
 
     private fun supportsOpenGles2(): Boolean {

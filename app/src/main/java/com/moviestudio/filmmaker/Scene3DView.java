@@ -42,6 +42,18 @@ public final class Scene3DView extends GLSurfaceView {
         requestRender();
     }
 
+    /** Changes the preview character's skin palette without recreating the renderer. */
+    public void setSkinPalette(int index) {
+        previewRenderer.setSkinPalette(index);
+        requestRender();
+    }
+
+    /** Changes the preview character's shirt palette without recreating the renderer. */
+    public void setShirtPalette(int index) {
+        previewRenderer.setShirtPalette(index);
+        requestRender();
+    }
+
     private static float spacing(MotionEvent event) {
         if (event.getPointerCount() < 2) return 0f;
         float dx = event.getX(0) - event.getX(1);
@@ -120,6 +132,25 @@ public final class Scene3DView extends GLSurfaceView {
             {0.18f,0.55f,0.78f,1f}, {0.20f,0.38f,0.64f,1f},
             {0.98f,0.68f,0.20f,1f}, {0.45f,0.31f,0.18f,1f}
         };
+        // Static palettes avoid allocating new color arrays on every rendered frame.
+        private static final float[][] SKIN_PALETTES = {
+            {0.91f,0.73f,0.56f,1f}, {0.72f,0.48f,0.34f,1f},
+            {0.54f,0.35f,0.24f,1f}, {0.36f,0.22f,0.16f,1f}
+        };
+        private static final float[][] SHIRT_PALETTES = {
+            {0.16f,0.39f,0.69f,1f}, {0.71f,0.24f,0.26f,1f},
+            {0.15f,0.51f,0.35f,1f}, {0.45f,0.31f,0.66f,1f},
+            {0.77f,0.54f,0.16f,1f}, {0.22f,0.27f,0.36f,1f}
+        };
+        private static final float[][] SHIRT_LIGHT_PALETTES = {
+            {0.28f,0.54f,0.84f,1f}, {0.84f,0.36f,0.38f,1f},
+            {0.29f,0.70f,0.50f,1f}, {0.61f,0.47f,0.82f,1f},
+            {0.90f,0.71f,0.36f,1f}, {0.40f,0.46f,0.56f,1f}
+        };
+        private static final float[] TROUSERS_COLOR = {0.13f,0.20f,0.32f,1f};
+        private static final float[] BOOTS_COLOR = {0.07f,0.09f,0.13f,1f};
+        private static final float[] HAIR_COLOR = {0.13f,0.10f,0.09f,1f};
+        private static final float[] EYE_COLOR = {0.035f,0.045f,0.06f,1f};
         private static final float[] FLOOR_COLOR = {0.19f,0.34f,0.25f,1f};
         private static final float[] GRID_COLOR = {0.48f,0.61f,0.52f,1f};
 
@@ -132,9 +163,19 @@ public final class Scene3DView extends GLSurfaceView {
         private int program, positionHandle, matrixHandle, colorHandle;
         private volatile float yaw = -25f, pitch = 18f, distance = 8.5f;
         private volatile int sceneMode = SCENE_CHARACTER;
+        private volatile int skinPaletteIndex = 1;
+        private volatile int shirtPaletteIndex = 0;
 
         void setSceneMode(int mode) {
             sceneMode = mode;
+        }
+
+        void setSkinPalette(int index) {
+            skinPaletteIndex = Math.max(0, Math.min(SKIN_PALETTES.length - 1, index));
+        }
+
+        void setShirtPalette(int index) {
+            shirtPaletteIndex = Math.max(0, Math.min(SHIRT_PALETTES.length - 1, index));
         }
         private volatile boolean failed;
 
@@ -264,31 +305,27 @@ public final class Scene3DView extends GLSurfaceView {
 
         /** Draws an actual low-poly humanoid from reusable 3D primitive meshes. */
         private void drawCharacter() {
-            final float[] skin = {0.72f, 0.48f, 0.34f, 1f};
-            final float[] shirt = {0.16f, 0.39f, 0.69f, 1f};
-            final float[] shirtLight = {0.28f, 0.54f, 0.84f, 1f};
-            final float[] trousers = {0.13f, 0.20f, 0.32f, 1f};
-            final float[] boots = {0.07f, 0.09f, 0.13f, 1f};
-            final float[] hair = {0.13f, 0.10f, 0.09f, 1f};
-            final float[] eyes = {0.035f, 0.045f, 0.06f, 1f};
+            final float[] skin = SKIN_PALETTES[skinPaletteIndex];
+            final float[] shirt = SHIRT_PALETTES[shirtPaletteIndex];
+            final float[] shirtLight = SHIRT_LIGHT_PALETTES[shirtPaletteIndex];
             final int triangles = GLES20.GL_TRIANGLES;
 
             // Legs and boots.
-            draw(cubeBuffer, triangles, 0, 36, trousers,
+            draw(cubeBuffer, triangles, 0, 36, TROUSERS_COLOR,
                     -0.17f, -0.68f, 0f, 0.16f, 0.30f, 0.17f, 2f);
-            draw(cubeBuffer, triangles, 0, 36, trousers,
+            draw(cubeBuffer, triangles, 0, 36, TROUSERS_COLOR,
                      0.17f, -0.68f, 0f, 0.16f, 0.30f, 0.17f, -2f);
-            draw(cubeBuffer, triangles, 0, 36, trousers,
+            draw(cubeBuffer, triangles, 0, 36, TROUSERS_COLOR,
                     -0.17f, -0.96f, 0f, 0.135f, 0.25f, 0.145f);
-            draw(cubeBuffer, triangles, 0, 36, trousers,
+            draw(cubeBuffer, triangles, 0, 36, TROUSERS_COLOR,
                      0.17f, -0.96f, 0f, 0.135f, 0.25f, 0.145f);
-            draw(cubeBuffer, triangles, 0, 36, boots,
+            draw(cubeBuffer, triangles, 0, 36, BOOTS_COLOR,
                     -0.17f, -1.105f, 0.075f, 0.18f, 0.075f, 0.27f);
-            draw(cubeBuffer, triangles, 0, 36, boots,
+            draw(cubeBuffer, triangles, 0, 36, BOOTS_COLOR,
                      0.17f, -1.105f, 0.075f, 0.18f, 0.075f, 0.27f);
 
             // Waist, torso and neck.
-            draw(cubeBuffer, triangles, 0, 36, trousers,
+            draw(cubeBuffer, triangles, 0, 36, TROUSERS_COLOR,
                     0f, -0.43f, 0f, 0.31f, 0.19f, 0.21f);
             draw(cubeBuffer, triangles, 0, 36, shirt,
                     0f, 0.06f, 0f, 0.38f, 0.49f, 0.23f);
@@ -314,11 +351,11 @@ public final class Scene3DView extends GLSurfaceView {
             // Low-poly head, hair and simple facial details.
             draw(headBuffer, triangles, 0, 24, skin,
                     0f, 0.94f, 0f, 0.27f, 0.34f, 0.25f);
-            draw(cubeBuffer, triangles, 0, 36, hair,
+            draw(cubeBuffer, triangles, 0, 36, HAIR_COLOR,
                     0f, 1.205f, -0.015f, 0.245f, 0.075f, 0.235f);
-            draw(cubeBuffer, triangles, 0, 36, eyes,
+            draw(cubeBuffer, triangles, 0, 36, EYE_COLOR,
                     -0.09f, 0.98f, 0.225f, 0.026f, 0.032f, 0.018f);
-            draw(cubeBuffer, triangles, 0, 36, eyes,
+            draw(cubeBuffer, triangles, 0, 36, EYE_COLOR,
                      0.09f, 0.98f, 0.225f, 0.026f, 0.032f, 0.018f);
             draw(cubeBuffer, triangles, 0, 36, skin,
                     0f, 0.91f, 0.255f, 0.035f, 0.055f, 0.035f);
