@@ -73,7 +73,8 @@ class AssetIllustrationView(
                 MovieAssetLibrary.CHARACTERS -> drawCharacter(c)
                 MovieAssetLibrary.CREATURES -> drawCreature(c)
                 MovieAssetLibrary.ENVIRONMENTS -> drawEnvironment(c)
-                else -> drawArchitecture(c)
+                MovieAssetLibrary.BUILDINGS -> drawArchitecture(c)
+                else -> drawProp(c)
             }
             // Thin inset frame and small glints give every tile a finished game-card look.
             fill(c,0x55FFFFFF); p.style=Paint.Style.STROKE; p.strokeWidth=2f
@@ -211,6 +212,24 @@ class AssetIllustrationView(
         oval(c,89f,210f,9f,11f,skin); oval(c,231f,210f,9f,11f,skin)
         stroke(c,85f,211f,81f,218f,0xFF9B6B52.toInt(),1.8f)
         stroke(c,235f,211f,239f,218f,0xFF9B6B52.toInt(),1.8f)
+        // Individual fingers and thumb, with visible knuckles and palm separation.
+        for(i in 0..3) {
+            val x=78f+i*4.2f
+            stroke(c,x,215f,x-1f,224f,skin,2.2f)
+            oval(c,x-1f,224f,1.25f,1.8f,0xFFD9A58A.toInt())
+        }
+        stroke(c,86f,214f,91f,219f,skin,2.4f)
+        for(i in 0..3) {
+            val x=224f+i*4.2f
+            stroke(c,x,215f,x+1f,224f,skin,2.2f)
+            oval(c,x+1f,224f,1.25f,1.8f,0xFFD9A58A.toInt())
+        }
+        stroke(c,234f,214f,229f,219f,skin,2.4f)
+        // Separated toes and sole seams on both boots.
+        for(i in 0..3) {
+            stroke(c,119f+i*6f,270f,119f+i*6f,276f,0xFF9AA5B2.toInt(),1.2f)
+            stroke(c,178f+i*6f,270f,178f+i*6f,276f,0xFF9AA5B2.toInt(),1.2f)
+        }
         stroke(c,121f,232f,199f,232f,0x66FFFFFF.toInt(),1.5f)
         // small cinematic rim lights
         stroke(c,121f,139f,112f,185f,0x66FFFFFF.toInt(),2f)
@@ -336,6 +355,49 @@ class AssetIllustrationView(
         for(x in listOf(116f,159f,201f,230f)) stroke(c,x,209f,x+5f,265f,scale,12f)
         oval(c,239f,128f,4f,4f,0xFFFFE9B5.toInt()); poly(c,floatArrayOf(250f,145f,277f,153f,249f,159f),0xFF402B38.toInt())
         for(x in listOf(130f,151f,172f,193f)) poly(c,floatArrayOf(x,151f,x+8f,132f,x+15f,155f),0xFFB8D6D0.toInt())
+    }
+
+    private fun drawProp(c:Canvas) {
+        val v=variant%20
+        val seed=categoryId.hashCode()
+        val base=palettes[(v+ kotlin.math.abs(seed%palettes.size))%palettes.size]
+        val dark=0xFF263449.toInt()
+        gradient(c,0xFF344B66.toInt(),0xFF101A29.toInt())
+        // Broad display plinth and soft contact shadow.
+        oval(c,160f,276f,112f,15f,0x99000000.toInt())
+        rect(c,18f,286f,302f,303f,0x553B526B.toInt(),8f)
+        when(categoryId) {
+            "furniture" -> {
+                when(v) {
+                    0,1,2 -> { rect(c,78f,116f,242f,196f,base,12f); rect(c,87f,190f,233f,213f,0xFFB18A62.toInt(),8f); for(x in listOf(91f,218f)) { rect(c,x,205f,x+10f,270f,0xFF76533B.toInt(),4f); rect(c,x-8f,105f,x+4f,207f,base,5f) } }
+                    3,4,5 -> { rect(c,53f,143f,267f,216f,base,20f); rect(c,62f,106f,258f,170f,base,18f); rect(c,70f,205f,83f,269f,0xFF76533B.toInt(),4f); rect(c,237f,205f,250f,269f,0xFF76533B.toInt(),4f) }
+                    6,7,8 -> { rect(c,64f,145f,256f,224f,base,10f); rect(c,73f,98f,247f,164f,0xFF9AB2C5.toInt(),9f); for(x in listOf(78f,228f)) rect(c,x,218f,x+13f,273f,0xFF76533B.toInt(),4f) }
+                    else -> { rect(c,70f,83f,250f,258f,base,7f); for(y in listOf(112f,158f,204f)) { rect(c,82f,y,238f,y+5f,0xFFCFB38D.toInt(),2f); for(x in listOf(111f,158f,205f)) rect(c,x,y+6f,x+30f,y+38f,0xFF6C8195.toInt(),3f) } }
+                }
+            }
+            "vehicles" -> {
+                when(v) {
+                    17,18 -> { oval(c,160f,160f,112f,53f,base); rect(c,78f,148f,242f,205f,base,16f); for(x in listOf(110f,210f)) oval(c,x,213f,22f,22f,dark); rect(c,114f,108f,205f,160f,0xFF8CB6CC.toInt(),12f) }
+                    14,15,16 -> { stroke(c,160f,92f,160f,224f,base,15f); oval(c,160f,111f,29f,28f,0xFFB8CBD6.toInt()); for(x in listOf(120f,200f)) oval(c,x,228f,19f,19f,dark) }
+                    else -> { poly(c,floatArrayOf(43f,193f,61f,147f,108f,134f,137f,95f,220f,95f,257f,154f,281f,174f,276f,216f,43f,216f),base); poly(c,floatArrayOf(119f,139f,145f,105f,210f,105f,235f,148f),0xFF8CB6CC.toInt()); for(x in listOf(91f,232f)) { oval(c,x,216f,24f,24f,dark); oval(c,x,216f,10f,10f,0xFF9DAAB6.toInt()) } }
+                }
+            }
+            "clothes" -> { poly(c,floatArrayOf(115f,92f,145f,112f,175f,112f,205f,92f,244f,130f,213f,163f,203f,260f,117f,260f,107f,163f,76f,130f),base); stroke(c,160f,113f,160f,251f,0xFFDAE0E5.toInt(),2f); for(y in listOf(153f,183f,213f)) oval(c,166f,y,2.5f,2.5f,0xFFFFD36C.toInt()) }
+            "weapons" -> { stroke(c,160f,65f,160f,252f,0xFFB9C4CE.toInt(),9f); poly(c,floatArrayOf(160f,45f,144f,105f,160f,91f,176f,105f),0xFFD7E1E9.toInt()); rect(c,138f,181f,182f,194f,0xFF8B603F.toInt(),4f); stroke(c,160f,193f,160f,245f,0xFF8B603F.toInt(),8f); if(v%3==1) rect(c,95f,120f,225f,145f,base,8f) }
+            "motions","emotions" -> { oval(c,160f,108f,49f,52f,0xFFD8A17F.toInt()); oval(c,144f,103f,4f,5f,dark); oval(c,176f,103f,4f,5f,dark); stroke(c,140f,84f,151f,82f,dark,3f); stroke(c,169f,82f,180f,84f,dark,3f); if(categoryId=="emotions") stroke(c,145f,137f,175f,if(v%4==0)130f else 142f,0xFF8D4F4A.toInt(),4f) else { stroke(c,125f,180f,87f,235f,base,16f); stroke(c,195f,180f,233f,235f,base,16f); stroke(c,140f,200f,128f,265f,dark,16f); stroke(c,180f,200f,192f,265f,dark,16f) } }
+            "cameras" -> { rect(c,71f,118f,249f,217f,0xFF27313F.toInt(),16f); rect(c,93f,98f,153f,122f,0xFF27313F.toInt(),6f); oval(c,160f,168f,52f,52f,0xFF111923.toInt()); oval(c,160f,168f,34f,34f,0xFF5D9AB9.toInt()); oval(c,160f,168f,15f,15f,0xFF172B40.toInt()); rect(c,111f,220f,209f,241f,base,5f) }
+            "sounds","phones" -> { rect(c,112f,72f,208f,248f,base,18f); rect(c,122f,91f,198f,206f,0xFF1A2A3D.toInt(),7f); oval(c,160f,226f,9f,9f,0xFFE4EAF0.toInt()); for(i in 0..2) stroke(c,135f,117f+i*22f,185f,117f+i*22f,0xFF91C6DD.toInt(),3f) }
+            "tools","medical" -> { rect(c,88f,119f,232f,229f,base,9f); rect(c,122f,99f,198f,121f,0xFFB8C6D2.toInt(),5f); for(i in 0..3) rect(c,105f+i*31f,145f,126f+i*31f,204f,0xFFB9C8D5.toInt(),3f); if(categoryId=="medical") rect(c,149f,150f,171f,194f,0xFFC84D54.toInt(),3f) }
+            "food" -> { oval(c,160f,170f,75f,57f,base); oval(c,160f,170f,59f,42f,0xFFE9D8B8.toInt()); when(v%5){0->oval(c,160f,157f,27f,35f,0xFFCB4D45.toInt());1->oval(c,160f,158f,18f,38f,0xFFECCB55.toInt());2->for(i in 0..5) oval(c,135f+i*10f,155f,12f,15f,0xFF704B8C.toInt());else->for(i in 0..7) oval(c,125f+(i%4)*22f,145f+(i/4)*27f,9f,9f,0xFF6A9B76.toInt())} }
+            "office","electronics" -> { rect(c,69f,95f,251f,220f,0xFF283444.toInt(),12f); rect(c,82f,109f,238f,196f,0xFF6FA7C3.toInt(),5f); rect(c,145f,220f,175f,248f,0xFF8E9BA7.toInt(),4f); rect(c,111f,248f,209f,258f,0xFF8E9BA7.toInt(),4f) }
+            "sports" -> { oval(c,160f,165f,70f,70f,base); for(i in 0..4) stroke(c,105f+i*24f,112f,215f-i*24f,218f,0xFFECF0E8.toInt(),3f) }
+            "travel" -> { rect(c,91f,93f,229f,250f,base,18f); rect(c,126f,73f,194f,108f,0xFFB8C6D2.toInt(),9f); rect(c,107f,123f,213f,190f,0x55303D50.toInt(),9f); stroke(c,130f,250f,130f,268f,dark,6f); stroke(c,190f,250f,190f,268f,dark,6f) }
+            "road" -> { rect(c,145f,83f,175f,259f,0xFF8E9BA7.toInt(),5f); rect(c,85f,93f,235f,185f,if(v%3==0)0xFFB94E4E.toInt() else 0xFFF0E7D1.toInt(),8f); for(i in 0..2) stroke(c,112f,120f+i*20f,208f,120f+i*20f,dark,3f) }
+            else -> { rect(c,83f,113f,237f,236f,base,12f); oval(c,160f,104f,31f,31f,0xFFFFD36C.toInt()); for(i in 0..4) stroke(c,105f+i*27f,135f,105f+i*27f,215f,0x66FFFFFF.toInt(),2f) }
+        }
+        // Distinct colorway, panel seams, highlights and a unique index marker.
+        for(i in 0..(v%5)) stroke(c,80f,246f+i*5f,240f,246f+i*5f,0x33FFFFFF.toInt(),1.4f)
+        oval(c,160f,279f,4f,4f,0xFFFFD36C.toInt())
     }
 
     private fun drawEnvironment(c:Canvas) {
