@@ -400,7 +400,7 @@ class AssetIllustrationView(
                 when(v%8) {
                     0,1 -> { rect(c,105f,88f,215f,122f,0xFF27313F.toInt(),7f); oval(c,160f,165f,57f,57f,0xFF101923.toInt()); oval(c,160f,165f,36f,36f,0xFF5D9AB9.toInt()) }
                     2,3 -> { rect(c,91f,104f,229f,218f,0xFF35465A.toInt(),10f); oval(c,160f,161f,43f,43f,0xFF111923.toInt()); oval(c,160f,161f,25f,25f,0xFF75B6D5.toInt()) }
-                    4,5 -> { rect(c,135f,70f,185f,120f,0xFF29384B.toInt(),7f); oval(c,160f,169f,45f,45f,0xFF111923.toInt()); stroke(c,160f,72f,160f,45f,metal,5f) }
+                    4,5 -> { rect(c,135f,70f,185f,120f,0xFF29384B.toInt(),7f); oval(c,160f,169f,45f,45f,0xFF111923.toInt()); stroke(c,160f,72f,160f,45f,0xFFBFCBD5.toInt(),5f) }
                     else -> { rect(c,83f,133f,237f,197f,0xFF27313F.toInt(),9f); oval(c,160f,165f,30f,30f,0xFF111923.toInt()); stroke(c,160f,133f,160f,82f,metal,5f) }
                 }
                 rect(c,115f,218f,205f,239f,base,5f)
@@ -569,62 +569,75 @@ class AssetIllustrationView(
 
     private fun drawVehicle(c: Canvas, v: Int, base: Int) {
         val glass=0xFF91C4DA.toInt(); val tire=0xFF17202B.toInt()
+        fun wheel(x:Float,y:Float,r:Float=22f){oval(c,x,y,r,r,tire);oval(c,x,y,r*0.43f,r*0.43f,0xFFB9C4CE.toInt())}
         when(v) {
-            14,15,16 -> { // motorcycle, scooter, bicycle
-                val wheel=if(v==16)16f else 21f
-                oval(c,83f,224f,wheel,wheel,tire); oval(c,237f,224f,wheel,wheel,tire)
-                stroke(c,83f,224f,145f,153f,base,7f); stroke(c,145f,153f,237f,224f,base,7f)
-                stroke(c,145f,153f,175f,224f,base,6f); stroke(c,142f,151f,183f,151f,0xFFCFD9E0.toInt(),5f)
-                if(v!=16){ oval(c,154f,137f,26f,19f,base); rect(c,135f,171f,188f,185f,0xFF303B4A.toInt(),5f) }
-                else { stroke(c,145f,153f,127f,114f,0xFFD4DEE5.toInt(),4f); stroke(c,127f,114f,110f,114f,0xFFD4DEE5.toInt(),4f) }
+            0,1,2,3,4 -> {
+                val top=if(v==2)145f else if(v==3)135f else 153f
+                val body=if(v==2)0xFFB83E45.toInt() else if(v==3)0xFF73513F.toInt() else base
+                rect(c,58f,top,262f,226f,body,if(v==3)5f else 18f)
+                poly(c,floatArrayOf(91f,top,122f,91f,207f,91f,235f,top),body)
+                poly(c,floatArrayOf(126f,top-8f,198f,top-8f,218f,top+3f,106f,top+3f),glass)
+                wheel(103f,225f);wheel(220f,225f)
+                if(v==2){rect(c,72f,163f,248f,174f,0xFF202A35.toInt(),3f);rect(c,88f,185f,232f,194f,0xFFFFD36C.toInt(),3f)}
+                if(v==3){rect(c,77f,144f,243f,157f,0xFFB18A59.toInt(),3f);rect(c,150f,130f,170f,221f,0xFFB18A59.toInt(),2f)}
+                if(v==4){rect(c,88f,162f,232f,177f,0xFF5B9EAE.toInt(),4f);oval(c,160f,188f,12f,12f,0xFFB9E4F0.toInt())}
             }
-            17 -> { // helicopter
-                oval(c,158f,174f,70f,38f,base); rect(c,119f,150f,178f,178f,glass,12f)
-                stroke(c,158f,139f,158f,79f,0xFFBFCBD5.toInt(),7f); stroke(c,55f,79f,265f,79f,0xFFBFCBD5.toInt(),5f)
-                stroke(c,118f,211f,220f,211f,0xFF7D8996.toInt(),5f); stroke(c,210f,174f,269f,140f,base,9f)
-                oval(c,272f,140f,12f,12f,0xFFBFCBD5.toInt())
-            }
-            18 -> { // passenger airplane
-                poly(c,floatArrayOf(160f,42f,178f,143f,278f,202f,278f,220f,176f,188f,169f,270f,151f,270f,144f,188f,42f,220f,42f,202f,142f,143f),base)
-                rect(c,151f,85f,169f,192f,glass,6f)
-            }
-            19 -> { // boat
-                poly(c,floatArrayOf(45f,205f,275f,205f,235f,258f,89f,258f),base)
-                rect(c,132f,112f,205f,205f,0xFFE2E7E9.toInt(),5f); poly(c,floatArrayOf(136f,116f,136f,52f,190f,116f),0xFFE8D9B7.toInt())
-                stroke(c,20f,272f,300f,272f,0xFF63B6D5.toInt(),4f)
-            }
-            else -> {
-                val bodyTop=if(v in 10..13)115f else 158f
-                val bodyBottom=if(v in 10..13)232f else 226f
-                val long=if(v==10||v==11)230f else 195f
-                rect(c,160f-long/2f,bodyTop,160f+long/2f,bodyBottom,base,20f)
-                if(v in 10..13) { rect(c,110f,67f,210f,139f,glass,10f); rect(c,90f,141f,230f,160f,base,5f) }
-                else { poly(c,floatArrayOf(93f,bodyTop,120f,100f,202f,100f,229f,bodyTop),base); poly(c,floatArrayOf(126f,bodyTop-8f,194f,bodyTop-8f,213f,bodyTop+8f,107f,bodyTop+8f),glass) }
-                for(x in listOf(105f,215f)) { oval(c,x,225f,23f,23f,tire); oval(c,x,225f,10f,10f,0xFFB9C4CE.toInt()) }
-                if(v==7||v==8||v==9) { rect(c,160f-long/2f,bodyTop,160f+long/2f,bodyTop+12f,0xFFFFD36C.toInt(),5f); rect(c,147f,bodyTop+20f,173f,bodyTop+45f,0xFFFAF3D9.toInt(),3f) }
-                if(v==12||v==13) rect(c,85f,bodyTop+8f,235f,bodyTop+60f,glass,8f)
-            }
+            5 -> { rect(c,45f,133f,275f,225f,0xFF64765B.toInt(),12f); poly(c,floatArrayOf(88f,133f,118f,91f,211f,91f,238f,133f),0xFF64765B.toInt()); poly(c,floatArrayOf(125f,100f,204f,100f,222f,132f,105f,132f),glass); wheel(91f,226f,25f);wheel(231f,226f,25f);rect(c,45f,170f,275f,180f,0xFF3F4D3D.toInt(),4f) }
+            6 -> { rect(c,41f,151f,277f,224f,base,9f); rect(c,55f,103f,145f,157f,glass,7f); rect(c,157f,121f,273f,184f,0xFF9B795B.toInt(),4f); wheel(92f,225f);wheel(231f,225f); rect(c,163f,132f,267f,142f,0xFFB6C1C8.toInt(),2f) }
+            7,8,9 -> { rect(c,57f,118f,263f,226f,if(v==7)Color.WHITE else if(v==8)0xFF263D5A.toInt() else 0xFFE34C3F.toInt(),12f); rect(c,88f,78f,231f,146f,glass,9f); wheel(101f,226f);wheel(220f,226f); if(v==7){rect(c,145f,151f,175f,194f,0xFFC84D54.toInt(),4f);rect(c,155f,158f,165f,187f,Color.WHITE,2f)}; if(v==8){rect(c,70f,126f,250f,140f,Color.WHITE,3f);oval(c,160f,133f,12f,12f,0xFF3B74B9.toInt())}; if(v==9){rect(c,80f,101f,240f,114f,0xFFFFD36C.toInt(),4f);rect(c,72f,157f,248f,168f,0xFFFFD36C.toInt(),4f);stroke(c,240f,120f,265f,64f,0xFFE34C3F.toInt(),7f)} }
+            10,11 -> { rect(c,57f,77f,263f,226f,if(v==11)0xFFF0B93F.toInt() else base,9f); rect(c,77f,91f,243f,144f,glass,5f); for(x in listOf(88f,132f,176f,220f)) rect(c,x,151f,x+29f,188f,if(v==11)0xFF34485C.toInt() else 0xFF6FA7C3.toInt(),3f); wheel(100f,226f);wheel(220f,226f); if(v==11){rect(c,61f,80f,259f,91f,0xFF34485C.toInt(),3f);rect(c,61f,203f,259f,214f,0xFF34485C.toInt(),3f)} }
+            12,13 -> { rect(c,40f,132f,280f,226f,if(v==12)0xFF697C89.toInt() else 0xFFB58B5B.toInt(),6f); rect(c,47f,82f,137f,151f,glass,5f); if(v==12){rect(c,148f,102f,273f,212f,0xFF71818C.toInt(),5f);for(y in listOf(116f,150f,184f))stroke(c,157f,y,266f,y,0xFF9EADB7.toInt(),2f)}else{rect(c,149f,107f,271f,205f,0xFF9C7048.toInt(),4f);for(x in listOf(170f,210f,250f))rect(c,x,118f,x+25f,192f,0xFFBF9668.toInt(),2f)};wheel(91f,226f,24f);wheel(232f,226f,24f)}
+            14,15,16 -> { val r=if(v==16)18f else 22f; wheel(83f,224f,r);wheel(237f,224f,r); stroke(c,83f,224f,145f,153f,base,7f);stroke(c,145f,153f,237f,224f,base,7f);stroke(c,145f,153f,175f,224f,base,6f); if(v==14){oval(c,154f,137f,26f,19f,base);rect(c,135f,171f,188f,185f,0xFF303B4A.toInt(),5f)}else if(v==15){oval(c,160f,154f,38f,18f,base);rect(c,137f,167f,183f,184f,0xFF303B4A.toInt(),6f);stroke(c,145f,151f,126f,118f,0xFFD4DEE5.toInt(),4f)}else{stroke(c,145f,153f,127f,114f,0xFFD4DEE5.toInt(),4f);stroke(c,127f,114f,110f,114f,0xFFD4DEE5.toInt(),4f);stroke(c,145f,153f,145f,224f,0xFFD4DEE5.toInt(),3f)}}
+            17 -> { oval(c,158f,174f,70f,38f,base);rect(c,119f,150f,178f,178f,glass,12f);stroke(c,158f,139f,158f,79f,0xFFBFCBD5.toInt(),7f);stroke(c,55f,79f,265f,79f,0xFFBFCBD5.toInt(),5f);stroke(c,118f,211f,220f,211f,0xFF7D8996.toInt(),5f);stroke(c,210f,174f,269f,140f,base,9f);oval(c,272f,140f,12f,12f,0xFFBFCBD5.toInt())}
+            18 -> { poly(c,floatArrayOf(160f,35f,179f,140f,285f,201f,285f,220f,177f,187f,169f,272f,151f,272f,143f,187f,35f,220f,35f,201f,141f,140f),base);rect(c,151f,84f,169f,190f,glass,6f);for(x in listOf(105f,215f))oval(c,x,202f,10f,10f,0xFF34485C.toInt()) }
+            else -> { poly(c,floatArrayOf(39f,205f,281f,205f,239f,261f,81f,261f),base);rect(c,132f,112f,205f,205f,0xFFE2E7E9.toInt(),5f);poly(c,floatArrayOf(136f,116f,136f,52f,190f,116f),0xFFE8D9B7.toInt());stroke(c,20f,272f,300f,272f,0xFF63B6D5.toInt(),4f)}
         }
     }
 
     private fun drawFurniture(c: Canvas, v: Int, base: Int) {
         val wood=0xFF9A704D.toInt()
         when(v) {
-            0,1,2 -> { rect(c,92f,130f,228f,153f,base,8f); rect(c,103f,91f,119f,139f,wood,5f); rect(c,201f,91f,217f,139f,wood,5f); for(x in listOf(108f,204f)) rect(c,x,151f,x+12f,265f,wood,4f) }
-            3,4,5 -> { rect(c,58f,154f,262f,222f,base,18f); rect(c,68f,95f,252f,167f,base,18f); rect(c,65f,205f,80f,266f,wood,5f); rect(c,240f,205f,255f,266f,wood,5f); for(x in listOf(125f,195f)) stroke(c,x,162f,x,210f,0x66FFFFFF.toInt(),2f) }
-            6,7,8 -> { rect(c,54f,151f,266f,210f,base,8f); rect(c,66f,108f,254f,160f,0xFFE3D2BD.toInt(),6f); rect(c,64f,205f,78f,270f,wood,4f); rect(c,248f,205f,262f,270f,wood,4f); if(v==8){rect(c,65f,70f,255f,122f,base,5f);stroke(c,160f,122f,160f,150f,wood,8f)} }
-            9,10,11,12 -> { rect(c,60f,157f,260f,179f,wood,5f); for(x in listOf(72f,236f)) rect(c,x,178f,x+12f,263f,wood,3f); if(v==11) rect(c,105f,135f,215f,157f,base,4f); if(v==12) rect(c,85f,118f,235f,157f,base,5f); if(v==10) rect(c,105f,90f,215f,157f,base,4f) }
-            13,14,15,16,17 -> { rect(c,79f,71f,241f,259f,base,5f); for(y in listOf(121f,174f,226f)) { rect(c,85f,y,235f,y+5f,wood,2f); for(x in listOf(110f,160f,210f)) rect(c,x,y+6f,x+24f,y+40f,0xFF6D8191.toInt(),3f) } }
-            18 -> { rect(c,145f,72f,175f,254f,0xFFB6A18A.toInt(),5f); oval(c,160f,67f,39f,35f,0xFFFFE2A0.toInt()); rect(c,135f,249f,185f,263f,wood,3f) }
-            else -> { rect(c,35f,196f,285f,245f,0xFFB58D63.toInt(),5f); for(i in 0..5) stroke(c,45f+i*45f,201f,45f+i*45f,239f,0xFF8C684B.toInt(),2f) }
+            0 -> { rect(c,92f,130f,228f,153f,base,7f); rect(c,103f,77f,119f,139f,wood,4f); rect(c,201f,77f,217f,139f,wood,4f); rect(c,103f,151f,117f,267f,wood,4f); rect(c,203f,151f,217f,267f,wood,4f) }
+            1 -> { rect(c,77f,127f,243f,151f,base,13f); rect(c,88f,76f,105f,139f,0xFF647B91.toInt(),7f); rect(c,215f,76f,232f,139f,0xFF647B91.toInt(),7f); for(x in listOf(94f,219f)) rect(c,x,151f,x+10f,267f,0xFF647B91.toInt(),4f) }
+            2 -> { rect(c,75f,120f,245f,145f,base,10f); rect(c,82f,82f,238f,130f,0xFF27384B.toInt(),9f); rect(c,84f,146f,98f,258f,wood,4f); rect(c,222f,146f,236f,258f,wood,4f); oval(c,160f,105f,9f,9f,0xFFFFD36C.toInt()) }
+            3,4,5 -> { val width=if(v==3)150f else if(v==4)210f else 118f; val l=160f-width/2f; val r=160f+width/2f; rect(c,l,158f,r,218f,base,17f); rect(c,l+8f,96f,r-8f,169f,base,16f); rect(c,l+8f,210f,l+20f,269f,wood,4f); rect(c,r-20f,210f,r-8f,269f,wood,4f); if(v==5){rect(c,l,155f,l+17f,219f,wood,6f);rect(c,r-17f,155f,r,219f,wood,6f)} }
+            6 -> { rect(c,52f,155f,268f,208f,wood,5f); rect(c,65f,112f,255f,161f,0xFFE6D9C7.toInt(),7f); rect(c,63f,205f,78f,271f,wood,4f); rect(c,247f,205f,262f,271f,wood,4f); rect(c,85f,138f,235f,146f,base,4f) }
+            7 -> { rect(c,77f,161f,243f,207f,wood,5f); rect(c,86f,125f,234f,166f,0xFFF0DCC7.toInt(),8f); rect(c,91f,205f,103f,266f,wood,4f); rect(c,217f,205f,229f,266f,wood,4f); oval(c,160f,148f,17f,10f,0xFFFFD36C.toInt()) }
+            8 -> { rect(c,65f,164f,255f,191f,wood,4f); rect(c,73f,80f,247f,169f,base,5f); rect(c,73f,205f,87f,268f,wood,4f); rect(c,233f,205f,247f,268f,wood,4f); rect(c,73f,62f,247f,83f,wood,4f); rect(c,73f,190f,247f,210f,wood,4f) }
+            9 -> { rect(c,54f,133f,266f,153f,wood,5f); for(x in listOf(68f,238f)) rect(c,x,153f,x+14f,264f,wood,4f); oval(c,160f,129f,34f,10f,base) }
+            10 -> { rect(c,48f,130f,272f,153f,wood,4f); rect(c,60f,153f,74f,265f,wood,4f); rect(c,246f,153f,260f,265f,wood,4f); rect(c,95f,154f,225f,202f,0xFF70513A.toInt(),4f); rect(c,101f,160f,219f,196f,base,3f); rect(c,122f,205f,198f,212f,wood,2f) }
+            11 -> { rect(c,83f,157f,237f,176f,wood,5f); rect(c,95f,176f,108f,245f,wood,4f); rect(c,212f,176f,225f,245f,wood,4f); oval(c,160f,147f,31f,14f,base) }
+            12 -> { rect(c,57f,124f,263f,146f,wood,4f); rect(c,69f,146f,83f,266f,wood,4f); rect(c,237f,146f,251f,266f,wood,4f); rect(c,105f,146f,215f,207f,base,4f); rect(c,112f,155f,208f,196f,0xFF6C91A7.toInt(),3f) }
+            13 -> { rect(c,82f,65f,238f,264f,base,4f); for(y in listOf(80f,145f,210f)) rect(c,87f,y,233f,y+5f,wood,2f); rect(c,100f,92f,145f,137f,0xFF7A91A4.toInt(),3f); rect(c,175f,92f,220f,137f,0xFF7A91A4.toInt(),3f); rect(c,100f,157f,220f,201f,0xFF7A91A4.toInt(),3f) }
+            14 -> { rect(c,72f,65f,248f,266f,wood,3f); for(y in listOf(108f,158f,208f)) { rect(c,79f,y,241f,y+5f,0xFFD7C2A5.toInt(),2f); for(x in listOf(91f,135f,179f,223f)) rect(c,x,y+6f,x+34f,y+40f,base,2f) } }
+            15 -> { rect(c,85f,58f,235f,267f,base,5f); rect(c,96f,70f,224f,255f,0xFF70513A.toInt(),4f); rect(c,104f,82f,216f,245f,0xFFB98C65.toInt(),4f); rect(c,154f,82f,166f,245f,wood,3f); oval(c,145f,165f,4f,4f,0xFFFFD36C.toInt()) }
+            16 -> { rect(c,62f,111f,258f,263f,base,4f); rect(c,76f,127f,244f,252f,0xFFB98C65.toInt(),3f); rect(c,90f,85f,230f,113f,wood,4f); rect(c,108f,153f,212f,225f,0xFF7A91A4.toInt(),3f); for(x in listOf(91f,229f)) rect(c,x,145f,x+7f,236f,wood,2f) }
+            17 -> { rect(c,55f,168f,265f,206f,wood,5f); rect(c,77f,92f,243f,171f,0xFF27313F.toInt(),8f); rect(c,88f,103f,232f,158f,0xFF5D9AB9.toInt(),4f); rect(c,105f,208f,117f,255f,wood,3f); rect(c,203f,208f,215f,255f,wood,3f) }
+            18 -> { stroke(c,160f,119f,160f,263f,wood,9f); oval(c,160f,82f,42f,34f,0xFFFFE2A0.toInt()); poly(c,floatArrayOf(118f,82f,202f,82f,190f,110f,130f,110f),0xFFFFD17A.toInt()); rect(c,126f,258f,194f,270f,wood,4f) }
+            else -> { rect(c,39f,103f,281f,258f,0xFFB58D63.toInt(),8f); for(i in 0..8) stroke(c,52f+i*27f,112f,52f+i*27f,249f,0xFF8C684B.toInt(),2f); for(y in listOf(120f,160f,200f,240f)) stroke(c,47f,y,273f,y,0x66F1D8B5.toInt(),2f) }
         }
     }
 
     private fun drawClothing(c: Canvas, v: Int, base: Int) {
         when(v) {
-            16,17 -> { oval(c,160f,93f,68f,35f,base); rect(c,94f,89f,226f,113f,0xFF4A3C31.toInt(),5f) }
-            18,19 -> { poly(c,floatArrayOf(95f,124f,225f,124f,244f,264f,76f,264f),base); oval(c,160f,260f,72f,12f,0xFF253143.toInt()); stroke(c,160f,145f,160f,248f,0xFFE4E8EA.toInt(),3f) }
-            else -> { poly(c,floatArrayOf(117f,91f,145f,112f,175f,112f,203f,91f,244f,130f,213f,166f,203f,260f,117f,260f,107f,166f,76f,130f),base); stroke(c,160f,115f,160f,250f,0x66FFFFFF.toInt(),3f); for(y in listOf(154f,184f,214f)) oval(c,166f,y,2.5f,2.5f,0xFFFFD36C.toInt()) }
+            0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15 -> {
+                val long=when(v){1,3,9,10,14,15->true;else->false}
+                val col=when(v){4->0xFF53694B.toInt();5->0xFF34485F.toInt();6,7->0xFFE8E9E2.toInt();8->0xFF805F42.toInt();9->0xFF34485F.toInt();10->0xFF607E9A.toInt();11->0xFF4F9A9A.toInt();12->0xFF303A4B.toInt();13->0xFF9B744C.toInt();14->0xFF67435C.toInt();15->0xFF8B4F72.toInt();else->base}
+                if(long) poly(c,floatArrayOf(126f,83f,194f,83f,242f,270f,78f,270f),col)
+                else poly(c,floatArrayOf(117f,91f,145f,112f,175f,112f,203f,91f,244f,130f,213f,166f,203f,236f,117f,236f,107f,166f,76f,130f),col)
+                stroke(c,160f,111f,160f,245f,0x66FFFFFF.toInt(),3f)
+                if(v==3||v==13) { rect(c,119f,137f,201f,177f,0xFFB58C5B.toInt(),4f);rect(c,119f,180f,201f,190f,0xFF654A3C.toInt(),2f) }
+                if(v==4||v==5) { rect(c,119f,137f,201f,226f,0x55303B45.toInt(),4f);for(x in listOf(130f,190f))rect(c,x,151f,x+14f,181f,0xFFB9A27B.toInt(),2f) }
+                if(v==6||v==7) { rect(c,146f,116f,174f,132f,0xFFC84D54.toInt(),3f);rect(c,155f,120f,165f,128f,Color.WHITE,1f) }
+                if(v==9) { poly(c,floatArrayOf(113f,91f,207f,91f,227f,128f,93f,128f),0xFF536B85.toInt());stroke(c,160f,130f,160f,257f,0xFFB8C6D2.toInt(),3f) }
+                if(v==10) { stroke(c,84f,125f,236f,125f,0xFFB8C6D2.toInt(),5f);for(i in 0..4)stroke(c,100f+i*30f,135f,100f+i*30f,235f,0x66FFFFFF.toInt(),2f) }
+                if(v==11) { stroke(c,120f,180f,200f,180f,0xFFFFD36C.toInt(),4f);rect(c,120f,195f,200f,220f,0xFF34485C.toInt(),4f) }
+                if(v==12) { rect(c,118f,205f,202f,240f,0xFF29384B.toInt(),3f);stroke(c,160f,205f,160f,240f,0xFFB8C6D2.toInt(),2f) }
+                if(v==14||v==15) { rect(c,118f,90f,202f,105f,0xFFFFD36C.toInt(),3f);for(i in 0..4)oval(c,130f+i*15f,210f,3f,4f,0xFFFFD36C.toInt()) }
+            }
+            16 -> { oval(c,160f,93f,68f,35f,base);rect(c,94f,89f,226f,113f,0xFF4A3C31.toInt(),5f);rect(c,153f,56f,167f,88f,0xFF4A3C31.toInt(),3f) }
+            17 -> { oval(c,160f,99f,71f,31f,base);poly(c,floatArrayOf(92f,98f,228f,98f,244f,112f,76f,112f),0xFF4A3C31.toInt()) }
+            18,19 -> { poly(c,floatArrayOf(95f,124f,225f,124f,244f,258f,76f,258f),base);rect(c,104f,238f,216f,266f,0xFF253143.toInt(),9f);stroke(c,160f,145f,160f,238f,0xFFE4E8EA.toInt(),3f);for(i in 0..4)stroke(c,124f+i*18f,252f,124f+i*18f,261f,0xFF9CAAB5.toInt(),2f);if(v==19)stroke(c,104f,174f,216f,174f,0xFFFFD36C.toInt(),3f)}
         }
     }
 
