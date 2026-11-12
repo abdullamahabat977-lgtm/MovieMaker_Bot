@@ -372,23 +372,6 @@ class AssetIllustrationView(
             "vehicles" -> drawVehicle(c, v, base)
             "weapons" -> drawWeapon(c, v, base)
             "clothes" -> drawClothing(c, v, base)
-            /*LEGACY_FURNITURE*/ -> {
-                when(v) {
-                    0,1,2 -> { rect(c,78f,116f,242f,196f,base,12f); rect(c,87f,190f,233f,213f,0xFFB18A62.toInt(),8f); for(x in listOf(91f,218f)) { rect(c,x,205f,x+10f,270f,0xFF76533B.toInt(),4f); rect(c,x-8f,105f,x+4f,207f,base,5f) } }
-                    3,4,5 -> { rect(c,53f,143f,267f,216f,base,20f); rect(c,62f,106f,258f,170f,base,18f); rect(c,70f,205f,83f,269f,0xFF76533B.toInt(),4f); rect(c,237f,205f,250f,269f,0xFF76533B.toInt(),4f) }
-                    6,7,8 -> { rect(c,64f,145f,256f,224f,base,10f); rect(c,73f,98f,247f,164f,0xFF9AB2C5.toInt(),9f); for(x in listOf(78f,228f)) rect(c,x,218f,x+13f,273f,0xFF76533B.toInt(),4f) }
-                    else -> { rect(c,70f,83f,250f,258f,base,7f); for(y in listOf(112f,158f,204f)) { rect(c,82f,y,238f,y+5f,0xFFCFB38D.toInt(),2f); for(x in listOf(111f,158f,205f)) rect(c,x,y+6f,x+30f,y+38f,0xFF6C8195.toInt(),3f) } }
-                }
-            }
-            /*LEGACY_VEHICLES*/ -> {
-                when(v) {
-                    17,18 -> { oval(c,160f,160f,112f,53f,base); rect(c,78f,148f,242f,205f,base,16f); for(x in listOf(110f,210f)) oval(c,x,213f,22f,22f,dark); rect(c,114f,108f,205f,160f,0xFF8CB6CC.toInt(),12f) }
-                    14,15,16 -> { stroke(c,160f,92f,160f,224f,base,15f); oval(c,160f,111f,29f,28f,0xFFB8CBD6.toInt()); for(x in listOf(120f,200f)) oval(c,x,228f,19f,19f,dark) }
-                    else -> { poly(c,floatArrayOf(43f,193f,61f,147f,108f,134f,137f,95f,220f,95f,257f,154f,281f,174f,276f,216f,43f,216f),base); poly(c,floatArrayOf(119f,139f,145f,105f,210f,105f,235f,148f),0xFF8CB6CC.toInt()); for(x in listOf(91f,232f)) { oval(c,x,216f,24f,24f,dark); oval(c,x,216f,10f,10f,0xFF9DAAB6.toInt()) } }
-                }
-            }
-            /*LEGACY_CLOTHES*/ -> { poly(c,floatArrayOf(115f,92f,145f,112f,175f,112f,205f,92f,244f,130f,213f,163f,203f,260f,117f,260f,107f,163f,76f,130f),base); stroke(c,160f,113f,160f,251f,0xFFDAE0E5.toInt(),2f); for(y in listOf(153f,183f,213f)) oval(c,166f,y,2.5f,2.5f,0xFFFFD36C.toInt()) }
-            /*LEGACY_WEAPONS*/ -> { stroke(c,160f,65f,160f,252f,0xFFB9C4CE.toInt(),9f); poly(c,floatArrayOf(160f,45f,144f,105f,160f,91f,176f,105f),0xFFD7E1E9.toInt()); rect(c,138f,181f,182f,194f,0xFF8B603F.toInt(),4f); stroke(c,160f,193f,160f,245f,0xFF8B603F.toInt(),8f); if(v%3==1) rect(c,95f,120f,225f,145f,base,8f) }
             "motions","emotions" -> { oval(c,160f,108f,49f,52f,0xFFD8A17F.toInt()); oval(c,144f,103f,4f,5f,dark); oval(c,176f,103f,4f,5f,dark); stroke(c,140f,84f,151f,82f,dark,3f); stroke(c,169f,82f,180f,84f,dark,3f); if(categoryId=="emotions") stroke(c,145f,137f,175f,if(v%4==0)130f else 142f,0xFF8D4F4A.toInt(),4f) else { stroke(c,125f,180f,87f,235f,base,16f); stroke(c,195f,180f,233f,235f,base,16f); stroke(c,140f,200f,128f,265f,dark,16f); stroke(c,180f,200f,192f,265f,dark,16f) } }
             "cameras" -> { rect(c,71f,118f,249f,217f,0xFF27313F.toInt(),16f); rect(c,93f,98f,153f,122f,0xFF27313F.toInt(),6f); oval(c,160f,168f,52f,52f,0xFF111923.toInt()); oval(c,160f,168f,34f,34f,0xFF5D9AB9.toInt()); oval(c,160f,168f,15f,15f,0xFF172B40.toInt()); rect(c,111f,220f,209f,241f,base,5f) }
             "sounds","phones" -> { rect(c,112f,72f,208f,248f,base,18f); rect(c,122f,91f,198f,206f,0xFF1A2A3D.toInt(),7f); oval(c,160f,226f,9f,9f,0xFFE4EAF0.toInt()); for(i in 0..2) stroke(c,135f,117f+i*22f,185f,117f+i*22f,0xFF91C6DD.toInt(),3f) }
