@@ -17,5 +17,9 @@
 - د 3D مخکتنې د پرانیستلو، رنګونو بدلولو، شاته تګ او د موبایل د حافظې/GL lifecycle ازموینه باید په حقیقي موبایل کې وشي.
 
 ## د جوړولو تایید
-- دا بدلونونه یوازې د `rebuild-v2` څانګې لپاره دي.
-- د GitHub Actions د APK جوړولو پایله باید د همدې commit د Workflow له بشپړېدو وروسته ثبت شي.
+- ټول بدلونونه یوازې په `rebuild-v2` څانګه کې ثبت شول؛ `main` او `backup-before-rebuild-20261109` ته هېڅ بدلون ونه لېږل شو.
+- GitHub Actions run #86 د ۲۰۲۶-۱۱-۱۲ په ورځ په بریالیتوب بشپړ شو.
+- د `Build debug APK` او `Upload APK` دواړه پړاوونه `success` دي.
+- APK artifact: `Movie-Studio-debug-apk`، اندازه 2,363,789 bytes.
+- د Workflow لینک: https://github.com/abdullamahabat977-lgtm/MovieMaker_Bot/actions/runs/43201042443
+- د CI بریالیتوب د کوډ جوړېدل او د APK پورته کېدل تاییدوي؛ د واقعي موبایل د پرانیستلو، رنګونو بدلولو او بیا شاته تګ ازموینه لا د کارن له خوا پاتې ده.
