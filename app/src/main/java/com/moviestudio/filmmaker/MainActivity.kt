@@ -183,7 +183,7 @@ class MainActivity : Activity() {
         }
         addAssetPageHeader(page, "🧰 د فلم توکي") { onBackPressed() }
         page.addView(text(
-            "د فلم لپاره توکي په لاندې برخو کې وټاکه. لومړني څلور کتابتونونه د ۸۰ توکو منظم نوملړ لري.",
+            "د فلم لپاره توکي په لاندې برخو کې وټاکه. ټولې ۲۲ برخې د هرې برخې ۲۰ جلا فلمي توکي لري.",
             14, 0xFFD7DCEF.toInt()
         ).apply { setPadding(dp(4), dp(8), dp(4), dp(14)) })
         categories.forEachIndexed { index, item ->
