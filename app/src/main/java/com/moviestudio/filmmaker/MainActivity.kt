@@ -55,15 +55,6 @@ class MainActivity : Activity() {
             14, 0xFFD7DCEF.toInt()
         ).apply { setPadding(dp(8), dp(10), dp(8), dp(18)) })
 
-        // محلي فلمي وسایل د حساب له نښلولو پرته هم کار کوي.
-        addHomeButtonRow(page,
-            "🎬 زما جوړ شوي فلمونه" to { showProjects() },
-            "📽️ نوی فلم جوړول" to { createProjectDialog() }
-        )
-        addHomeButtonRow(page,
-            "🧰 د فلم لپاره کارېدونکي شیان" to { showMovieAssets() }
-        )
-
         if (linked) {
             accountStatus = text("حساب په دې موبایل کې خوندي دی. د بیلانس او اجازو تازه معلومات د انټرنېټ په وصلېدو ترلاسه کېږي.", 13, 0xFFB9C5DE.toInt())
             val cached = prefs.getString("cached_profile", null)
@@ -78,6 +69,15 @@ class MainActivity : Activity() {
             }
             page.addView(accountStatus, marginParams(top = 8, bottom = 14))
         }
+
+        // محلي فلمي وسایل د حساب له نښلولو پرته هم کار کوي.
+        addHomeButtonRow(page,
+            "🎬 زما جوړ شوي فلمونه" to { showProjects() },
+            "📽️ نوی فلم جوړول" to { createProjectDialog() }
+        )
+        addHomeButtonRow(page,
+            "🧰 د فلم لپاره کارېدونکي شیان" to { showMovieAssets() }
+        )
 
         if (!linked) {
             addButton(page, "♻️  ټېلېګرام بوټ ونښلوه") { showAccountDialog() }
