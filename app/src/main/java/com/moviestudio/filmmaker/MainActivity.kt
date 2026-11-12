@@ -271,6 +271,10 @@ class MainActivity : Activity() {
         }
         addAssetPageHeader(page, title) { onBackPressed() }
         if (entries.isNotEmpty()) {
+            val isWideCategory = categoryId == MovieAssetLibrary.ENVIRONMENTS ||
+                categoryId == MovieAssetLibrary.BUILDINGS
+            val imageHeight = if (isWideCategory) dp(104) else dp(142)
+            val tileHeight = if (isWideCategory) dp(136) else dp(174)
             page.addView(text(
                 "د توکي د انځور د لوی لیدلو او بیې لپاره پر انځور ټچ وکړه. اوس ټول توکي وړیا دي.",
                 14, 0xFFD7DCEF.toInt()
@@ -297,20 +301,20 @@ class MainActivity : Activity() {
                         setOnClickListener { showAssetPreview(categoryId!!, index) }
                     }
                     tile.addView(image, LinearLayout.LayoutParams(
-                        LinearLayout.LayoutParams.MATCH_PARENT, dp(142)
+                        LinearLayout.LayoutParams.MATCH_PARENT, imageHeight
                     ))
                     val free = text("وړیا • ۰", 13, 0xFF8FE0B1.toInt(), true).apply {
                         gravity = android.view.Gravity.CENTER
                         setPadding(0, dp(6), 0, dp(4))
                     }
                     tile.addView(free)
-                    val params = LinearLayout.LayoutParams(0, dp(174), 1f).apply {
+                    val params = LinearLayout.LayoutParams(0, tileHeight, 1f).apply {
                         if (row.childCount > 0) marginStart = dp(8)
                     }
                     row.addView(tile, params)
                 }
                 if (pair.size == 1) {
-                    row.addView(View(this), LinearLayout.LayoutParams(0, dp(174), 1f))
+                    row.addView(View(this), LinearLayout.LayoutParams(0, tileHeight, 1f))
                 }
                 page.addView(row, marginParams(top = 4, bottom = 4))
             }
@@ -332,8 +336,11 @@ class MainActivity : Activity() {
             setBackgroundColor(0xFF17243A.toInt())
         }
         val preview = AssetIllustrationView(this, categoryId, index)
+        val isWidePreview = categoryId == MovieAssetLibrary.ENVIRONMENTS ||
+            categoryId == MovieAssetLibrary.BUILDINGS
         content.addView(preview, LinearLayout.LayoutParams(
-            dp(280), dp(260)
+            if (isWidePreview) dp(320) else dp(280),
+            if (isWidePreview) dp(190) else dp(260)
         ))
         content.addView(text("وړیا", 20, 0xFF8FE0B1.toInt(), true).apply {
             gravity = android.view.Gravity.CENTER
