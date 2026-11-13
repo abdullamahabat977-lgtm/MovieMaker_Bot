@@ -102,7 +102,7 @@ class SceneEditorActivity : Activity() {
         content.addView(editRow)
 
         content.addView(label("د حرکت Timeline", 17, true).apply { setPadding(0, dp(14), 0, dp(4)) })
-        content.addView(label("دا مهال یوازې د حرکت پلان (فریمونه) ثبتېږي؛ د GLB د هډوکو حقیقي حرکت او Timeline playback لا نه دی فعال شوی.", 12))
+        content.addView(label("دا مهال د Timeline کلیپونه یوازې د حرکت پلان ثبتوي؛ که وارد شوی GLB خپل هډوکي او animation ولري، لومړی حرکت یې په 3D مخکتنه کې پلی کېږي.", 12))
         val motionRow = horizontal()
         motionRow.addView(button("ولاړ") { addClip("idle") }, weighted())
         motionRow.addView(button("قدم") { addClip("walk") }, weighted())
