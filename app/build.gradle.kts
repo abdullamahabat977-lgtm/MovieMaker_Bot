@@ -31,4 +31,8 @@ android {
 
 dependencies {
     implementation("androidx.core:core-ktx:1.15.0")
+    // Filament renders textured, rigged GLB/glTF assets with physically based materials.
+    implementation("com.google.android.filament:filament-android:1.56.0")
+    implementation("com.google.android.filament:gltfio-android:1.56.0")
+    implementation("com.google.android.filament:filament-utils-android:1.56.0")
 }
