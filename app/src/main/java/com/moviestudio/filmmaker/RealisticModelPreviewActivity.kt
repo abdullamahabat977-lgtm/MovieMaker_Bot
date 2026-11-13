@@ -94,7 +94,6 @@ class RealisticModelPreviewActivity : Activity() {
                 FrameLayout.LayoutParams.WRAP_CONTENT, FrameLayout.LayoutParams.WRAP_CONTENT,
                 Gravity.TOP or Gravity.END
             ).apply { topMargin = 18; marginEnd = 18 })
-            setContentView(frame)
             title = intent.getStringExtra(EXTRA_MODEL_NAME) ?: "واقعي 3D ماډل"
         } catch (error: Exception) {
             Toast.makeText(this, error.message ?: "د 3D ماډل پرانیستل ناکام شول", Toast.LENGTH_LONG).show()
