@@ -251,18 +251,6 @@ class SceneEditorActivity : Activity() {
         }
     }
 
-    private fun addObject(type: String, name: String) {
-        try {
-            val item = store.addSceneObject(projectId, type, name)
-            selectedObjectId = item.optString("id")
-            selectedObject = item
-            preview.setSceneMode(Scene3DView.SCENE_CUBE)
-            applySelectedTransform()
-            refreshPanels()
-            status.text = "توکی ورزیات او خوندي شو."
-        } catch (error: Exception) { toast(error.message ?: "توکی نه شو ورزیاتېدای") }
-    }
-
     private fun nudge(axis: String, delta: Double) {
         val item = selectedObject ?: run { toast("لومړی یو توکی وټاکه"); return }
         val changes = JSONObject().put(axis, item.optDouble(axis) + delta)
