@@ -63,7 +63,7 @@ class RealisticModelPreviewActivity : Activity() {
             val resetCamera = Button(this).apply {
                 text = "کمره بېرته برابره کړه"
                 isAllCaps = false
-                setOnClickListener { viewer.resetToDefaultState(); applyObjectTransform(viewer) }
+                setOnClickListener { recreate() }
             }
             val frame = FrameLayout(this)
             frame.addView(surface, FrameLayout.LayoutParams(
