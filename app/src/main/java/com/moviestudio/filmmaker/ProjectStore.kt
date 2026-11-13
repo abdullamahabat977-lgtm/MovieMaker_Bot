@@ -81,6 +81,21 @@ class ProjectStore(context: Context) {
         return item
     }
 
+    fun duplicateSceneObject(projectId: String, objectId: String): JSONObject {
+        val project = load(projectId)
+        val objects = firstScene(project).optJSONArray("objects") ?: JSONArray()
+        val source = (0 until objects.length()).mapNotNull { objects.optJSONObject(it) }
+            .firstOrNull { it.optString("id") == objectId }
+            ?: throw IllegalArgumentException("د صحنې توکی ونه موندل شو")
+        val copy = JSONObject(source.toString())
+            .put("id", "object_" + System.currentTimeMillis().toString())
+            .put("name", source.optString("name") + " - کاپي")
+            .put("x", (source.optDouble("x") + 0.35).coerceAtMost(3.0))
+        objects.put(copy)
+        save(project)
+        return copy
+    }
+
     fun updateSceneObject(projectId: String, objectId: String, changes: JSONObject): JSONObject {
         val project = load(projectId)
         val objects = firstScene(project).optJSONArray("objects") ?: JSONArray()
