@@ -4,6 +4,9 @@ import android.app.Activity
 import android.os.Bundle
 import android.view.Choreographer
 import android.view.SurfaceView
+import android.view.Gravity
+import android.widget.Button
+import android.widget.FrameLayout
 import android.widget.Toast
 import com.google.android.filament.Skybox
 import com.google.android.filament.utils.ModelViewer
@@ -43,12 +46,26 @@ class RealisticModelPreviewActivity : Activity() {
             viewer.scene.skybox = Skybox.Builder()
                 .color(0.12f, 0.16f, 0.22f, 1.0f)
                 .build(viewer.engine)
-            setContentView(surface)
             val bytes = file.readBytes()
             require(bytes.size > 12) { "GLB فایل تش دی" }
             viewer.loadModelGlb(ByteBuffer.wrap(bytes))
             viewer.transformToUnitCube()
-            title = intent.getStringExtra(EXTRA_MODEL_NAME) ?: "واقعي 3D کرکټر"
+            check(viewer.asset != null) { "د GLB ماډل لوستل ناکام شول" }
+            val resetCamera = Button(this).apply {
+                text = "کمره بېرته برابره کړه"
+                isAllCaps = false
+                setOnClickListener { viewer.resetToDefaultState() }
+            }
+            val frame = FrameLayout(this)
+            frame.addView(surface, FrameLayout.LayoutParams(
+                FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.MATCH_PARENT
+            ))
+            frame.addView(resetCamera, FrameLayout.LayoutParams(
+                FrameLayout.LayoutParams.WRAP_CONTENT, FrameLayout.LayoutParams.WRAP_CONTENT,
+                Gravity.TOP or Gravity.END
+            ).apply { topMargin = 18; marginEnd = 18 })
+            setContentView(frame)
+            title = intent.getStringExtra(EXTRA_MODEL_NAME) ?: "واقعي 3D ماډل"
         } catch (error: Exception) {
             Toast.makeText(this, error.message ?: "د 3D ماډل پرانیستل ناکام شول", Toast.LENGTH_LONG).show()
             finish()
