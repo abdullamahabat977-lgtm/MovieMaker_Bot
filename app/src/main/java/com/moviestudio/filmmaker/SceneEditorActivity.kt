@@ -102,7 +102,7 @@ class SceneEditorActivity : Activity() {
         content.addView(editRow)
 
         content.addView(label("د حرکت Timeline", 17, true).apply { setPadding(0, dp(14), 0, dp(4)) })
-        content.addView(label("حرکتونه د فریمونو په شمېر خوندي کېږي؛ لومړنی FPS د پروژې له تنظیماتو سره سم دی.", 12))
+        content.addView(label("دا مهال یوازې د حرکت پلان (فریمونه) ثبتېږي؛ د GLB د هډوکو حقیقي حرکت او Timeline playback لا نه دی فعال شوی.", 12))
         val motionRow = horizontal()
         motionRow.addView(button("ولاړ") { addClip("idle") }, weighted())
         motionRow.addView(button("قدم") { addClip("walk") }, weighted())
@@ -194,8 +194,17 @@ class SceneEditorActivity : Activity() {
     }
 
     private fun chooseModelType() {
-        val labels = arrayOf("انسان", "حیوان", "موټر / وسیله", "کور / ودانۍ", "ونه / بوټی", "فرنیچر", "نور شیان", "چاپېریال")
-        val types = arrayOf("character", "animal", "vehicle", "building", "tree", "furniture", "prop", "environment")
+        val labels = arrayOf(
+            "انسان", "حیوان", "موټر / وسیله", "کور / ودانۍ", "ونه / بوټی", "فرنیچر",
+            "جامې او لوازم", "نمایشي وسله", "کمره", "د کار وسایل", "طبي وسایل",
+            "خوراک او څښاک", "د دفتر وسایل", "سپورټ", "د سفر وسایل",
+            "د سړک توکي", "برېښنايي وسایل", "چاپېریال", "نور شیان"
+        )
+        val types = arrayOf(
+            "character", "animal", "vehicle", "building", "tree", "furniture",
+            "clothing", "weapon", "camera", "tool", "medical", "food",
+            "office", "sports", "travel", "road", "electronics", "environment", "other"
+        )
         AlertDialog.Builder(this)
             .setTitle("کوم حقیقي 3D توکی واردوې؟")
             .setItems(labels) { _, which -> pendingModelType = types[which]; pickRealisticModel() }
@@ -227,7 +236,11 @@ class SceneEditorActivity : Activity() {
         }
         startActivity(Intent(this, RealisticModelPreviewActivity::class.java)
             .putExtra(RealisticModelPreviewActivity.EXTRA_MODEL_PATH, file.absolutePath)
-            .putExtra(RealisticModelPreviewActivity.EXTRA_MODEL_NAME, item.optString("name")))
+            .putExtra(RealisticModelPreviewActivity.EXTRA_MODEL_NAME, item.optString("name"))
+            .putExtra(RealisticModelPreviewActivity.EXTRA_X, item.optDouble("x").toFloat())
+            .putExtra(RealisticModelPreviewActivity.EXTRA_Y, item.optDouble("y").toFloat())
+            .putExtra(RealisticModelPreviewActivity.EXTRA_Z, item.optDouble("z").toFloat())
+            .putExtra(RealisticModelPreviewActivity.EXTRA_SCALE, item.optDouble("scale", 1.0).toFloat()))
     }
 
     @Deprecated("Uses the compatible document picker API for older Android versions")
