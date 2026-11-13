@@ -57,6 +57,13 @@ class ProjectStore(context: Context) {
         return JSONObject(file.readText())
     }
 
+    fun listSceneObjects(projectId: String): List<JSONObject> {
+        val objects = firstScene(load(projectId)).optJSONArray("objects") ?: JSONArray()
+        return (0 until objects.length()).mapNotNull { index ->
+            objects.optJSONObject(index)?.let { JSONObject(it.toString()) }
+        }
+    }
+
     fun save(project: JSONObject): JSONObject {
         val details = project.optJSONObject("project")
             ?: throw IllegalArgumentException("د پروژې معلومات نشته")
@@ -151,13 +158,20 @@ class ProjectStore(context: Context) {
         val scene = firstScene(project)
         val objects = scene.optJSONArray("objects") ?: JSONArray().also { scene.put("objects", it) }
         val objectId = "object_" + System.currentTimeMillis().toString()
+        val slot = objects.length()
+        val layout = arrayOf(
+            0.0 to 0.0, -2.2 to 0.0, 2.2 to 0.0,
+            0.0 to -2.2, -2.2 to -2.2, 2.2 to -2.2
+        )
+        val position = layout[slot % layout.size]
+        val depth = position.second - (slot / layout.size) * 4.4
         val item = JSONObject()
             .put("id", objectId)
             .put("type", modelType)
             .put("name", cleanName)
             .put("format", "glb")
             .put("modelPath", relativePath)
-            .put("x", 0.0).put("y", 0.0).put("z", 0.0).put("scale", 1.0)
+            .put("x", position.first).put("y", 0.0).put("z", depth).put("scale", 1.0)
         try {
             objects.put(item)
             val assets = project.optJSONArray("assets") ?: JSONArray().also { project.put("assets", it) }
