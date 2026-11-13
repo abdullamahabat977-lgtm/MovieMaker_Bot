@@ -48,7 +48,6 @@ class RealisticModelPreviewActivity : Activity() {
             require(bytes.size > 12) { "GLB فایل تش دی" }
             viewer.loadModelGlb(ByteBuffer.wrap(bytes))
             viewer.transformToUnitCube()
-            viewer.autoPlayAnimations = true
             title = intent.getStringExtra(EXTRA_MODEL_NAME) ?: "واقعي 3D کرکټر"
         } catch (error: Exception) {
             Toast.makeText(this, error.message ?: "د 3D ماډل پرانیستل ناکام شول", Toast.LENGTH_LONG).show()
