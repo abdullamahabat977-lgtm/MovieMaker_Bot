@@ -67,22 +67,6 @@ class ProjectStore(context: Context) {
         return project
     }
 
-    fun addSceneObject(projectId: String, type: String, label: String): JSONObject {
-        require(type in setOf("character", "cube", "environment", "prop")) { "د توکي ډول ناسم دی" }
-        val project = load(projectId)
-        val scene = firstScene(project)
-        val objects = scene.optJSONArray("objects") ?: JSONArray().also { scene.put("objects", it) }
-        val objectId = "object_" + System.currentTimeMillis().toString()
-        val item = JSONObject()
-            .put("id", objectId).put("type", type).put("name", label.take(60))
-            .put("x", 0.0).put("y", 0.0).put("z", 0.0).put("scale", 1.0)
-            .put("skin", 1).put("shirt", 0)
-        objects.put(item)
-        save(project)
-        return item
-    }
-
-
     /**
      * Imports a real GLB 2.0 model into the project's private local asset folder.
      * Supported types: character, animal, vehicle, building, tree, furniture, prop, environment.
@@ -226,7 +210,7 @@ class ProjectStore(context: Context) {
             if (item.optString("id") == objectId) { found = item; break }
         }
         val item = found ?: throw IllegalArgumentException("د صحنې توکی ونه موندل شو")
-        listOf("name", "x", "y", "z", "scale", "skin", "shirt").forEach { key ->
+        listOf("name", "x", "y", "z", "scale").forEach { key ->
             if (changes.has(key)) item.put(key, changes.get(key))
         }
         item.put("scale", item.optDouble("scale", 1.0).coerceIn(0.25, 3.0))
