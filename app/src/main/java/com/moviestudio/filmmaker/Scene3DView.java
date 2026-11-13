@@ -60,6 +60,12 @@ public final class Scene3DView extends GLSurfaceView {
         requestRender();
     }
 
+    /** Restores the default orbit camera position. */
+    public void resetCamera() {
+        previewRenderer.resetCamera();
+        requestRender();
+    }
+
     private static float spacing(MotionEvent event) {
         if (event.getPointerCount() < 2) return 0f;
         float dx = event.getX(0) - event.getX(1);
@@ -202,6 +208,12 @@ public final class Scene3DView extends GLSurfaceView {
 
         void zoom(float delta) {
             distance = Math.max(4.2f, Math.min(17f, distance + delta));
+        }
+
+        void resetCamera() {
+            yaw = -25f;
+            pitch = 18f;
+            distance = 8.5f;
         }
 
         private FloatBuffer buffer(float[] values) {
