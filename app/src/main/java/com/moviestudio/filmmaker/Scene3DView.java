@@ -179,7 +179,6 @@ public final class Scene3DView extends GLSurfaceView {
         private volatile int skinPaletteIndex = 1;
         private volatile int shirtPaletteIndex = 0;
         private volatile float objectX = 0f, objectY = 0f, objectZ = 0f, objectScale = 1f;
-        private final float[] transformedVp = new float[16];\n        private volatile float objectX = 0f, objectY = 0f, objectZ = 0f, objectScale = 1f;
 
         void setSceneMode(int mode) {
             sceneMode = mode;
