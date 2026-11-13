@@ -98,8 +98,6 @@ class SceneEditorActivity : Activity() {
         val editRow = horizontal()
         editRow.addView(button("نوم بدلول") { renameSelected() }, weighted())
         editRow.addView(button("کاپي") { duplicateSelected() }, weighted())
-        editRow.addView(button("د پوستکي رنګ") { cyclePalette("skin", 4) }, weighted())
-        editRow.addView(button("د کمیس رنګ") { cyclePalette("shirt", 6) }, weighted())
         content.addView(editRow)
         content.addView(button("🎥 کمره بېرته برابره کړه") { preview.resetCamera() })
 
@@ -157,8 +155,7 @@ class SceneEditorActivity : Activity() {
             val select = button((if (id == preferredSelection) "✓ " else "") + name + " • " + type) {
                 selectedObjectId = id
                 selectedObject = item
-                preview.setSceneMode(if (type == "cube" || type == "prop" || type == "environment")
-                    Scene3DView.SCENE_CUBE else Scene3DView.SCENE_CHARACTER)
+                preview.setSceneMode(Scene3DView.SCENE_CUBE)
                 applySelectedTransform()
                 status.text = "ټاکل شوی: $name"
                 refreshObjectSelection()
@@ -206,7 +203,7 @@ class SceneEditorActivity : Activity() {
             row.addView(button((if (id == selectedObjectId) "✓ " else "") + item.optString("name")) {
                 selectedObjectId = id
                 selectedObject = item
-                preview.setSceneMode(if (item.optString("type") == "cube") Scene3DView.SCENE_CUBE else Scene3DView.SCENE_CHARACTER)
+                preview.setSceneMode(Scene3DView.SCENE_CUBE)
                 applySelectedTransform()
                 refreshObjectSelection()
             }, LinearLayout.LayoutParams(0, dp(46), 1f))
@@ -265,7 +262,7 @@ class SceneEditorActivity : Activity() {
             val item = store.addSceneObject(projectId, type, name)
             selectedObjectId = item.optString("id")
             selectedObject = item
-            preview.setSceneMode(if (type == "cube" || type == "environment") Scene3DView.SCENE_CUBE else Scene3DView.SCENE_CHARACTER)
+            preview.setSceneMode(Scene3DView.SCENE_CUBE)
             applySelectedTransform()
             refreshPanels()
             status.text = "توکی ورزیات او خوندي شو."
@@ -301,6 +298,7 @@ class SceneEditorActivity : Activity() {
             return
         }
         preview.visibility = View.VISIBLE
+        preview.setSceneMode(Scene3DView.SCENE_CUBE)
         preview.setObjectTransform(
             item.optDouble("x").toFloat(), item.optDouble("y").toFloat(),
             item.optDouble("z").toFloat(), item.optDouble("scale", 1.0).toFloat()
