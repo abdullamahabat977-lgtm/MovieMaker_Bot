@@ -183,7 +183,7 @@ class MainActivity : Activity() {
         }
         addAssetPageHeader(page, "🧰 د فلم توکي") { onBackPressed() }
         page.addView(text(
-            "د فلم لپاره توکي په لاندې برخو کې وټاکه. ټولې ۲۲ برخې د هرې برخې یوازې ۵ جلا فلمي توکي لري.",
+            "د فلم د توکو کټګورۍ دلته دي. دا نوملړ د 3D ماډلونو فایلونه نه لري؛ د حقیقي ماډل لپاره GLB 2.0 وارد کړه.",
             14, 0xFFD7DCEF.toInt()
         ).apply { setPadding(dp(4), dp(8), dp(4), dp(14)) })
         categories.forEachIndexed { index, item ->
@@ -270,91 +270,37 @@ class MainActivity : Activity() {
             setPadding(dp(12), dp(16), dp(12), dp(24))
         }
         addAssetPageHeader(page, title) { onBackPressed() }
-        if (entries.isNotEmpty()) {
-            val isWideCategory = categoryId == MovieAssetLibrary.ENVIRONMENTS ||
-                categoryId == MovieAssetLibrary.BUILDINGS
-            val imageHeight = if (isWideCategory) dp(104) else dp(142)
-            val tileHeight = if (isWideCategory) dp(136) else dp(174)
-            page.addView(text(
-                "د توکي د لوی لیدلو او بیې لپاره پر انځور ټچ وکړه. په هره برخه کې ۵ توکي دي؛ اوس ټول توکي وړیا دي.",
-                14, 0xFFD7DCEF.toInt()
-            ).apply { setPadding(dp(6), dp(8), dp(6), dp(14)) })
-
-            entries.indices.chunked(2).forEach { pair ->
-                val row = LinearLayout(this).apply {
-                    orientation = LinearLayout.HORIZONTAL
-                    layoutDirection = View.LAYOUT_DIRECTION_RTL
+        page.addView(text(
+            "دا د توکو نوملړ دی، د حقیقي 3D فایلونو مجموعه نه ده. په اوسني پړاو کې کارتوني انځورونه او جعلي ماډلونه نه ښودل کېږي. د هر توکي حقیقي بڼه د GLB 2.0 فایل په واردولو ترلاسه کېږي.",
+            14, 0xFFD7DCEF.toInt()
+        ).apply { setPadding(dp(6), dp(8), dp(6), dp(14)) })
+        entries.forEach { entry ->
+            val row = LinearLayout(this).apply {
+                orientation = LinearLayout.VERTICAL
+                setPadding(dp(12), dp(8), dp(12), dp(8))
+                background = android.graphics.drawable.GradientDrawable().apply {
+                    setColor(0xFF202E49.toInt())
+                    setStroke(dp(1), 0xFF526B9A.toInt())
+                    cornerRadius = dp(12).toFloat()
                 }
-                pair.forEach { index ->
-                    val image = AssetIllustrationView(this, categoryId!!, index, entries[index].name).apply {
-                        contentDescription = "د وړیا فلمي توکي انځور"
-                        setOnClickListener { showAssetPreview(categoryId!!, index) }
-                    }
-                    val tile = LinearLayout(this).apply {
-                        orientation = LinearLayout.VERTICAL
-                        setPadding(dp(5), dp(5), dp(5), dp(5))
-                        background = android.graphics.drawable.GradientDrawable().apply {
-                            setColor(0xFF202E49.toInt())
-                            setStroke(dp(1), 0xFF526B9A.toInt())
-                            cornerRadius = dp(13).toFloat()
-                        }
-                        setOnClickListener { showAssetPreview(categoryId!!, index) }
-                    }
-                    tile.addView(image, LinearLayout.LayoutParams(
-                        LinearLayout.LayoutParams.MATCH_PARENT, imageHeight
-                    ))
-                    val free = text("وړیا • ۰", 13, 0xFF8FE0B1.toInt(), true).apply {
-                        gravity = android.view.Gravity.CENTER
-                        setPadding(0, dp(6), 0, dp(4))
-                    }
-                    tile.addView(free)
-                    val params = LinearLayout.LayoutParams(0, tileHeight, 1f).apply {
-                        if (row.childCount > 0) marginStart = dp(8)
-                    }
-                    row.addView(tile, params)
-                }
-                if (pair.size == 1) {
-                    row.addView(View(this), LinearLayout.LayoutParams(0, tileHeight, 1f))
-                }
-                page.addView(row, marginParams(top = 4, bottom = 4))
             }
-        } else {
-            page.addView(text(
-                "د دې برخې انځوریز توکي به په راتلونکو پړاوونو کې ورزیات شي.",
-                14, 0xFFB9C5DE.toInt()
-            ).apply { setPadding(dp(10), dp(18), dp(10), dp(18)) })
+            row.addView(text(entry.name, 15, Color.WHITE, true))
+            row.addView(text(entry.description, 12, 0xFFB9C5DE.toInt()))
+            row.addView(text("حقیقي GLB فایل: لا نه دی وارد شوی", 11, 0xFFFFD18A.toInt()))
+            page.addView(row, marginParams(top = 4, bottom = 4))
         }
+        page.addView(text(
+            "د حقیقي انسان، حیوان، موټر، ودانۍ، ونې، فرنیچر او نورو توکو د واردولو لپاره پروژه پرانیزه، د صحنې ایډیټر ته لاړ شه او «حقیقي 3D توکی واردول» وټاکه.",
+            14, 0xFFD7DCEF.toInt()
+        ).apply { setPadding(dp(8), dp(14), dp(8), dp(10)) })
+        val openProjects = Button(this).apply {
+            text = "زما پروژې پرانیزه"
+            isAllCaps = false
+            setOnClickListener { showProjects() }
+        }
+        page.addView(openProjects, marginParams(top = 6))
         scroll.addView(page)
         setContentView(scroll)
-    }
-
-    private fun showAssetPreview(categoryId: String, index: Int) {
-        val content = LinearLayout(this).apply {
-            orientation = LinearLayout.VERTICAL
-            gravity = android.view.Gravity.CENTER_HORIZONTAL
-            setPadding(dp(18), dp(14), dp(18), dp(8))
-            setBackgroundColor(0xFF17243A.toInt())
-        }
-        val previewName = MovieAssetLibrary.forCategory(categoryId).getOrNull(index)?.name.orEmpty()
-        val preview = AssetIllustrationView(this, categoryId, index, previewName)
-        val isWidePreview = categoryId == MovieAssetLibrary.ENVIRONMENTS ||
-            categoryId == MovieAssetLibrary.BUILDINGS
-        content.addView(preview, LinearLayout.LayoutParams(
-            if (isWidePreview) dp(320) else dp(280),
-            if (isWidePreview) dp(190) else dp(260)
-        ))
-        content.addView(text("وړیا", 20, 0xFF8FE0B1.toInt(), true).apply {
-            gravity = android.view.Gravity.CENTER
-            setPadding(0, dp(12), 0, dp(3))
-        })
-        content.addView(text("بیه: ۰", 16, Color.WHITE, true).apply {
-            gravity = android.view.Gravity.CENTER
-            setPadding(0, dp(2), 0, dp(8))
-        })
-        AlertDialog.Builder(this)
-            .setView(content)
-            .setPositiveButton("بندول", null)
-            .show()
     }
 
     private fun showAboutUs() {
