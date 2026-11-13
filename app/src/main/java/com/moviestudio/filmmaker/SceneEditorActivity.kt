@@ -21,13 +21,12 @@ import org.json.JSONObject
 class SceneEditorActivity : Activity() {
     private lateinit var store: ProjectStore
     private lateinit var projectId: String
-    private lateinit var preview: Scene3DView
+    private lateinit var previewNotice: TextView
     private lateinit var objectPanel: LinearLayout
     private lateinit var timelinePanel: LinearLayout
     private lateinit var status: TextView
     private var selectedObjectId: String? = null
     private var selectedObject: JSONObject? = null
-    private var glResumed = false
     private var pendingModelType = "character"
 
     private fun dp(v: Int) = (v * resources.displayMetrics.density).toInt()
@@ -64,10 +63,14 @@ class SceneEditorActivity : Activity() {
         header.addView(button("خوندي") { saveAndRefresh() }, LinearLayout.LayoutParams(dp(86), dp(46)))
         root.addView(header)
 
-        preview = Scene3DView(this)
-        root.addView(preview, LinearLayout.LayoutParams(
-            LinearLayout.LayoutParams.MATCH_PARENT, 0, 1f
-        ).apply { height = dp(300) })
+        previewNotice = label("دلته به د کارتوني نمونې پر ځای یوازې د وارد شوي حقیقي GLB ماډل بشپړ 3D لید پرانیستل کېږي.", 13, true).apply {
+            gravity = Gravity.CENTER
+            setBackgroundColor(0xFF17243A.toInt())
+            minHeight = dp(86)
+        }
+        root.addView(previewNotice, LinearLayout.LayoutParams(
+            LinearLayout.LayoutParams.MATCH_PARENT, dp(86)
+        ))
 
         val scroll = ScrollView(this).apply { isFillViewport = false }
         val content = LinearLayout(this).apply {
@@ -97,7 +100,6 @@ class SceneEditorActivity : Activity() {
         editRow.addView(button("نوم بدلول") { renameSelected() }, weighted())
         editRow.addView(button("کاپي") { duplicateSelected() }, weighted())
         content.addView(editRow)
-        content.addView(button("🎥 کمره بېرته برابره کړه") { preview.resetCamera() })
 
         content.addView(label("د حرکت Timeline", 17, true).apply { setPadding(0, dp(14), 0, dp(4)) })
         content.addView(label("حرکتونه د فریمونو په شمېر خوندي کېږي؛ لومړنی FPS د پروژې له تنظیماتو سره سم دی.", 12))
@@ -120,22 +122,6 @@ class SceneEditorActivity : Activity() {
         setContentView(root)
     }
 
-    override fun onResume() {
-        super.onResume()
-        if (!glResumed) {
-            try { preview.onResume(); glResumed = true }
-            catch (_: RuntimeException) { toast("د 3D مخکتنې بیا پرانیستل ناکام شول") }
-        }
-    }
-
-    override fun onPause() {
-        if (glResumed) {
-            try { preview.onPause() } catch (_: RuntimeException) { }
-            glResumed = false
-        }
-        super.onPause()
-    }
-
     private fun refreshPanels() {
         val project = store.load(projectId)
         val scene = project.optJSONArray("scenes")?.optJSONObject(0) ?: JSONObject()
@@ -153,7 +139,6 @@ class SceneEditorActivity : Activity() {
             val select = button((if (id == preferredSelection) "✓ " else "") + name + " • " + type) {
                 selectedObjectId = id
                 selectedObject = item
-                preview.setSceneMode(Scene3DView.SCENE_CUBE)
                 applySelectedTransform()
                 status.text = "ټاکل شوی: $name"
                 refreshObjectSelection()
@@ -201,8 +186,7 @@ class SceneEditorActivity : Activity() {
             row.addView(button((if (id == selectedObjectId) "✓ " else "") + item.optString("name")) {
                 selectedObjectId = id
                 selectedObject = item
-                preview.setSceneMode(Scene3DView.SCENE_CUBE)
-                applySelectedTransform()
+                    applySelectedTransform()
                 refreshObjectSelection()
             }, LinearLayout.LayoutParams(0, dp(46), 1f))
             objectPanel.addView(row)
@@ -235,8 +219,9 @@ class SceneEditorActivity : Activity() {
             toast("دا پخوانی ساده توکی دی؛ د حقیقي لید لپاره GLB ماډل وارد کړه")
             return
         }
-        val file = java.io.File(java.io.File(filesDir, "MovieProjects/$projectId"), relativePath)
-        if (!file.isFile) {
+        val projectFolder = java.io.File(filesDir, "MovieProjects/$projectId").canonicalFile
+        val file = java.io.File(projectFolder, relativePath).canonicalFile
+        if (!file.path.startsWith(projectFolder.path + java.io.File.separator) || !file.isFile) {
             toast("د 3D ماډل GLB فایل ونه موندل شو")
             return
         }
@@ -300,20 +285,15 @@ class SceneEditorActivity : Activity() {
     }
 
     private fun applySelectedTransform() {
-        val item = selectedObject ?: return
-        if (item.optString("modelPath").isNotBlank()) {
-            preview.visibility = View.INVISIBLE
-            status.text = "حقیقي GLB ماډل ټاکل شوی؛ د 3D لیدلو تڼۍ وکاروه."
+        val item = selectedObject ?: run {
+            previewNotice.text = "د صحنې د حقیقي لید لپاره لومړی GLB 2.0 ماډل وارد کړه."
             return
         }
-        preview.visibility = View.VISIBLE
-        preview.setSceneMode(Scene3DView.SCENE_CUBE)
-        preview.setObjectTransform(
-            item.optDouble("x").toFloat(), item.optDouble("y").toFloat(),
-            item.optDouble("z").toFloat(), item.optDouble("scale", 1.0).toFloat()
-        )
-        preview.setSkinPalette(item.optInt("skin", 1))
-        preview.setShirtPalette(item.optInt("shirt", 0))
+        previewNotice.text = if (item.optString("modelPath").isNotBlank()) {
+            "حقیقي 3D ماډل ټاکل شوی: ${item.optString("name")}\nد بشپړ لید لپاره د «3D کې وګوره» تڼۍ وکاروه."
+        } else {
+            "دا پخوانی ساده توکی دی؛ کارتوني یا هندسي انسان نه ښودل کېږي. د حقیقي ماډل لپاره GLB وارد کړه."
+        }
     }
 
     private fun renameSelected() {
@@ -345,16 +325,6 @@ class SceneEditorActivity : Activity() {
             refreshPanels()
             status.text = "د توکي کاپي جوړه او خوندي شوه."
         } catch (error: Exception) { toast(error.message ?: "کاپي نه شوه") }
-    }
-
-    private fun cyclePalette(key: String, count: Int) {
-        val item = selectedObject ?: run { toast("لومړی یو کرکټر وټاکه"); return }
-        if (item.optString("type") != "character") {
-            toast("رنګونه یوازې د کرکټر لپاره دي")
-            return
-        }
-        val next = (item.optInt(key) + 1) % count
-        updateSelected(JSONObject().put(key, next))
     }
 
     private fun deleteSelected() {
