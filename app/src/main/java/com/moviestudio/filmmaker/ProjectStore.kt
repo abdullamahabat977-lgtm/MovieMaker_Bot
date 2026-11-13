@@ -112,6 +112,13 @@ class ProjectStore(context: Context) {
         }
         require(removed) { "د صحنې توکی ونه موندل شو" }
         firstScene(project).put("objects", kept)
+        val clips = firstScene(project).optJSONArray("timeline") ?: JSONArray()
+        val keptClips = JSONArray()
+        for (index in 0 until clips.length()) {
+            val clip = clips.optJSONObject(index) ?: continue
+            if (clip.optString("objectId") != objectId) keptClips.put(clip)
+        }
+        firstScene(project).put("timeline", keptClips)
         save(project)
     }
 
