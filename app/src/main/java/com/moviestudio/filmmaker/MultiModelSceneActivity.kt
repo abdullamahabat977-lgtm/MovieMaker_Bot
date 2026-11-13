@@ -176,14 +176,16 @@ class MultiModelSceneActivity : Activity() {
                     val buffer = FileInputStream(file).channel.use { channel ->
                         channel.map(FileChannel.MapMode.READ_ONLY, 0L, file.length())
                     }
-                    asset = assetLoader!!.createAsset(buffer)
+                    val createdAsset = assetLoader!!.createAsset(buffer)
                         ?: throw IllegalArgumentException("د ${item.optString("name")} GLB نه لوستل کېږي")
-                    resourceLoader = ResourceLoader(modelViewer.engine, true)
-                    check(resourceLoader.asyncBeginLoad(asset)) { "د ${item.optString("name")} ماډل لوډ نه شو" }
-                    applySceneTransform(modelViewer, asset, item)
-                    val animator = asset.instance.animator
-                    asset.releaseSourceData()
-                    models.add(SceneModel(item.optString("name"), asset, resourceLoader, animator))
+                    asset = createdAsset
+                    val createdResources = ResourceLoader(modelViewer.engine, true)
+                    resourceLoader = createdResources
+                    check(createdResources.asyncBeginLoad(createdAsset)) { "د ${item.optString("name")} ماډل لوډ نه شو" }
+                    applySceneTransform(modelViewer, createdAsset, item)
+                    val animator = createdAsset.instance.animator
+                    createdAsset.releaseSourceData()
+                    models.add(SceneModel(item.optString("name"), createdAsset, createdResources, animator))
                 } catch (error: Exception) {
                     resourceLoader?.asyncCancelLoad()
                     resourceLoader?.destroy()
