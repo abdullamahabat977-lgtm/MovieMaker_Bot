@@ -195,6 +195,12 @@ class ProjectStore(context: Context) {
             .put("name", source.optString("name") + " - کاپي")
             .put("x", (source.optDouble("x") + 0.35).coerceAtMost(3.0))
         objects.put(copy)
+        val assets = project.optJSONArray("assets") ?: JSONArray()
+        val sourceAsset = (0 until assets.length()).mapNotNull { assets.optJSONObject(it) }
+            .firstOrNull { it.optString("id") == objectId }
+        if (sourceAsset != null) {
+            assets.put(JSONObject(sourceAsset.toString()).put("id", copy.optString("id")))
+        }
         save(project)
         return copy
     }
@@ -226,7 +232,7 @@ class ProjectStore(context: Context) {
         var removed = false
         for (index in 0 until old.length()) {
             val item = old.optJSONObject(index) ?: continue
-            if (item.optString("id") == objectId) removed = true else kept.put(item)
+            if (item.optString("id") == objectId) { removed = true; deletedPath = item.optString("modelPath").ifBlank { null } } else kept.put(item)
         }
         require(removed) { "د صحنې توکی ونه موندل شو" }
         firstScene(project).put("objects", kept)
@@ -235,8 +241,7 @@ class ProjectStore(context: Context) {
         var deletedPath: String? = null
         for (index in 0 until assets.length()) {
             val asset = assets.optJSONObject(index) ?: continue
-            if (asset.optString("id") == objectId) deletedPath = asset.optString("path")
-            else keptAssets.put(asset)
+            if (asset.optString("id") != objectId) keptAssets.put(asset)
         }
         project.put("assets", keptAssets)
         if (!deletedPath.isNullOrBlank()) {
