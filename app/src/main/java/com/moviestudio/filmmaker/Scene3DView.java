@@ -159,6 +159,7 @@ public final class Scene3DView extends GLSurfaceView {
         private final float[] model = new float[16];
         private final float[] vp = new float[16];
         private final float[] mvp = new float[16];
+        private final float[] transformedVp = new float[16];
         private FloatBuffer cubeBuffer, headBuffer, floorBuffer, gridBuffer;
         private int program, positionHandle, matrixHandle, colorHandle;
         private volatile float yaw = -25f, pitch = 18f, distance = 8.5f;
