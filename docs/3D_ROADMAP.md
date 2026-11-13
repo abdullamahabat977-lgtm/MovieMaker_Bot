@@ -25,7 +25,7 @@
 - د GL view د Activity lifecycle اداره.
 
 ### پاتې پړاوونه
-1. د GLB/GLTF فایل انتخاب، validation، محلي واردول او د حقیقي mesh رینډر.
+1. د څو GLB ماډلونو ګډ scene renderer او د هر توکي مستقل transform.
 2. د څو ماډلونو هممهاله رینډر او د هر توکي مستقل transform.
 3. skeletal rig، joints او حقیقي keyframe animation playback.
 4. د کمرې شاټونه، رڼا، مواد او scene settings.
