@@ -88,12 +88,32 @@ class ProjectStore(context: Context) {
         val projectDirectory = projectFolder(projectId)
         val characterDirectory = File(projectDirectory, "assets/characters").apply { mkdirs() }
         val modelFile = File(characterDirectory, "character_${System.currentTimeMillis()}.glb")
-        source.use { input ->
-            modelFile.outputStream().use { output -> input.copyTo(output) }
-        }
-        require(modelFile.isFile && modelFile.length() > 12L) {
+        try {
+            source.use { input ->
+                modelFile.outputStream().use { output ->
+                    val buffer = ByteArray(64 * 1024)
+                    var totalBytes = 0L
+                    while (true) {
+                        val count = input.read(buffer)
+                        if (count < 0) break
+                        totalBytes += count
+                        require(totalBytes <= 40L * 1024L * 1024L) {
+                            "د GLB ماډل اندازه له ۴۰ MB څخه زیاته ده؛ کوچنی ماډل وټاکه"
+                        }
+                        output.write(buffer, 0, count)
+                    }
+                }
+            }
+            val hasGlbHeader = modelFile.inputStream().use { input ->
+                val header = ByteArray(4)
+                input.read(header) == 4 && String(header, Charsets.US_ASCII) == "glTF"
+            }
+            require(modelFile.length() > 12L && hasGlbHeader) {
+                "دا GLB 2.0 فایل نه دی؛ د .glb فایل وټاکه"
+            }
+        } catch (error: Exception) {
             modelFile.delete()
-            "GLB فایل تش یا ناسم دی"
+            throw error
         }
         val cleanName = displayName.substringBeforeLast('.', displayName)
             .replace(Regex("[\\\\/:*?\"<>|]"), "_").trim().take(60)
