@@ -1,0 +1,287 @@
+package com.moviestudio.filmmaker
+
+import android.app.Activity
+import android.app.AlertDialog
+import android.graphics.Color
+import android.os.Bundle
+import android.view.Gravity
+import android.view.View
+import android.widget.Button
+import android.widget.LinearLayout
+import android.widget.ScrollView
+import android.widget.TextView
+import android.widget.Toast
+import org.json.JSONArray
+import org.json.JSONObject
+
+/** Local-first scene editor: objects and timeline metadata are persisted in project.json. */
+class SceneEditorActivity : Activity() {
+    private lateinit var store: ProjectStore
+    private lateinit var projectId: String
+    private lateinit var preview: Scene3DView
+    private lateinit var objectPanel: LinearLayout
+    private lateinit var timelinePanel: LinearLayout
+    private lateinit var status: TextView
+    private var selectedObjectId: String? = null
+    private var selectedObject: JSONObject? = null
+
+    private fun dp(v: Int) = (v * resources.displayMetrics.density).toInt()
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        store = ProjectStore(this)
+        projectId = intent.getStringExtra(EXTRA_PROJECT_ID).orEmpty()
+        if (projectId.isBlank()) { finish(); return }
+        try { store.load(projectId) } catch (_: Exception) {
+            Toast.makeText(this, "پروژه ونه موندل شوه", Toast.LENGTH_LONG).show()
+            finish(); return
+        }
+        buildEditor()
+        refreshPanels()
+    }
+
+    private fun buildEditor() {
+        window.statusBarColor = Color.rgb(12, 18, 34)
+        window.navigationBarColor = Color.rgb(12, 18, 34)
+        val root = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            layoutDirection = View.LAYOUT_DIRECTION_RTL
+            setBackgroundColor(0xFF0C1222.toInt())
+        }
+        val header = LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+            gravity = Gravity.CENTER_VERTICAL
+            setPadding(dp(8), dp(4), dp(8), dp(4))
+        }
+        header.addView(button("شاته") { finish() }, LinearLayout.LayoutParams(dp(78), dp(46)))
+        val projectName = store.load(projectId).optJSONObject("project")?.optString("name") ?: "فلم"
+        header.addView(label("🎬 $projectName", 18, true), LinearLayout.LayoutParams(0, dp(46), 1f))
+        header.addView(button("خوندي") { saveAndRefresh() }, LinearLayout.LayoutParams(dp(86), dp(46)))
+        root.addView(header)
+
+        preview = Scene3DView(this)
+        root.addView(preview, LinearLayout.LayoutParams(
+            LinearLayout.LayoutParams.MATCH_PARENT, 0, 1f
+        ).apply { height = dp(300) })
+
+        val scroll = ScrollView(this).apply { isFillViewport = false }
+        val content = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(dp(12), dp(8), dp(12), dp(18))
+        }
+        content.addView(label("د صحنې توکي", 17, true))
+        content.addView(label("کرکټر، مکعب او چاپېریال ورزیات کړه؛ هر بدلون په موبایل کې خوندي کېږي.", 12))
+        val addRow = horizontal()
+        addRow.addView(button("＋ کرکټر") { addObject("character", "نوی کرکټر") }, weighted())
+        addRow.addView(button("＋ مکعب") { addObject("cube", "نوی مکعب") }, weighted())
+        addRow.addView(button("＋ چاپېریال") { addObject("environment", "چاپېریال") }, weighted())
+        content.addView(addRow)
+        objectPanel = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
+        content.addView(objectPanel)
+
+        content.addView(label("د ټاکل شوي توکي بدلون", 17, true).apply { setPadding(0, dp(12), 0, dp(4)) })
+        val transformRow = horizontal()
+        transformRow.addView(button("X −") { nudge("x", -0.25) }, weighted())
+        transformRow.addView(button("X ＋") { nudge("x", 0.25) }, weighted())
+        transformRow.addView(button("Y −") { nudge("y", -0.25) }, weighted())
+        transformRow.addView(button("Y ＋") { nudge("y", 0.25) }, weighted())
+        content.addView(transformRow)
+        val scaleRow = horizontal()
+        scaleRow.addView(button("کوچنی −") { scale(-0.1) }, weighted())
+        scaleRow.addView(button("لوی ＋") { scale(0.1) }, weighted())
+        scaleRow.addView(button("حذف") { deleteSelected() }, weighted())
+        content.addView(scaleRow)
+
+        content.addView(label("د حرکت Timeline", 17, true).apply { setPadding(0, dp(14), 0, dp(4)) })
+        content.addView(label("حرکتونه د فریمونو په شمېر خوندي کېږي؛ لومړنی FPS د پروژې له تنظیماتو سره سم دی.", 12))
+        val motionRow = horizontal()
+        motionRow.addView(button("ولاړ") { addClip("idle") }, weighted())
+        motionRow.addView(button("قدم") { addClip("walk") }, weighted())
+        motionRow.addView(button("منډه") { addClip("run") }, weighted())
+        motionRow.addView(button("خبرې") { addClip("talk") }, weighted())
+        content.addView(motionRow)
+        timelinePanel = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
+        content.addView(timelinePanel)
+
+        status = label("ټول بدلونونه محلي دي.", 12)
+        status.setPadding(0, dp(10), 0, dp(4))
+        content.addView(status)
+        scroll.addView(content)
+        root.addView(scroll, LinearLayout.LayoutParams(
+            LinearLayout.LayoutParams.MATCH_PARENT, dp(360)
+        ))
+        setContentView(root)
+    }
+
+    private fun refreshPanels() {
+        val project = store.load(projectId)
+        val scene = project.optJSONArray("scenes")?.optJSONObject(0) ?: JSONObject()
+        val objects = scene.optJSONArray("objects") ?: JSONArray()
+        objectPanel.removeAllViews()
+        selectedObject = null
+        selectedObjectId = null
+        for (i in 0 until objects.length()) {
+            val item = objects.optJSONObject(i) ?: continue
+            val id = item.optString("id")
+            val type = item.optString("type")
+            val name = item.optString("name", type)
+            val row = horizontal()
+            val select = button((if (id == selectedObjectId) "✓ " else "") + name + " • " + type) {
+                selectedObjectId = id
+                selectedObject = item
+                preview.setSceneMode(if (type == "cube" || type == "prop" || type == "environment")
+                    Scene3DView.SCENE_CUBE else Scene3DView.SCENE_CHARACTER)
+                applySelectedTransform()
+                status.text = "ټاکل شوی: $name"
+                refreshObjectSelection()
+            }
+            row.addView(select, LinearLayout.LayoutParams(0, dp(48), 1f))
+            objectPanel.addView(row)
+        }
+        timelinePanel.removeAllViews()
+        val clips = scene.optJSONArray("timeline") ?: JSONArray()
+        for (i in 0 until clips.length()) {
+            val clip = clips.optJSONObject(i) ?: continue
+            val line = label(
+                "${clip.optString("action")}  •  ${clip.optInt("startFrame")}–${clip.optInt("startFrame") + clip.optInt("durationFrames")} فریم",
+                13
+            )
+            timelinePanel.addView(line)
+            timelinePanel.addView(button("دا کلیپ حذف کړه") {
+                try {
+                    store.removeTimelineClip(projectId, clip.optString("id"))
+                    refreshPanels()
+                } catch (error: Exception) { toast(error.message ?: "حذف ناکام شو") }
+            })
+        }
+        if (selectedObjectId == null && objects.length() > 0) {
+            selectedObject = objects.optJSONObject(0)
+            selectedObjectId = selectedObject?.optString("id")
+            applySelectedTransform()
+        }
+        if (objects.length() == 0) objectPanel.addView(label("تر اوسه توکي نشته؛ له پورته تڼیو یو توکی ورزیات کړه.", 13))
+        if (clips.length() == 0) timelinePanel.addView(label("Timeline تش دی؛ لومړی یو توکی وټاکه او حرکت ورزیات کړه.", 13))
+    }
+
+    private fun refreshObjectSelection() {
+        val project = store.load(projectId)
+        val scene = project.optJSONArray("scenes")?.optJSONObject(0) ?: return
+        val objects = scene.optJSONArray("objects") ?: return
+        objectPanel.removeAllViews()
+        for (i in 0 until objects.length()) {
+            val item = objects.optJSONObject(i) ?: continue
+            val id = item.optString("id")
+            val row = horizontal()
+            row.addView(button((if (id == selectedObjectId) "✓ " else "") + item.optString("name")) {
+                selectedObjectId = id
+                selectedObject = item
+                preview.setSceneMode(if (item.optString("type") == "cube") Scene3DView.SCENE_CUBE else Scene3DView.SCENE_CHARACTER)
+                applySelectedTransform()
+                refreshObjectSelection()
+            }, LinearLayout.LayoutParams(0, dp(46), 1f))
+            objectPanel.addView(row)
+        }
+    }
+
+    private fun addObject(type: String, name: String) {
+        try {
+            val item = store.addSceneObject(projectId, type, name)
+            selectedObjectId = item.optString("id")
+            selectedObject = item
+            preview.setSceneMode(if (type == "cube" || type == "environment") Scene3DView.SCENE_CUBE else Scene3DView.SCENE_CHARACTER)
+            applySelectedTransform()
+            refreshPanels()
+            status.text = "توکی ورزیات او خوندي شو."
+        } catch (error: Exception) { toast(error.message ?: "توکی نه شو ورزیاتېدای") }
+    }
+
+    private fun nudge(axis: String, delta: Double) {
+        val item = selectedObject ?: run { toast("لومړی یو توکی وټاکه"); return }
+        val changes = JSONObject().put(axis, item.optDouble(axis) + delta)
+        updateSelected(changes)
+    }
+
+    private fun scale(delta: Double) {
+        val item = selectedObject ?: run { toast("لومړی یو توکی وټاکه"); return }
+        updateSelected(JSONObject().put("scale", item.optDouble("scale", 1.0) + delta))
+    }
+
+    private fun updateSelected(changes: JSONObject) {
+        val id = selectedObjectId ?: run { toast("لومړی یو توکی وټاکه"); return }
+        try {
+            selectedObject = store.updateSceneObject(projectId, id, changes)
+            applySelectedTransform()
+            refreshObjectSelection()
+            status.text = "بدلون خوندي شو."
+        } catch (error: Exception) { toast(error.message ?: "بدلون خوندي نه شو") }
+    }
+
+    private fun applySelectedTransform() {
+        val item = selectedObject ?: return
+        preview.setObjectTransform(
+            item.optDouble("x").toFloat(), item.optDouble("y").toFloat(),
+            item.optDouble("z").toFloat(), item.optDouble("scale", 1.0).toFloat()
+        )
+        preview.setSkinPalette(item.optInt("skin", 1))
+        preview.setShirtPalette(item.optInt("shirt", 0))
+    }
+
+    private fun deleteSelected() {
+        val id = selectedObjectId ?: run { toast("لومړی یو توکی وټاکه"); return }
+        AlertDialog.Builder(this).setTitle("توکی حذفول")
+            .setMessage("ټاکل شوی توکی او د هغه د Timeline کلیپونه حذف شي؟")
+            .setNegativeButton("نه", null)
+            .setPositiveButton("هو") { _, _ ->
+                try {
+                    store.removeSceneObject(projectId, id)
+                    selectedObjectId = null; selectedObject = null
+                    refreshPanels()
+                    status.text = "توکی حذف شو."
+                } catch (error: Exception) { toast(error.message ?: "حذف ناکام شو") }
+            }.show()
+    }
+
+    private fun addClip(action: String) {
+        val id = selectedObjectId ?: run { toast("لومړی یو کرکټر یا توکی وټاکه"); return }
+        try {
+            store.addTimelineClip(projectId, id, action)
+            refreshPanels()
+            status.text = "د حرکت کلیپ Timeline ته ورزیات شو."
+        } catch (error: Exception) { toast(error.message ?: "کلیپ نه شو ورزیاتېدای") }
+    }
+
+    private fun saveAndRefresh() {
+        try { store.save(store.load(projectId)); status.text = "پروژه په موبایل کې خوندي شوه." }
+        catch (error: Exception) { toast(error.message ?: "خوندي کول ناکام شول") }
+    }
+
+    private fun horizontal() = LinearLayout(this).apply {
+        orientation = LinearLayout.HORIZONTAL
+        layoutDirection = View.LAYOUT_DIRECTION_RTL
+    }
+
+    private fun weighted() = LinearLayout.LayoutParams(0, dp(48), 1f).apply {
+        marginStart = dp(4); marginEnd = dp(4)
+    }
+
+    private fun label(value: String, size: Int, bold: Boolean = false) = TextView(this).apply {
+        text = value; textSize = size.toFloat(); setTextColor(Color.WHITE)
+        if (bold) setTypeface(typeface, android.graphics.Typeface.BOLD)
+        setPadding(dp(5), dp(5), dp(5), dp(5))
+    }
+
+    private fun button(value: String, action: () -> Unit) = Button(this).apply {
+        text = value; isAllCaps = false; textSize = 13f; setTextColor(Color.WHITE)
+        minHeight = dp(44)
+        background = android.graphics.drawable.GradientDrawable().apply {
+            setColor(0xFF344F83.toInt()); setStroke(dp(1), 0xFF718BB9.toInt())
+            cornerRadius = dp(12).toFloat()
+        }
+        setOnClickListener { action() }
+    }
+
+    private fun toast(message: String) =
+        Toast.makeText(this, message, Toast.LENGTH_LONG).show()
+
+    companion object { const val EXTRA_PROJECT_ID = "project_id" }
+}
