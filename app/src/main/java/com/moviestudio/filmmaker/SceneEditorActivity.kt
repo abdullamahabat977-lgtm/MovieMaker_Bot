@@ -7,6 +7,7 @@ import android.os.Bundle
 import android.view.Gravity
 import android.view.View
 import android.widget.Button
+import android.widget.EditText
 import android.widget.LinearLayout
 import android.widget.ScrollView
 import android.widget.TextView
@@ -92,6 +93,13 @@ class SceneEditorActivity : Activity() {
         scaleRow.addView(button("لوی ＋") { scale(0.1) }, weighted())
         scaleRow.addView(button("حذف") { deleteSelected() }, weighted())
         content.addView(scaleRow)
+        val editRow = horizontal()
+        editRow.addView(button("نوم بدلول") { renameSelected() }, weighted())
+        editRow.addView(button("کاپي") { duplicateSelected() }, weighted())
+        editRow.addView(button("د پوستکي رنګ") { cyclePalette("skin", 4) }, weighted())
+        editRow.addView(button("د کمیس رنګ") { cyclePalette("shirt", 6) }, weighted())
+        content.addView(editRow)
+        content.addView(button("🎥 کمره بېرته برابره کړه") { preview.resetCamera() })
 
         content.addView(label("د حرکت Timeline", 17, true).apply { setPadding(0, dp(14), 0, dp(4)) })
         content.addView(label("حرکتونه د فریمونو په شمېر خوندي کېږي؛ لومړنی FPS د پروژې له تنظیماتو سره سم دی.", 12))
@@ -245,6 +253,47 @@ class SceneEditorActivity : Activity() {
         )
         preview.setSkinPalette(item.optInt("skin", 1))
         preview.setShirtPalette(item.optInt("shirt", 0))
+    }
+
+    private fun renameSelected() {
+        val item = selectedObject ?: run { toast("لومړی یو توکی وټاکه"); return }
+        val input = EditText(this).apply {
+            setSingleLine(true)
+            setText(item.optString("name"))
+            setSelection(text.length)
+        }
+        AlertDialog.Builder(this).setTitle("د توکي نوم بدلول")
+            .setView(input).setNegativeButton("لغوه", null)
+            .setPositiveButton("خوندي کول") { _, _ ->
+                val id = selectedObjectId ?: return@setPositiveButton
+                try {
+                    selectedObject = store.updateSceneObject(projectId, id,
+                        JSONObject().put("name", input.text.toString().trim()))
+                    refreshPanels()
+                    status.text = "د توکي نوم بدل او خوندي شو."
+                } catch (error: Exception) { toast(error.message ?: "نوم بدل نه شو") }
+            }.show()
+    }
+
+    private fun duplicateSelected() {
+        val id = selectedObjectId ?: run { toast("لومړی یو توکی وټاکه"); return }
+        try {
+            val copy = store.duplicateSceneObject(projectId, id)
+            selectedObjectId = copy.optString("id")
+            selectedObject = copy
+            refreshPanels()
+            status.text = "د توکي کاپي جوړه او خوندي شوه."
+        } catch (error: Exception) { toast(error.message ?: "کاپي نه شوه") }
+    }
+
+    private fun cyclePalette(key: String, count: Int) {
+        val item = selectedObject ?: run { toast("لومړی یو کرکټر وټاکه"); return }
+        if (item.optString("type") != "character") {
+            toast("رنګونه یوازې د کرکټر لپاره دي")
+            return
+        }
+        val next = (item.optInt(key) + 1) % count
+        updateSelected(JSONObject().put(key, next))
     }
 
     private fun deleteSelected() {
