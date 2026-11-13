@@ -11,6 +11,9 @@
             android:name=".AccountLinkActivity"
             android:exported="false" />
         <activity
+            android:name=".SceneEditorActivity"
+            android:exported="false" />
+        <activity
             android:name=".Scene3DActivity"
             android:exported="false" />
         <activity
