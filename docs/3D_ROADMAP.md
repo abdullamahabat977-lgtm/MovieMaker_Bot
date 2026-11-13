@@ -25,7 +25,7 @@
 - د GL view د Activity lifecycle اداره.
 
 ### پاتې پړاوونه
-1. د ګډ scene renderer لپاره د حافظې، رڼا، سیوري او animation فعالیت لا ښه کول؛ بنسټیز څو-GLB لید ورزیات شوی.
+1. د ګډ scene renderer لپاره د حافظې، رڼا، سیوري او animation فعالیت لا ښه کول؛ بنسټیز څو-GLB لید ورزیات شوی (تر ۸ ماډلونو او ۸۰ MB پورې).
 2. د څو ماډلونو هممهاله رینډر، د انتخاب/ټچ له لارې د توکي ټاکل او مستقل transform کنټرول.
 3. د Timeline له لارې د embedded animation انتخاب، د حرکتونو blend او keyframe کنټرول؛ له GLB بهر د نوي skeletal rig جوړول.
 4. د کمرې شاټونه، رڼا، مواد او scene settings.
