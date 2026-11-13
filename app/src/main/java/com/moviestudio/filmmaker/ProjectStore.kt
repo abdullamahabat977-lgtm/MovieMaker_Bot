@@ -242,30 +242,25 @@ class ProjectStore(context: Context) {
         val old = firstScene(project).optJSONArray("objects") ?: JSONArray()
         val kept = JSONArray()
         var removed = false
+        var deletedPath: String? = null
         for (index in 0 until old.length()) {
             val item = old.optJSONObject(index) ?: continue
-            if (item.optString("id") == objectId) { removed = true; deletedPath = item.optString("modelPath").ifBlank { null } } else kept.put(item)
+            if (item.optString("id") == objectId) {
+                removed = true
+                deletedPath = item.optString("modelPath").ifBlank { null }
+            } else {
+                kept.put(item)
+            }
         }
         require(removed) { "د صحنې توکی ونه موندل شو" }
         firstScene(project).put("objects", kept)
         val assets = project.optJSONArray("assets") ?: JSONArray()
         val keptAssets = JSONArray()
-        var deletedPath: String? = null
         for (index in 0 until assets.length()) {
             val asset = assets.optJSONObject(index) ?: continue
             if (asset.optString("id") != objectId) keptAssets.put(asset)
         }
         project.put("assets", keptAssets)
-        if (!deletedPath.isNullOrBlank()) {
-            val stillUsed = (0 until kept.length()).any {
-                kept.optJSONObject(it)?.optString("modelPath") == deletedPath
-            }
-            if (!stillUsed) {
-                val candidate = File(projectFolder(projectId), deletedPath!!).canonicalFile
-                val base = projectFolder(projectId).canonicalFile
-                if (candidate.path.startsWith(base.path + File.separator) && candidate.isFile) candidate.delete()
-            }
-        }
         val clips = firstScene(project).optJSONArray("timeline") ?: JSONArray()
         val keptClips = JSONArray()
         for (index in 0 until clips.length()) {
@@ -274,6 +269,16 @@ class ProjectStore(context: Context) {
         }
         firstScene(project).put("timeline", keptClips)
         save(project)
+        if (!deletedPath.isNullOrBlank()) {
+            val stillUsed = (0 until kept.length()).any {
+                kept.optJSONObject(it)?.optString("modelPath") == deletedPath
+            }
+            if (!stillUsed) {
+                val base = projectFolder(projectId).canonicalFile
+                val candidate = File(base, deletedPath!!).canonicalFile
+                if (candidate.path.startsWith(base.path + File.separator) && candidate.isFile) candidate.delete()
+            }
+        }
     }
 
     fun addTimelineClip(projectId: String, objectId: String, action: String, durationFrames: Int = 48): JSONObject {
