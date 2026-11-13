@@ -73,7 +73,7 @@ class SceneEditorActivity : Activity() {
             setPadding(dp(12), dp(8), dp(12), dp(18))
         }
         content.addView(label("د صحنې توکي", 17, true))
-        content.addView(label("کرکټر، مکعب او چاپېریال ورزیات کړه؛ هر بدلون په موبایل کې خوندي کېږي.", 12))
+        content.addView(label("مکعب او چاپېریال ورزیات کړه؛ د واقعي انسان لپاره GLB 2.0 کرکټر وارد کړه. ټول فایلونه په موبایل کې خوندي کېږي.", 12))
         val addRow = horizontal()
         addRow.addView(button("＋ مکعب") { addObject("cube", "نوی مکعب") }, weighted())
         addRow.addView(button("＋ چاپېریال") { addObject("environment", "چاپېریال") }, weighted())
