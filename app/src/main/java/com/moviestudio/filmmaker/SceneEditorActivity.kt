@@ -13,6 +13,7 @@ import android.widget.LinearLayout
 import android.widget.ScrollView
 import android.widget.TextView
 import android.widget.Toast
+import android.provider.OpenableColumns
 import org.json.JSONArray
 import org.json.JSONObject
 
@@ -27,6 +28,7 @@ class SceneEditorActivity : Activity() {
     private var selectedObjectId: String? = null
     private var selectedObject: JSONObject? = null
     private var glResumed = false
+    private var pendingModelType = "character"
 
     private fun dp(v: Int) = (v * resources.displayMetrics.density).toInt()
 
@@ -73,13 +75,9 @@ class SceneEditorActivity : Activity() {
             setPadding(dp(12), dp(8), dp(12), dp(18))
         }
         content.addView(label("د صحنې توکي", 17, true))
-        content.addView(label("مکعب او چاپېریال ورزیات کړه؛ د واقعي انسان لپاره GLB 2.0 کرکټر وارد کړه. ټول فایلونه په موبایل کې خوندي کېږي.", 12))
-        val addRow = horizontal()
-        addRow.addView(button("＋ مکعب") { addObject("cube", "نوی مکعب") }, weighted())
-        addRow.addView(button("＋ چاپېریال") { addObject("environment", "چاپېریال") }, weighted())
-        content.addView(addRow)
-        content.addView(button("🧍 واقعي 3D کرکټر واردول (GLB)") { pickRealisticCharacter() })
-        content.addView(button("واقعي کرکټر په 3D کې وګوره") { openSelectedRealisticModel() })
+        content.addView(label("د انسان، حیوان، موټر، کور، ونې، فرنیچر او نورو شیانو حقیقي 3D ماډلونه د GLB 2.0 په بڼه وارد کړه. کارتوني نمونه‌یي شکلونه د فلم د توکو په توګه نه کارېږي.", 12))
+        content.addView(button("＋ حقیقي 3D توکی واردول (GLB)") { chooseModelType() })
+        content.addView(button("ټاکل شوی حقیقي ماډل په 3D کې وګوره") { openSelectedRealisticModel() })
         objectPanel = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
         content.addView(objectPanel)
 
@@ -211,7 +209,17 @@ class SceneEditorActivity : Activity() {
         }
     }
 
-    private fun pickRealisticCharacter() {
+    private fun chooseModelType() {
+        val labels = arrayOf("انسان", "حیوان", "موټر / وسیله", "کور / ودانۍ", "ونه / بوټی", "فرنیچر", "نور شیان", "چاپېریال")
+        val types = arrayOf("character", "animal", "vehicle", "building", "tree", "furniture", "prop", "environment")
+        AlertDialog.Builder(this)
+            .setTitle("کوم حقیقي 3D توکی واردوې؟")
+            .setItems(labels) { _, which -> pendingModelType = types[which]; pickRealisticModel() }
+            .setNegativeButton("لغوه", null)
+            .show()
+    }
+
+    private fun pickRealisticModel() {
         val intent = Intent(Intent.ACTION_OPEN_DOCUMENT).apply {
             addCategory(Intent.CATEGORY_OPENABLE)
             type = "*/*"
@@ -221,15 +229,15 @@ class SceneEditorActivity : Activity() {
     }
 
     private fun openSelectedRealisticModel() {
-        val item = selectedObject ?: run { toast("لومړی یو وارد شوی کرکټر وټاکه"); return }
+        val item = selectedObject ?: run { toast("لومړی یو وارد شوی حقیقي 3D ماډل وټاکه"); return }
         val relativePath = item.optString("modelPath")
         if (relativePath.isBlank()) {
-            toast("دا پخوانی نمونه‌یي کرکټر دی؛ د واقعي کرکټر لپاره GLB فایل وارد کړه")
+            toast("دا پخوانی ساده توکی دی؛ د حقیقي لید لپاره GLB ماډل وارد کړه")
             return
         }
         val file = java.io.File(java.io.File(filesDir, "MovieProjects/$projectId"), relativePath)
         if (!file.isFile) {
-            toast("د کرکټر GLB فایل ونه موندل شو")
+            toast("د 3D ماډل GLB فایل ونه موندل شو")
             return
         }
         startActivity(Intent(this, RealisticModelPreviewActivity::class.java)
@@ -244,16 +252,17 @@ class SceneEditorActivity : Activity() {
         val uri = data?.data ?: return
         try {
             val stream = contentResolver.openInputStream(uri) ?: throw IllegalStateException("فایل نه پرانیستل کېږي")
-            val name = uri.lastPathSegment?.substringAfterLast('/')?.substringAfterLast(':')
-                ?.ifBlank { "واقعي 3D کرکټر" } ?: "واقعي 3D کرکټر"
-            val imported = store.importCharacterModel(projectId, stream, name)
+            val name = contentResolver.query(uri, arrayOf(OpenableColumns.DISPLAY_NAME), null, null, null)?.use { cursor ->
+                if (cursor.moveToFirst()) cursor.getString(0) else null
+            } ?: "3D-${pendingModelType}.glb"
+            val imported = store.importSceneModel(projectId, stream, name, pendingModelType)
             selectedObjectId = imported.optString("id")
             selectedObject = imported
             refreshPanels()
-            status.text = "واقعي GLB کرکټر په موبایل کې وارد او خوندي شو."
-            toast("واقعي 3D کرکټر وارد شو")
+            status.text = "حقیقي GLB ماډل په موبایل کې وارد او خوندي شو."
+            toast("حقیقي 3D ماډل وارد شو")
         } catch (error: Exception) {
-            toast(error.message ?: "د GLB واردول ناکام شول")
+            toast(error.message ?: "د حقیقي 3D ماډل واردول ناکام شول")
         }
     }
 
@@ -294,7 +303,7 @@ class SceneEditorActivity : Activity() {
         val item = selectedObject ?: return
         if (item.optString("modelPath").isNotBlank()) {
             preview.visibility = View.INVISIBLE
-            status.text = "واقعي GLB کرکټر ټاکل شوی؛ د واقعي لیدلو تڼۍ وکاروه."
+            status.text = "حقیقي GLB ماډل ټاکل شوی؛ د 3D لیدلو تڼۍ وکاروه."
             return
         }
         preview.visibility = View.VISIBLE
