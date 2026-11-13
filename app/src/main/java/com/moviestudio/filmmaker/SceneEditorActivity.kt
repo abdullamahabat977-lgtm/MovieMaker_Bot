@@ -1,6 +1,7 @@
 package com.moviestudio.filmmaker
 
 import android.app.Activity
+import android.content.Intent
 import android.app.AlertDialog
 import android.graphics.Color
 import android.os.Bundle
@@ -74,10 +75,11 @@ class SceneEditorActivity : Activity() {
         content.addView(label("د صحنې توکي", 17, true))
         content.addView(label("کرکټر، مکعب او چاپېریال ورزیات کړه؛ هر بدلون په موبایل کې خوندي کېږي.", 12))
         val addRow = horizontal()
-        addRow.addView(button("＋ کرکټر") { addObject("character", "نوی کرکټر") }, weighted())
         addRow.addView(button("＋ مکعب") { addObject("cube", "نوی مکعب") }, weighted())
         addRow.addView(button("＋ چاپېریال") { addObject("environment", "چاپېریال") }, weighted())
         content.addView(addRow)
+        content.addView(button("🧍 واقعي 3D کرکټر واردول (GLB)") { pickRealisticCharacter() })
+        content.addView(button("واقعي کرکټر په 3D کې وګوره") { openSelectedRealisticModel() })
         objectPanel = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
         content.addView(objectPanel)
 
@@ -212,6 +214,52 @@ class SceneEditorActivity : Activity() {
         }
     }
 
+    private fun pickRealisticCharacter() {
+        val intent = Intent(Intent.ACTION_OPEN_DOCUMENT).apply {
+            addCategory(Intent.CATEGORY_OPENABLE)
+            type = "*/*"
+            putExtra(Intent.EXTRA_MIME_TYPES, arrayOf("model/gltf-binary", "application/octet-stream"))
+        }
+        startActivityForResult(intent, REQUEST_IMPORT_GLB)
+    }
+
+    private fun openSelectedRealisticModel() {
+        val item = selectedObject ?: run { toast("لومړی یو وارد شوی کرکټر وټاکه"); return }
+        val relativePath = item.optString("modelPath")
+        if (relativePath.isBlank()) {
+            toast("دا پخوانی نمونه‌یي کرکټر دی؛ د واقعي کرکټر لپاره GLB فایل وارد کړه")
+            return
+        }
+        val file = java.io.File(java.io.File(filesDir, "MovieProjects/$projectId"), relativePath)
+        if (!file.isFile) {
+            toast("د کرکټر GLB فایل ونه موندل شو")
+            return
+        }
+        startActivity(Intent(this, RealisticModelPreviewActivity::class.java)
+            .putExtra(RealisticModelPreviewActivity.EXTRA_MODEL_PATH, file.absolutePath)
+            .putExtra(RealisticModelPreviewActivity.EXTRA_MODEL_NAME, item.optString("name")))
+    }
+
+    @Deprecated("Uses the compatible document picker API for older Android versions")
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+        if (requestCode != REQUEST_IMPORT_GLB || resultCode != RESULT_OK) return
+        val uri = data?.data ?: return
+        try {
+            val stream = contentResolver.openInputStream(uri) ?: throw IllegalStateException("فایل نه پرانیستل کېږي")
+            val name = uri.lastPathSegment?.substringAfterLast('/')?.substringAfterLast(':')
+                ?.ifBlank { "واقعي 3D کرکټر" } ?: "واقعي 3D کرکټر"
+            val imported = store.importCharacterModel(projectId, stream, name)
+            selectedObjectId = imported.optString("id")
+            selectedObject = imported
+            refreshPanels()
+            status.text = "واقعي GLB کرکټر په موبایل کې وارد او خوندي شو."
+            toast("واقعي 3D کرکټر وارد شو")
+        } catch (error: Exception) {
+            toast(error.message ?: "د GLB واردول ناکام شول")
+        }
+    }
+
     private fun addObject(type: String, name: String) {
         try {
             val item = store.addSceneObject(projectId, type, name)
@@ -247,6 +295,12 @@ class SceneEditorActivity : Activity() {
 
     private fun applySelectedTransform() {
         val item = selectedObject ?: return
+        if (item.optString("modelPath").isNotBlank()) {
+            preview.visibility = View.INVISIBLE
+            status.text = "واقعي GLB کرکټر ټاکل شوی؛ د واقعي لیدلو تڼۍ وکاروه."
+            return
+        }
+        preview.visibility = View.VISIBLE
         preview.setObjectTransform(
             item.optDouble("x").toFloat(), item.optDouble("y").toFloat(),
             item.optDouble("z").toFloat(), item.optDouble("scale", 1.0).toFloat()
@@ -353,5 +407,5 @@ class SceneEditorActivity : Activity() {
     private fun toast(message: String) =
         Toast.makeText(this, message, Toast.LENGTH_LONG).show()
 
-    companion object { const val EXTRA_PROJECT_ID = "project_id" }
+    companion object { const val EXTRA_PROJECT_ID = "project_id"; private const val REQUEST_IMPORT_GLB = 7301 }
 }
