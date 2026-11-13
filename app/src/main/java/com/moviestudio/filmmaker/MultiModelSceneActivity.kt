@@ -258,7 +258,7 @@ class MultiModelSceneActivity : Activity() {
 
     companion object {
         const val EXTRA_PROJECT_ID = "multi_scene_project_id"
-        private const val MAX_MODELS = 12
-        private const val MAX_TOTAL_BYTES = 120L * 1024L * 1024L
+        private const val MAX_MODELS = 8
+        private const val MAX_TOTAL_BYTES = 80L * 1024L * 1024L
     }
 }
