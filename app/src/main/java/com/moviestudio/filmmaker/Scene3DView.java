@@ -164,7 +164,7 @@ public final class Scene3DView extends GLSurfaceView {
         private volatile float yaw = -25f, pitch = 18f, distance = 8.5f;
         private volatile int sceneMode = SCENE_CHARACTER;
         private volatile int skinPaletteIndex = 1;
-        private volatile int shirtPaletteIndex = 0;
+        private volatile int shirtPaletteIndex = 0;\n        private volatile float objectX = 0f, objectY = 0f, objectZ = 0f, objectScale = 1f;
 
         void setSceneMode(int mode) {
             sceneMode = mode;
