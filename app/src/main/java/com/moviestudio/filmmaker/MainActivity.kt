@@ -572,14 +572,16 @@ class MainActivity : Activity() {
         val name = details.optString("name", "بې نومه")
         val created = details.optString("createdAt", "نامعلوم")
         val updated = details.optString("updatedAt", "نامعلوم")
-        val options = arrayOf("📂 د پروژې معلومات", "✏️ نوم بدلول", "🗑️ پروژه حذفول")
+        val options = arrayOf("🎬 د فلم صحنه پرانیستل", "📂 د پروژې معلومات", "✏️ نوم بدلول", "🗑️ پروژه حذفول")
         AlertDialog.Builder(this).setTitle(name).setItems(options) { _, which ->
             when (which) {
-                0 -> AlertDialog.Builder(this).setTitle("د پروژې معلومات")
-                    .setMessage("نوم: $name\n\nجوړه شوې: $created\n\nوروستی بدلون: $updated\n\nپروژه او اړوند فایلونه یوازې په همدې موبایل کې ساتل کېږي. د 3D صحنې ایډیټر لا د جوړولو په پړاو کې دی.")
+                0 -> startActivity(Intent(this, SceneEditorActivity::class.java)
+                    .putExtra(SceneEditorActivity.EXTRA_PROJECT_ID, id))
+                1 -> AlertDialog.Builder(this).setTitle("د پروژې معلومات")
+                    .setMessage("نوم: $name\\n\\nجوړه شوې: $created\\n\\nوروستی بدلون: $updated\\n\\nپروژه، صحنې، توکي او Timeline یوازې په همدې موبایل کې ساتل کېږي.")
                     .setPositiveButton("سمه ده", null).show()
-                1 -> renameProjectDialog(id, name)
-                2 -> confirmDeleteProject(id, name)
+                2 -> renameProjectDialog(id, name)
+                3 -> confirmDeleteProject(id, name)
             }
         }.setNegativeButton("بند", null).show()
     }
