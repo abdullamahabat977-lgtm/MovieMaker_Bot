@@ -4,6 +4,7 @@ import android.content.Context
 import org.json.JSONArray
 import org.json.JSONObject
 import java.io.File
+import java.io.InputStream
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -77,6 +78,46 @@ class ProjectStore(context: Context) {
             .put("x", 0.0).put("y", 0.0).put("z", 0.0).put("scale", 1.0)
             .put("skin", 1).put("shirt", 0)
         objects.put(item)
+        save(project)
+        return item
+    }
+
+
+    /** Imports a textured GLB character into this project's private local storage. */
+    fun importCharacterModel(projectId: String, source: InputStream, displayName: String): JSONObject {
+        val projectDirectory = projectFolder(projectId)
+        val characterDirectory = File(projectDirectory, "assets/characters").apply { mkdirs() }
+        val modelFile = File(characterDirectory, "character_${System.currentTimeMillis()}.glb")
+        source.use { input ->
+            modelFile.outputStream().use { output -> input.copyTo(output) }
+        }
+        require(modelFile.isFile && modelFile.length() > 12L) {
+            modelFile.delete()
+            "GLB فایل تش یا ناسم دی"
+        }
+        val cleanName = displayName.substringBeforeLast('.', displayName)
+            .replace(Regex("[\\\\/:*?\"<>|]"), "_").trim().take(60)
+            .ifBlank { "واقعي 3D کرکټر" }
+        val relativePath = "assets/characters/${modelFile.name}"
+        val project = load(projectId)
+        val scene = firstScene(project)
+        val objects = scene.optJSONArray("objects") ?: JSONArray().also { scene.put("objects", it) }
+        val item = JSONObject()
+            .put("id", "object_" + System.currentTimeMillis().toString())
+            .put("type", "character")
+            .put("name", cleanName)
+            .put("format", "glb")
+            .put("modelPath", relativePath)
+            .put("x", 0.0).put("y", 0.0).put("z", 0.0).put("scale", 1.0)
+        objects.put(item)
+        val assets = project.optJSONArray("assets") ?: JSONArray().also { project.put("assets", it) }
+        assets.put(JSONObject()
+            .put("id", item.optString("id"))
+            .put("type", "character")
+            .put("format", "glb")
+            .put("name", cleanName)
+            .put("path", relativePath)
+            .put("sizeBytes", modelFile.length()))
         save(project)
         return item
     }
