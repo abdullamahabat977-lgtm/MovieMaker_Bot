@@ -183,7 +183,7 @@ class MainActivity : Activity() {
         }
         addAssetPageHeader(page, "🧰 د فلم توکي") { onBackPressed() }
         page.addView(text(
-            "د فلم لپاره توکي په لاندې برخو کې وټاکه. ټولې ۲۲ برخې د هرې برخې ۲۰ جلا فلمي توکي لري.",
+            "د فلم لپاره توکي په لاندې برخو کې وټاکه. ټولې ۲۲ برخې د هرې برخې یوازې ۵ جلا فلمي توکي لري.",
             14, 0xFFD7DCEF.toInt()
         ).apply { setPadding(dp(4), dp(8), dp(4), dp(14)) })
         categories.forEachIndexed { index, item ->
@@ -276,7 +276,7 @@ class MainActivity : Activity() {
             val imageHeight = if (isWideCategory) dp(104) else dp(142)
             val tileHeight = if (isWideCategory) dp(136) else dp(174)
             page.addView(text(
-                "د توکي د انځور د لوی لیدلو او بیې لپاره پر انځور ټچ وکړه. اوس ټول توکي وړیا دي.",
+                "د توکي د لوی لیدلو او بیې لپاره پر انځور ټچ وکړه. په هره برخه کې ۵ توکي دي؛ اوس ټول توکي وړیا دي.",
                 14, 0xFFD7DCEF.toInt()
             ).apply { setPadding(dp(6), dp(8), dp(6), dp(14)) })
 
