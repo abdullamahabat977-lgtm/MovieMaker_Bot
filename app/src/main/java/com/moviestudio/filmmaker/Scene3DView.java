@@ -54,6 +54,12 @@ public final class Scene3DView extends GLSurfaceView {
         requestRender();
     }
 
+    /** Applies the selected scene object's saved transform to the live preview. */
+    public void setObjectTransform(float x, float y, float z, float scale) {
+        previewRenderer.setObjectTransform(x, y, z, scale);
+        requestRender();
+    }
+
     private static float spacing(MotionEvent event) {
         if (event.getPointerCount() < 2) return 0f;
         float dx = event.getX(0) - event.getX(1);
@@ -165,7 +171,9 @@ public final class Scene3DView extends GLSurfaceView {
         private volatile float yaw = -25f, pitch = 18f, distance = 8.5f;
         private volatile int sceneMode = SCENE_CHARACTER;
         private volatile int skinPaletteIndex = 1;
-        private volatile int shirtPaletteIndex = 0;\n        private volatile float objectX = 0f, objectY = 0f, objectZ = 0f, objectScale = 1f;
+        private volatile int shirtPaletteIndex = 0;
+        private volatile float objectX = 0f, objectY = 0f, objectZ = 0f, objectScale = 1f;
+        private final float[] transformedVp = new float[16];\n        private volatile float objectX = 0f, objectY = 0f, objectZ = 0f, objectScale = 1f;
 
         void setSceneMode(int mode) {
             sceneMode = mode;
@@ -177,6 +185,13 @@ public final class Scene3DView extends GLSurfaceView {
 
         void setShirtPalette(int index) {
             shirtPaletteIndex = Math.max(0, Math.min(SHIRT_PALETTES.length - 1, index));
+        }
+
+        void setObjectTransform(float x, float y, float z, float scale) {
+            objectX = Math.max(-3f, Math.min(3f, x));
+            objectY = Math.max(-1f, Math.min(3f, y));
+            objectZ = Math.max(-3f, Math.min(3f, z));
+            objectScale = Math.max(0.25f, Math.min(3f, scale));
         }
         private volatile boolean failed;
 
@@ -382,6 +397,10 @@ public final class Scene3DView extends GLSurfaceView {
                         0f, 0f, 0f, 1f, 1f, 1f);
                 draw(gridBuffer, GLES20.GL_LINES, 0, 17 * 4, GRID_COLOR,
                         0f, 0f, 0f, 1f, 1f, 1f);
+                // Keep the floor/grid fixed; transform only the selected model.
+                Matrix.translateM(transformedVp, 0, vp, 0, objectX, objectY, objectZ);
+                Matrix.scaleM(transformedVp, 0, objectScale, objectScale, objectScale);
+                System.arraycopy(transformedVp, 0, vp, 0, 16);
                 if (sceneMode == SCENE_CHARACTER) {
                     drawCharacter();
                 } else {
