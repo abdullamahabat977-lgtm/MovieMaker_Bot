@@ -81,6 +81,7 @@ class SceneEditorActivity : Activity() {
         content.addView(label("د انسان، حیوان، موټر، کور، ونې، فرنیچر او نورو شیانو حقیقي 3D ماډلونه د GLB 2.0 په بڼه وارد کړه. کارتوني نمونه‌یي شکلونه د فلم د توکو په توګه نه کارېږي.", 12))
         content.addView(button("＋ حقیقي 3D توکی واردول (GLB)") { chooseModelType() })
         content.addView(button("ټاکل شوی حقیقي ماډل په 3D کې وګوره") { openSelectedRealisticModel() })
+        content.addView(button("ټول حقیقي توکي په یوه 3D صحنه کې وګوره") { openWholeScene() })
         objectPanel = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
         content.addView(objectPanel)
 
@@ -219,6 +220,11 @@ class SceneEditorActivity : Activity() {
             putExtra(Intent.EXTRA_MIME_TYPES, arrayOf("model/gltf-binary", "application/octet-stream"))
         }
         startActivityForResult(intent, REQUEST_IMPORT_GLB)
+    }
+
+    private fun openWholeScene() {
+        startActivity(Intent(this, MultiModelSceneActivity::class.java)
+            .putExtra(MultiModelSceneActivity.EXTRA_PROJECT_ID, projectId))
     }
 
     private fun openSelectedRealisticModel() {
