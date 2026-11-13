@@ -20,6 +20,10 @@ import java.nio.ByteBuffer
  */
 class RealisticModelPreviewActivity : Activity() {
     private var modelViewer: ModelViewer? = null
+    private var userX = 0f
+    private var userY = 0f
+    private var userZ = 0f
+    private var userScale = 1f
     private val frameCallback = object : Choreographer.FrameCallback {
         override fun doFrame(frameTimeNanos: Long) {
             val viewer = modelViewer ?: return
@@ -51,10 +55,15 @@ class RealisticModelPreviewActivity : Activity() {
             viewer.loadModelGlb(ByteBuffer.wrap(bytes))
             viewer.transformToUnitCube()
             check(viewer.asset != null) { "د GLB ماډل لوستل ناکام شول" }
+            userX = intent.getFloatExtra(EXTRA_X, 0f)
+            userY = intent.getFloatExtra(EXTRA_Y, 0f)
+            userZ = intent.getFloatExtra(EXTRA_Z, 0f)
+            userScale = intent.getFloatExtra(EXTRA_SCALE, 1f).coerceIn(0.25f, 3f)
+            applyObjectTransform(viewer)
             val resetCamera = Button(this).apply {
                 text = "کمره بېرته برابره کړه"
                 isAllCaps = false
-                setOnClickListener { viewer.resetToDefaultState() }
+                setOnClickListener { viewer.resetToDefaultState(); applyObjectTransform(viewer) }
             }
             val frame = FrameLayout(this)
             frame.addView(surface, FrameLayout.LayoutParams(
@@ -72,6 +81,18 @@ class RealisticModelPreviewActivity : Activity() {
         }
     }
 
+    private fun applyObjectTransform(viewer: ModelViewer) {
+        val asset = viewer.asset ?: return
+        val manager = viewer.engine.transformManager
+        val instance = manager.getInstance(asset.root)
+        val matrix = manager.getTransform(instance, FloatArray(16))
+        for (column in 0..2) for (row in 0..2) matrix[column * 4 + row] *= userScale
+        matrix[12] += userX
+        matrix[13] += userY
+        matrix[14] += userZ
+        manager.setTransform(instance, matrix)
+    }
+
     override fun onResume() {
         super.onResume()
         if (modelViewer != null) Choreographer.getInstance().postFrameCallback(frameCallback)
@@ -85,5 +106,9 @@ class RealisticModelPreviewActivity : Activity() {
     companion object {
         const val EXTRA_MODEL_PATH = "model_path"
         const val EXTRA_MODEL_NAME = "model_name"
+        const val EXTRA_X = "model_x"
+        const val EXTRA_Y = "model_y"
+        const val EXTRA_Z = "model_z"
+        const val EXTRA_SCALE = "model_scale"
     }
 }
