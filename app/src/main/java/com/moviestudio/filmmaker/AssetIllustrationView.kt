@@ -401,7 +401,7 @@ class AssetIllustrationView(
                     0,1 -> { rect(c,105f,88f,215f,122f,0xFF27313F.toInt(),7f); oval(c,160f,165f,57f,57f,0xFF101923.toInt()); oval(c,160f,165f,36f,36f,0xFF5D9AB9.toInt()) }
                     2,3 -> { rect(c,91f,104f,229f,218f,0xFF35465A.toInt(),10f); oval(c,160f,161f,43f,43f,0xFF111923.toInt()); oval(c,160f,161f,25f,25f,0xFF75B6D5.toInt()) }
                     4,5 -> { rect(c,135f,70f,185f,120f,0xFF29384B.toInt(),7f); oval(c,160f,169f,45f,45f,0xFF111923.toInt()); stroke(c,160f,72f,160f,45f,0xFFBFCBD5.toInt(),5f) }
-                    else -> { rect(c,83f,133f,237f,197f,0xFF27313F.toInt(),9f); oval(c,160f,165f,30f,30f,0xFF111923.toInt()); stroke(c,160f,133f,160f,82f,metal,5f) }
+                    else -> { rect(c,83f,133f,237f,197f,0xFF27313F.toInt(),9f); oval(c,160f,165f,30f,30f,0xFF111923.toInt()); stroke(c,160f,133f,160f,82f,0xFFBFCBD5.toInt(),5f) }
                 }
                 rect(c,115f,218f,205f,239f,base,5f)
             }
