@@ -24,9 +24,19 @@ class RealisticModelPreviewActivity : Activity() {
     private var userY = 0f
     private var userZ = 0f
     private var userScale = 1f
+    private var animationStartTimeNanos = 0L
     private val frameCallback = object : Choreographer.FrameCallback {
         override fun doFrame(frameTimeNanos: Long) {
             val viewer = modelViewer ?: return
+            val animator = viewer.animator
+            if (animator != null && animator.animationCount > 0) {
+                if (animationStartTimeNanos == 0L) animationStartTimeNanos = frameTimeNanos
+                val elapsedSeconds = (frameTimeNanos - animationStartTimeNanos) / 1_000_000_000f
+                val duration = animator.getAnimationDuration(0)
+                val animationTime = if (duration > 0f) elapsedSeconds % duration else elapsedSeconds
+                animator.applyAnimation(0, animationTime)
+                animator.updateBoneMatrices()
+            }
             viewer.render(frameTimeNanos)
             Choreographer.getInstance().postFrameCallback(this)
         }
