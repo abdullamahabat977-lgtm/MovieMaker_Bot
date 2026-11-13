@@ -24,6 +24,7 @@ class SceneEditorActivity : Activity() {
     private lateinit var status: TextView
     private var selectedObjectId: String? = null
     private var selectedObject: JSONObject? = null
+    private var glResumed = false
 
     private fun dp(v: Int) = (v * resources.displayMetrics.density).toInt()
 
@@ -113,10 +114,27 @@ class SceneEditorActivity : Activity() {
         setContentView(root)
     }
 
+    override fun onResume() {
+        super.onResume()
+        if (!glResumed) {
+            try { preview.onResume(); glResumed = true }
+            catch (_: RuntimeException) { toast("د 3D مخکتنې بیا پرانیستل ناکام شول") }
+        }
+    }
+
+    override fun onPause() {
+        if (glResumed) {
+            try { preview.onPause() } catch (_: RuntimeException) { }
+            glResumed = false
+        }
+        super.onPause()
+    }
+
     private fun refreshPanels() {
         val project = store.load(projectId)
         val scene = project.optJSONArray("scenes")?.optJSONObject(0) ?: JSONObject()
         val objects = scene.optJSONArray("objects") ?: JSONArray()
+        val preferredSelection = selectedObjectId
         objectPanel.removeAllViews()
         selectedObject = null
         selectedObjectId = null
@@ -126,7 +144,7 @@ class SceneEditorActivity : Activity() {
             val type = item.optString("type")
             val name = item.optString("name", type)
             val row = horizontal()
-            val select = button((if (id == selectedObjectId) "✓ " else "") + name + " • " + type) {
+            val select = button((if (id == preferredSelection) "✓ " else "") + name + " • " + type) {
                 selectedObjectId = id
                 selectedObject = item
                 preview.setSceneMode(if (type == "cube" || type == "prop" || type == "environment")
@@ -154,8 +172,11 @@ class SceneEditorActivity : Activity() {
                 } catch (error: Exception) { toast(error.message ?: "حذف ناکام شو") }
             })
         }
-        if (selectedObjectId == null && objects.length() > 0) {
-            selectedObject = objects.optJSONObject(0)
+        val selectedIndex = (0 until objects.length()).firstOrNull {
+            objects.optJSONObject(it)?.optString("id") == preferredSelection
+        } ?: if (objects.length() > 0) 0 else -1
+        if (selectedIndex >= 0) {
+            selectedObject = objects.optJSONObject(selectedIndex)
             selectedObjectId = selectedObject?.optString("id")
             applySelectedTransform()
         }
