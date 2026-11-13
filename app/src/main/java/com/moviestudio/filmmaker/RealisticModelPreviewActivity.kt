@@ -1,6 +1,7 @@
 package com.moviestudio.filmmaker
 
 import android.app.Activity
+import android.app.ActivityManager
 import android.os.Bundle
 import android.view.Choreographer
 import android.view.SurfaceView
@@ -12,7 +13,8 @@ import com.google.android.filament.Skybox
 import com.google.android.filament.utils.ModelViewer
 import com.google.android.filament.utils.Utils
 import java.io.File
-import java.nio.ByteBuffer
+import java.io.FileInputStream
+import java.nio.channels.FileChannel
 
 /**
  * Physically based GLB viewer. Textures, mesh detail, skinning and embedded animations
@@ -51,18 +53,31 @@ class RealisticModelPreviewActivity : Activity() {
             finish()
             return
         }
+        val deviceInfo = (getSystemService(ACTIVITY_SERVICE) as ActivityManager).deviceConfigurationInfo
+        if (deviceInfo == null || deviceInfo.reqGlEsVersion < 0x00030000) {
+            Toast.makeText(this, "د حقیقي 3D لید لپاره OpenGL ES 3.0 ته اړتیا ده", Toast.LENGTH_LONG).show()
+            finish()
+            return
+        }
         try {
             Utils.init()
             val surface = SurfaceView(this)
             val viewer = ModelViewer(surface)
             modelViewer = viewer
             surface.setOnTouchListener(viewer)
+            val frame = FrameLayout(this)
+            frame.addView(surface, FrameLayout.LayoutParams(
+                FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.MATCH_PARENT
+            ))
+            setContentView(frame)
             viewer.scene.skybox = Skybox.Builder()
                 .color(0.12f, 0.16f, 0.22f, 1.0f)
                 .build(viewer.engine)
-            val bytes = file.readBytes()
-            require(bytes.size > 12) { "GLB فایل تش دی" }
-            viewer.loadModelGlb(ByteBuffer.wrap(bytes))
+            require(file.length() > 12L) { "GLB فایل تش دی" }
+            val glbBuffer = FileInputStream(file).channel.use { channel ->
+                channel.map(FileChannel.MapMode.READ_ONLY, 0L, file.length())
+            }
+            viewer.loadModelGlb(glbBuffer)
             viewer.transformToUnitCube()
             check(viewer.asset != null) { "د GLB ماډل لوستل ناکام شول" }
             userX = intent.getFloatExtra(EXTRA_X, 0f)
@@ -75,10 +90,6 @@ class RealisticModelPreviewActivity : Activity() {
                 isAllCaps = false
                 setOnClickListener { recreate() }
             }
-            val frame = FrameLayout(this)
-            frame.addView(surface, FrameLayout.LayoutParams(
-                FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.MATCH_PARENT
-            ))
             frame.addView(resetCamera, FrameLayout.LayoutParams(
                 FrameLayout.LayoutParams.WRAP_CONTENT, FrameLayout.LayoutParams.WRAP_CONTENT,
                 Gravity.TOP or Gravity.END
@@ -110,6 +121,7 @@ class RealisticModelPreviewActivity : Activity() {
 
     override fun onPause() {
         Choreographer.getInstance().removeFrameCallback(frameCallback)
+        animationStartTimeNanos = 0L
         super.onPause()
     }
 
