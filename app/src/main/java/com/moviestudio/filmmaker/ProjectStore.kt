@@ -101,7 +101,19 @@ class ProjectStore(context: Context) {
             "tree" to "environments",
             "furniture" to "props",
             "prop" to "props",
-            "environment" to "environments"
+            "environment" to "environments",
+            "clothing" to "props",
+            "weapon" to "props",
+            "camera" to "props",
+            "tool" to "props",
+            "medical" to "props",
+            "food" to "props",
+            "office" to "props",
+            "sports" to "props",
+            "travel" to "props",
+            "road" to "props",
+            "electronics" to "props",
+            "other" to "props"
         )
         val folderName = folders[modelType]
             ?: throw IllegalArgumentException("د 3D ماډل ډول ناسم دی")
