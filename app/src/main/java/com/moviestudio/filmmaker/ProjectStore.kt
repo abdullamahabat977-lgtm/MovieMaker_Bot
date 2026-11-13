@@ -83,11 +83,32 @@ class ProjectStore(context: Context) {
     }
 
 
-    /** Imports a textured GLB character into this project's private local storage. */
-    fun importCharacterModel(projectId: String, source: InputStream, displayName: String): JSONObject {
+    /**
+     * Imports a real GLB 2.0 model into the project's private local asset folder.
+     * Supported types: character, animal, vehicle, building, tree, furniture, prop, environment.
+     */
+    fun importSceneModel(
+        projectId: String,
+        source: InputStream,
+        displayName: String,
+        modelType: String
+    ): JSONObject {
+        val folders = mapOf(
+            "character" to "characters",
+            "animal" to "characters",
+            "vehicle" to "props",
+            "building" to "environments",
+            "tree" to "environments",
+            "furniture" to "props",
+            "prop" to "props",
+            "environment" to "environments"
+        )
+        val folderName = folders[modelType]
+            ?: throw IllegalArgumentException("د 3D ماډل ډول ناسم دی")
         val projectDirectory = projectFolder(projectId)
-        val characterDirectory = File(projectDirectory, "assets/characters").apply { mkdirs() }
-        val modelFile = File(characterDirectory, "character_${System.currentTimeMillis()}.glb")
+        val assetDirectory = File(projectDirectory, "assets/$folderName").apply { mkdirs() }
+        val modelFile = File(assetDirectory, "${modelType}_${System.currentTimeMillis()}.glb")
+
         try {
             source.use { input ->
                 modelFile.outputStream().use { output ->
@@ -97,50 +118,71 @@ class ProjectStore(context: Context) {
                         val count = input.read(buffer)
                         if (count < 0) break
                         totalBytes += count
-                        require(totalBytes <= 40L * 1024L * 1024L) {
+                        require(totalBytes <= MAX_MODEL_BYTES) {
                             "د GLB ماډل اندازه له ۴۰ MB څخه زیاته ده؛ کوچنی ماډل وټاکه"
                         }
                         output.write(buffer, 0, count)
                     }
                 }
             }
-            val hasGlbHeader = modelFile.inputStream().use { input ->
-                val header = ByteArray(4)
-                input.read(header) == 4 && String(header, Charsets.US_ASCII) == "glTF"
+            val header = ByteArray(12)
+            val validHeader = modelFile.inputStream().use { input ->
+                var offset = 0
+                while (offset < header.size) {
+                    val count = input.read(header, offset, header.size - offset)
+                    if (count < 0) break
+                    offset += count
+                }
+                if (offset != 12) false else {
+                    val bytes = java.nio.ByteBuffer.wrap(header).order(java.nio.ByteOrder.LITTLE_ENDIAN)
+                    val magic = String(header, 0, 4, Charsets.US_ASCII) == "glTF"
+                    val version = bytes.getInt(4) == 2
+                    val declaredLength = bytes.getInt(8).toLong() and 0xffffffffL
+                    magic && version && declaredLength == modelFile.length()
+                }
             }
-            require(modelFile.length() > 12L && hasGlbHeader) {
-                "دا GLB 2.0 فایل نه دی؛ د .glb فایل وټاکه"
-            }
+            require(validHeader) { "دا سم GLB 2.0 فایل نه دی؛ اصلي .glb فایل وټاکه" }
         } catch (error: Exception) {
             modelFile.delete()
             throw error
         }
+
         val cleanName = displayName.substringBeforeLast('.', displayName)
             .replace(Regex("[\\\\/:*?\"<>|]"), "_").trim().take(60)
-            .ifBlank { "واقعي 3D کرکټر" }
-        val relativePath = "assets/characters/${modelFile.name}"
+            .ifBlank { modelType }
+        val relativePath = "assets/$folderName/${modelFile.name}"
         val project = load(projectId)
         val scene = firstScene(project)
         val objects = scene.optJSONArray("objects") ?: JSONArray().also { scene.put("objects", it) }
+        val objectId = "object_" + System.currentTimeMillis().toString()
         val item = JSONObject()
-            .put("id", "object_" + System.currentTimeMillis().toString())
-            .put("type", "character")
+            .put("id", objectId)
+            .put("type", modelType)
             .put("name", cleanName)
             .put("format", "glb")
             .put("modelPath", relativePath)
             .put("x", 0.0).put("y", 0.0).put("z", 0.0).put("scale", 1.0)
-        objects.put(item)
-        val assets = project.optJSONArray("assets") ?: JSONArray().also { project.put("assets", it) }
-        assets.put(JSONObject()
-            .put("id", item.optString("id"))
-            .put("type", "character")
-            .put("format", "glb")
-            .put("name", cleanName)
-            .put("path", relativePath)
-            .put("sizeBytes", modelFile.length()))
-        save(project)
+        try {
+            objects.put(item)
+            val assets = project.optJSONArray("assets") ?: JSONArray().also { project.put("assets", it) }
+            assets.put(JSONObject()
+                .put("id", objectId)
+                .put("type", modelType)
+                .put("format", "glb")
+                .put("name", cleanName)
+                .put("path", relativePath)
+                .put("sizeBytes", modelFile.length()))
+            save(project)
+        } catch (error: Exception) {
+            modelFile.delete()
+            throw error
+        }
         return item
     }
+
+    /** Backward-compatible helper for older callers. */
+    fun importCharacterModel(projectId: String, source: InputStream, displayName: String): JSONObject =
+        importSceneModel(projectId, source, displayName, "character")
 
     fun duplicateSceneObject(projectId: String, objectId: String): JSONObject {
         val project = load(projectId)
@@ -188,6 +230,25 @@ class ProjectStore(context: Context) {
         }
         require(removed) { "د صحنې توکی ونه موندل شو" }
         firstScene(project).put("objects", kept)
+        val assets = project.optJSONArray("assets") ?: JSONArray()
+        val keptAssets = JSONArray()
+        var deletedPath: String? = null
+        for (index in 0 until assets.length()) {
+            val asset = assets.optJSONObject(index) ?: continue
+            if (asset.optString("id") == objectId) deletedPath = asset.optString("path")
+            else keptAssets.put(asset)
+        }
+        project.put("assets", keptAssets)
+        if (!deletedPath.isNullOrBlank()) {
+            val stillUsed = (0 until kept.length()).any {
+                kept.optJSONObject(it)?.optString("modelPath") == deletedPath
+            }
+            if (!stillUsed) {
+                val candidate = File(projectFolder(projectId), deletedPath!!).canonicalFile
+                val base = projectFolder(projectId).canonicalFile
+                if (candidate.path.startsWith(base.path + File.separator) && candidate.isFile) candidate.delete()
+            }
+        }
         val clips = firstScene(project).optJSONArray("timeline") ?: JSONArray()
         val keptClips = JSONArray()
         for (index in 0 until clips.length()) {
@@ -263,6 +324,8 @@ class ProjectStore(context: Context) {
         require(folder.parentFile == root.canonicalFile) { "د پروژې لاره ناسمه ده" }
         return folder
     }
+
+    private companion object { const val MAX_MODEL_BYTES = 40L * 1024L * 1024L }
 
     private fun timestamp(): String =
         SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.US).format(Date())
