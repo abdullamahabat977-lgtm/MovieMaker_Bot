@@ -155,8 +155,12 @@ class RealisticModelPreviewActivity : Activity() {
 
     private fun updateAnimationStatus() {
         val count = modelViewer?.animator?.animationCount ?: 0
-        animationStatus?.text = "حرکت " + (currentAnimationIndex + 1) + "/" + count +
-            if (animationPlaying) " • چلېږي" else " • درېدلی"
+        animationStatus?.text = if (count == 0) {
+            "حرکت نشته"
+        } else {
+            "حرکت " + (currentAnimationIndex + 1) + "/" + count +
+                if (animationPlaying) " • چلېږي" else " • درېدلی"
+        }
     }
 
     private fun applyObjectTransform(viewer: ModelViewer) {
