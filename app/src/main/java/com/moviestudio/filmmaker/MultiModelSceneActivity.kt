@@ -887,7 +887,7 @@ class MultiModelSceneActivity : Activity() {
         }
 
         // A broad, shadow-free fill light softens dark faces without replacing the key light.
-        val fillIntensity = config.optDouble("fillIntensityLux", 9000.0)
+        val fillIntensity = config.optDouble("fillIntensityCandela", config.optDouble("fillIntensityLux", 9000.0))
             .toFloat().coerceIn(0f, 60000f)
         if (fillIntensity > 0f) {
             val fillEntity = EntityManager.get().create()
