@@ -50,6 +50,13 @@ class MultiModelSceneActivity : Activity() {
         val animationName: String
     )
 
+    private data class PlaybackCameraShot(
+        val id: String,
+        val startSeconds: Double,
+        val endSeconds: Double,
+        val data: JSONObject
+    )
+
     private var viewer: ModelViewer? = null
     private var assetLoader: AssetLoader? = null
     private var materialProvider: UbershaderProvider? = null
@@ -59,6 +66,8 @@ class MultiModelSceneActivity : Activity() {
     private var framePosted = false
     private var omittedModelCount = 0
     private var timelineClips: List<PlaybackClip> = emptyList()
+    private var cameraShots: List<PlaybackCameraShot> = emptyList()
+    private var activeCameraShotId: String? = null
     private var timelineDurationSeconds = 0.0
     private var timelinePositionSeconds = 0.0
     private var timelineStartNanos = 0L
@@ -122,6 +131,7 @@ class MultiModelSceneActivity : Activity() {
                 timelinePositionSeconds = ((frameTimeNanos - timelineStartNanos).coerceAtLeast(0L) / 1_000_000_000.0)
                     .coerceAtMost(timelineDurationSeconds)
                 if (timelinePositionSeconds >= timelineDurationSeconds) timelinePlaying = false
+                applyCameraForTimelinePosition()
                 updateTimelineStatus()
             }
             loadingLabel?.text = "د 3D توکو چمتووالی: $readyCount / ${models.size}" +
@@ -294,8 +304,8 @@ class MultiModelSceneActivity : Activity() {
     }
 
     private fun toggleTimelinePlayback() {
-        if (timelineClips.isEmpty()) {
-            Toast.makeText(this, "د دې پروژې Timeline تش دی؛ لومړی حرکتونه ثبت کړه", Toast.LENGTH_LONG).show()
+        if (timelineClips.isEmpty() && cameraShots.isEmpty()) {
+            Toast.makeText(this, "د دې پروژې Timeline او د کمرې شاټونه تش دي", Toast.LENGTH_LONG).show()
             return
         }
         if (timelinePlaying) {
@@ -313,7 +323,7 @@ class MultiModelSceneActivity : Activity() {
     }
 
     private fun restartTimeline() {
-        if (timelineClips.isEmpty()) {
+        if (timelineClips.isEmpty() && cameraShots.isEmpty()) {
             Toast.makeText(this, "د دې پروژې Timeline تش دی", Toast.LENGTH_SHORT).show()
             return
         }
@@ -328,7 +338,7 @@ class MultiModelSceneActivity : Activity() {
         val total = timelineDurationSeconds.coerceAtLeast(0.0)
         val current = timelinePositionSeconds.coerceAtLeast(0.0)
         val state = when {
-            timelineClips.isEmpty() -> "Timeline تش دی"
+            timelineClips.isEmpty() && cameraShots.isEmpty() -> "Timeline تش دی"
             timelinePlaying -> "چلېږي"
             current >= total -> "پای ته ورسېد"
             else -> "درېدلی"
@@ -340,7 +350,25 @@ class MultiModelSceneActivity : Activity() {
         )
     }
 
-    private fun applyCameraShot(shot: JSONObject) {
+    private fun clockSeconds(value: String): Int {
+        if (!value.matches(Regex("^(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d$"))) {
+            throw IllegalArgumentException("د فلم وخت ناسمه بڼه لري")
+        }
+        val parts = value.split(":").map { it.toInt() }
+        return parts[0] * 3600 + parts[1] * 60 + parts[2]
+    }
+
+    private fun applyCameraForTimelinePosition() {
+        val shot = cameraShots.firstOrNull {
+            timelinePositionSeconds >= it.startSeconds && timelinePositionSeconds < it.endSeconds
+        }
+        val nextId = shot?.id
+        if (nextId == activeCameraShotId) return
+        activeCameraShotId = nextId
+        if (shot != null) applyCameraShot(shot.data, showMessage = false)
+    }
+
+    private fun applyCameraShot(shot: JSONObject, showMessage: Boolean = true) {
         val modelViewer = viewer ?: return
         val eyeX = shot.optDouble("x", 0.0)
         val eyeY = shot.optDouble("y", 3.0)
@@ -357,7 +385,7 @@ class MultiModelSceneActivity : Activity() {
             0.0, 1.0, 0.0
         )
         modelViewer.camera.setProjection(fov, aspect, 0.1, 1000.0, com.google.android.filament.Camera.Fov.VERTICAL)
-        Toast.makeText(this, "د «${shot.optString("name", "کمره")}» شاټ فعال شو", Toast.LENGTH_SHORT).show()
+        if (showMessage) Toast.makeText(this, "د «${shot.optString("name", "کمره")}» شاټ فعال شو", Toast.LENGTH_SHORT).show()
     }
 
     private fun loadProjectModels() {
@@ -368,6 +396,19 @@ class MultiModelSceneActivity : Activity() {
             val scene = project.optJSONArray("scenes")?.optJSONObject(0)
             val projectFps = (project.optJSONObject("project")?.optJSONObject("settings")?.optInt("fps", 24) ?: 24)
                 .coerceIn(1, 120)
+            val production = scene?.optJSONObject("production") ?: JSONObject()
+            val filmStartSeconds = production.optString("startTime", "00:00:00")
+                .let { runCatching { clockSeconds(it) }.getOrDefault(0) }
+            val rawShots = scene?.optJSONArray("cameraShots") ?: org.json.JSONArray()
+            cameraShots = (0 until rawShots.length()).mapNotNull { index ->
+                val shot = rawShots.optJSONObject(index) ?: return@mapNotNull null
+                val start = runCatching { clockSeconds(shot.optString("startTime")) - filmStartSeconds }.getOrNull()
+                    ?: return@mapNotNull null
+                val end = runCatching { clockSeconds(shot.optString("endTime")) - filmStartSeconds }.getOrNull()
+                    ?: return@mapNotNull null
+                if (end <= start) return@mapNotNull null
+                PlaybackCameraShot(shot.optString("id"), start.toDouble(), end.toDouble(), shot)
+            }.sortedBy { it.startSeconds }
             val rawClips = scene?.optJSONArray("timeline") ?: org.json.JSONArray()
             timelineClips = (0 until rawClips.length()).mapNotNull { index ->
                 val clip = rawClips.optJSONObject(index) ?: return@mapNotNull null
@@ -387,12 +428,25 @@ class MultiModelSceneActivity : Activity() {
                     clip.optString("animationName")
                 )
             }.sortedBy { it.startSeconds }
-            timelineDurationSeconds = timelineClips.maxOfOrNull { it.endSeconds } ?: 0.0
-            if (timelineClips.isEmpty()) {
+            val clipEnd = timelineClips.maxOfOrNull { it.endSeconds } ?: 0.0
+            val cameraEnd = cameraShots.maxOfOrNull { it.endSeconds } ?: 0.0
+            val productionEnd = production.optString("endTime").takeIf { it.isNotBlank() }
+                ?.let { runCatching { (clockSeconds(it) - filmStartSeconds).toDouble() }.getOrNull() } ?: 0.0
+            timelineDurationSeconds = maxOf(clipEnd, cameraEnd, productionEnd)
+            val hasPlayback = timelineClips.isNotEmpty() || cameraShots.isNotEmpty()
+            if (!hasPlayback) {
                 timelinePositionSeconds = 0.0
                 timelineStartNanos = 0L
                 timelinePlaying = false
+            } else if (timelinePositionSeconds >= timelineDurationSeconds) {
+                timelinePositionSeconds = 0.0
+                timelinePlaying = true
+                timelineStartNanos = 0L
+            } else if (!timelinePlaying && timelinePositionSeconds == 0.0) {
+                timelinePlaying = true
             }
+            activeCameraShotId = null
+            applyCameraForTimelinePosition()
             updateTimelineStatus()
             val objects = store.listSceneObjects(projectId)
                 .filter { it.optString("modelPath").isNotBlank() }
