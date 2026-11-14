@@ -893,7 +893,8 @@ class SceneEditorActivity : Activity() {
         val keys = listOf(
             "intensityLux", "red", "green", "blue",
             "directionX", "directionY", "directionZ", "fillIntensityCandela",
-            "skyRed", "skyGreen", "skyBlue"
+            "skyRed", "skyGreen", "skyBlue",
+            "fillRed", "fillGreen", "fillBlue", "fillX", "fillY", "fillZ", "fillFalloff"
         )
         val captions = listOf(
             "د اصلي رڼا شدت (۵۰۰–۱۲۰۰۰۰ Lux)",
@@ -901,7 +902,11 @@ class SceneEditorActivity : Activity() {
             "د رڼا لوری X (-۱ تر ۱)", "د رڼا لوری Y (-۱ تر ۱)", "د رڼا لوری Z (-۱ تر ۱)",
             "مرستندویه نقطوي رڼا (۰–۶۰۰۰۰ Candela)",
             "د چاپېریال اسماني سور رنګ (۰–۱)", "د چاپېریال اسماني شین رنګ (۰–۱)",
-            "د چاپېریال اسماني آبي رنګ (۰–۱)"
+            "د چاپېریال اسماني آبي رنګ (۰–۱)",
+            "د مرستندویه رڼا سور رنګ (۰–۱)", "د مرستندویه رڼا شین رنګ (۰–۱)",
+            "د مرستندویه رڼا آبي رنګ (۰–۱)",
+            "د مرستندویه رڼا موقعیت X", "د مرستندویه رڼا موقعیت Y",
+            "د مرستندویه رڼا موقعیت Z", "د مرستندویه رڼا د خپرېدو واټن (۱–۱۰۰۰)"
         )
         val preset = lighting.optString("preset", "day")
         val defaults = listOf(
@@ -909,7 +914,8 @@ class SceneEditorActivity : Activity() {
             if (preset == "night") 900.0 else 9000.0,
             if (preset == "night") 0.025 else if (preset == "sunset") 0.28 else 0.12,
             if (preset == "night") 0.035 else if (preset == "sunset") 0.12 else 0.16,
-            if (preset == "night") 0.10 else if (preset == "sunset") 0.07 else 0.22
+            if (preset == "night") 0.10 else if (preset == "sunset") 0.07 else 0.22,
+            0.78, 0.84, 1.0, 4.0, 5.0, 1.5, 15.0
         )
         val fields = keys.mapIndexed { index, key ->
             EditText(this).apply {
