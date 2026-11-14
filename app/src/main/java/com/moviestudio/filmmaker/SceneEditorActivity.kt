@@ -92,6 +92,23 @@ class SceneEditorActivity : Activity() {
         transformRow.addView(button("Y −") { nudge("y", -0.25) }, weighted())
         transformRow.addView(button("Y ＋") { nudge("y", 0.25) }, weighted())
         content.addView(transformRow)
+        val depthRow = horizontal()
+        depthRow.addView(button("Z نږدې") { nudge("z", 0.25) }, weighted())
+        depthRow.addView(button("Z لرې") { nudge("z", -0.25) }, weighted())
+        depthRow.addView(button("دقیق بدلون") { editExactTransform() }, weighted())
+        content.addView(depthRow)
+        content.addView(label("د توکي څرخول • هر ځل ۱۵ درجې", 13, true))
+        val rotateX = horizontal()
+        rotateX.addView(button("X ↶") { rotate("rotationX", -15.0) }, weighted())
+        rotateX.addView(button("X ↷") { rotate("rotationX", 15.0) }, weighted())
+        rotateX.addView(button("Y ↶") { rotate("rotationY", -15.0) }, weighted())
+        rotateX.addView(button("Y ↷") { rotate("rotationY", 15.0) }, weighted())
+        content.addView(rotateX)
+        val rotateZ = horizontal()
+        rotateZ.addView(button("Z ↶") { rotate("rotationZ", -15.0) }, weighted())
+        rotateZ.addView(button("Z ↷") { rotate("rotationZ", 15.0) }, weighted())
+        rotateZ.addView(button("بېرته صفر") { resetRotation() }, weighted())
+        content.addView(rotateZ)
         val scaleRow = horizontal()
         scaleRow.addView(button("کوچنی −") { scale(-0.1) }, weighted())
         scaleRow.addView(button("لوی ＋") { scale(0.1) }, weighted())
@@ -246,7 +263,10 @@ class SceneEditorActivity : Activity() {
             .putExtra(RealisticModelPreviewActivity.EXTRA_X, item.optDouble("x").toFloat())
             .putExtra(RealisticModelPreviewActivity.EXTRA_Y, item.optDouble("y").toFloat())
             .putExtra(RealisticModelPreviewActivity.EXTRA_Z, item.optDouble("z").toFloat())
-            .putExtra(RealisticModelPreviewActivity.EXTRA_SCALE, item.optDouble("scale", 1.0).toFloat()))
+            .putExtra(RealisticModelPreviewActivity.EXTRA_SCALE, item.optDouble("scale", 1.0).toFloat())
+            .putExtra(RealisticModelPreviewActivity.EXTRA_ROTATION_X, item.optDouble("rotationX").toFloat())
+            .putExtra(RealisticModelPreviewActivity.EXTRA_ROTATION_Y, item.optDouble("rotationY").toFloat())
+            .putExtra(RealisticModelPreviewActivity.EXTRA_ROTATION_Z, item.optDouble("rotationZ").toFloat()))
     }
 
     @Deprecated("Uses the compatible document picker API for older Android versions")
@@ -279,6 +299,52 @@ class SceneEditorActivity : Activity() {
     private fun scale(delta: Double) {
         val item = selectedObject ?: run { toast("لومړی یو توکی وټاکه"); return }
         updateSelected(JSONObject().put("scale", item.optDouble("scale", 1.0) + delta))
+    }
+
+    private fun rotate(axis: String, delta: Double) {
+        val item = selectedObject ?: run { toast("لومړی یو توکی وټاکه"); return }
+        updateSelected(JSONObject().put(axis, item.optDouble(axis) + delta))
+    }
+
+    private fun resetRotation() {
+        updateSelected(JSONObject().put("rotationX", 0).put("rotationY", 0).put("rotationZ", 0))
+    }
+
+    private fun editExactTransform() {
+        val item = selectedObject ?: run { toast("لومړی یو توکی وټاکه"); return }
+        val fields = listOf("x", "y", "z", "scale", "rotationX", "rotationY", "rotationZ")
+        val labels = listOf("X موقعیت", "Y موقعیت", "Z موقعیت", "اندازه", "X څرخول", "Y څرخول", "Z څرخول")
+        val inputs = fields.map { key ->
+            EditText(this).apply {
+                setSingleLine(true)
+                inputType = android.text.InputType.TYPE_CLASS_NUMBER or
+                    android.text.InputType.TYPE_NUMBER_FLAG_SIGNED or
+                    android.text.InputType.TYPE_NUMBER_FLAG_DECIMAL
+                setText(item.optDouble(key, if (key == "scale") 1.0 else 0.0).toString())
+            }
+        }
+        val panel = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(dp(18), dp(8), dp(18), dp(4))
+        }
+        inputs.forEachIndexed { index, input ->
+            panel.addView(label(labels[index], 12, true))
+            panel.addView(input)
+        }
+        AlertDialog.Builder(this).setTitle("د توکي دقیق موقعیت، اندازه او څرخول")
+            .setView(ScrollView(this).apply { addView(panel) })
+            .setNegativeButton("لغوه", null)
+            .setPositiveButton("خوندي کول") { _, _ ->
+                try {
+                    val changes = JSONObject()
+                    fields.forEachIndexed { index, key ->
+                        val value = inputs[index].text.toString().toDoubleOrNull()
+                            ?: throw IllegalArgumentException("د ${labels[index]} شمېره ناسمه ده")
+                        changes.put(key, value)
+                    }
+                    updateSelected(changes)
+                } catch (error: Exception) { toast(error.message ?: "بدلون خوندي نه شو") }
+            }.show()
     }
 
     private fun updateSelected(changes: JSONObject) {
