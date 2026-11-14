@@ -2,6 +2,7 @@ package com.moviestudio.filmmaker
 
 import android.app.Activity
 import android.app.ActivityManager
+import android.media.MediaPlayer
 import android.app.AlertDialog
 import android.os.Bundle
 import android.view.Choreographer
@@ -58,6 +59,14 @@ class MultiModelSceneActivity : Activity() {
         val data: JSONObject
     )
 
+    private data class PlaybackAudioClip(
+        val id: String,
+        val path: String,
+        val startSeconds: Double,
+        val endSeconds: Double,
+        val volume: Float
+    )
+
     private var viewer: ModelViewer? = null
     private var assetLoader: AssetLoader? = null
     private var materialProvider: UbershaderProvider? = null
@@ -69,6 +78,9 @@ class MultiModelSceneActivity : Activity() {
     private var omittedModelCount = 0
     private var timelineClips: List<PlaybackClip> = emptyList()
     private var cameraShots: List<PlaybackCameraShot> = emptyList()
+    private var audioClips: List<PlaybackAudioClip> = emptyList()
+    private val audioPlayers = mutableMapOf<String, MediaPlayer>()
+    private val preparedAudioIds = mutableSetOf<String>()
     private var activeCameraShotId: String? = null
     private var timelineDurationSeconds = 0.0
     private var timelinePositionSeconds = 0.0
@@ -127,7 +139,7 @@ class MultiModelSceneActivity : Activity() {
                     }
                 }
             }
-            if ((timelineClips.isNotEmpty() || cameraShots.isNotEmpty()) && timelinePlaying) {
+            if ((timelineClips.isNotEmpty() || cameraShots.isNotEmpty() || audioClips.isNotEmpty()) && timelinePlaying) {
                 if (timelineStartNanos == 0L) timelineStartNanos = frameTimeNanos -
                     (timelinePositionSeconds * 1_000_000_000.0).toLong()
                 timelinePositionSeconds = ((frameTimeNanos - timelineStartNanos).coerceAtLeast(0L) / 1_000_000_000.0)
@@ -136,6 +148,7 @@ class MultiModelSceneActivity : Activity() {
                 applyCameraForTimelinePosition()
                 updateTimelineStatus()
             }
+            updateAudioPlayback()
             loadingLabel?.text = "د 3D توکو چمتووالی: $readyCount / ${models.size}" +
                 if (omittedModelCount > 0) " • $omittedModelCount نور د حافظې د حد له امله نه ښودل کېږي" else ""
             modelViewer.render(frameTimeNanos)
@@ -249,7 +262,7 @@ class MultiModelSceneActivity : Activity() {
     override fun onResume() {
         super.onResume()
         if (viewer != null && models.isEmpty()) loadProjectModels()
-        if (resumeTimelineAfterPause && (timelineClips.isNotEmpty() || cameraShots.isNotEmpty()) &&
+        if (resumeTimelineAfterPause && (timelineClips.isNotEmpty() || cameraShots.isNotEmpty() || audioClips.isNotEmpty()) &&
             timelinePositionSeconds < timelineDurationSeconds) {
             timelinePlaying = true
             timelineStartNanos = System.nanoTime() -
@@ -351,7 +364,7 @@ class MultiModelSceneActivity : Activity() {
     }
 
     private fun toggleTimelinePlayback() {
-        if (timelineClips.isEmpty() && cameraShots.isEmpty()) {
+        if (timelineClips.isEmpty() && cameraShots.isEmpty() && audioClips.isEmpty()) {
             Toast.makeText(this, "د دې پروژې Timeline او د کمرې شاټونه تش دي", Toast.LENGTH_LONG).show()
             return
         }
@@ -385,7 +398,7 @@ class MultiModelSceneActivity : Activity() {
         val total = timelineDurationSeconds.coerceAtLeast(0.0)
         val current = timelinePositionSeconds.coerceAtLeast(0.0)
         val state = when {
-            timelineClips.isEmpty() && cameraShots.isEmpty() -> "Timeline تش دی"
+            timelineClips.isEmpty() && cameraShots.isEmpty() && audioClips.isEmpty() -> "Timeline تش دی"
             timelinePlaying -> "چلېږي"
             current >= total -> "پای ته ورسېد"
             else -> "درېدلی"
@@ -458,6 +471,21 @@ class MultiModelSceneActivity : Activity() {
                 if (end <= start) return@mapNotNull null
                 PlaybackCameraShot(shot.optString("id"), start.toDouble(), end.toDouble(), shot)
             }.sortedBy { it.startSeconds }
+            val rawAudio = scene?.optJSONArray("audioTracks") ?: org.json.JSONArray()
+            val projectFolder = store.projectDirectory(projectId).canonicalFile
+            audioClips = (0 until rawAudio.length()).mapNotNull { index ->
+                val clip = rawAudio.optJSONObject(index) ?: return@mapNotNull null
+                val relativePath = clip.optString("path")
+                val file = File(projectFolder, relativePath).canonicalFile
+                if (!file.path.startsWith(projectFolder.path + File.separator) || !file.isFile) return@mapNotNull null
+                val start = clip.optDouble("startOffsetSeconds", -1.0)
+                val duration = clip.optDouble("durationSeconds", 0.0)
+                if (start < 0.0 || duration <= 0.0) return@mapNotNull null
+                PlaybackAudioClip(
+                    clip.optString("id"), file.absolutePath, start, start + duration,
+                    clip.optDouble("volume", 1.0).toFloat().coerceIn(0f, 1f)
+                )
+            }.sortedBy { it.startSeconds }
             val rawClips = scene?.optJSONArray("timeline") ?: org.json.JSONArray()
             timelineClips = (0 until rawClips.length()).mapNotNull { index ->
                 val clip = rawClips.optJSONObject(index) ?: return@mapNotNull null
@@ -479,10 +507,11 @@ class MultiModelSceneActivity : Activity() {
             }.sortedBy { it.startSeconds }
             val clipEnd = timelineClips.maxOfOrNull { it.endSeconds } ?: 0.0
             val cameraEnd = cameraShots.maxOfOrNull { it.endSeconds } ?: 0.0
+            val audioEnd = audioClips.maxOfOrNull { it.endSeconds } ?: 0.0
             val productionEnd = production.optString("endTime").takeIf { it.isNotBlank() }
                 ?.let { runCatching { (clockSeconds(it) - filmStartSeconds).toDouble() }.getOrNull() } ?: 0.0
-            timelineDurationSeconds = maxOf(clipEnd, cameraEnd, productionEnd)
-            val hasPlayback = timelineClips.isNotEmpty() || cameraShots.isNotEmpty()
+            timelineDurationSeconds = maxOf(clipEnd, cameraEnd, audioEnd, productionEnd)
+            val hasPlayback = timelineClips.isNotEmpty() || cameraShots.isNotEmpty() || audioClips.isNotEmpty()
             if (!hasPlayback) {
                 timelinePositionSeconds = 0.0
                 timelineStartNanos = 0L
@@ -591,6 +620,81 @@ class MultiModelSceneActivity : Activity() {
         transforms.setTransform(transforms.getInstance(asset.root), matrix)
     }
 
+    private fun updateAudioPlayback() {
+        if (!timelinePlaying) {
+            audioPlayers.forEach { (id, player) ->
+                if (id in preparedAudioIds) runCatching { if (player.isPlaying) player.pause() }
+            }
+            return
+        }
+        val active = audioClips.filter {
+            timelinePositionSeconds >= it.startSeconds && timelinePositionSeconds < it.endSeconds
+        }
+        val activeIds = active.map { it.id }.toSet()
+        audioPlayers.keys.filter { it !in activeIds }.toList().forEach { id ->
+            val player = audioPlayers.remove(id)
+            preparedAudioIds.remove(id)
+            runCatching { player?.stop() }
+            runCatching { player?.release() }
+        }
+        active.forEach { clip ->
+            var player = audioPlayers[clip.id]
+            if (player == null) {
+                try {
+                    player = MediaPlayer()
+                    audioPlayers[clip.id] = player
+                    player.setDataSource(clip.path)
+                    player.setVolume(clip.volume, clip.volume)
+                    player.setOnPreparedListener { prepared ->
+                        preparedAudioIds.add(clip.id)
+                        if (timelinePlaying && timelinePositionSeconds >= clip.startSeconds &&
+                            timelinePositionSeconds < clip.endSeconds) {
+                            val offset = ((timelinePositionSeconds - clip.startSeconds) * 1000.0)
+                                .toInt().coerceIn(0, (prepared.duration - 1).coerceAtLeast(0))
+                            runCatching {
+                                prepared.seekTo(offset)
+                                prepared.start()
+                            }
+                        }
+                    }
+                    player.setOnErrorListener { failed, _, _ ->
+                        audioPlayers.remove(clip.id)
+                        preparedAudioIds.remove(clip.id)
+                        runCatching { failed.release() }
+                        true
+                    }
+                    player.prepareAsync()
+                } catch (error: Exception) {
+                    audioPlayers.remove(clip.id)
+                    preparedAudioIds.remove(clip.id)
+                    runCatching { player?.release() }
+                    Toast.makeText(this, "د «${clip.id}» غږ پلی نه شو", Toast.LENGTH_SHORT).show()
+                }
+                return@forEach
+            }
+            if (clip.id in preparedAudioIds) {
+                runCatching {
+                    val desired = ((timelinePositionSeconds - clip.startSeconds) * 1000.0).toInt()
+                    if (!player.isPlaying) {
+                        player.seekTo(desired.coerceAtLeast(0))
+                        player.start()
+                    } else if (kotlin.math.abs(player.currentPosition - desired) > 650) {
+                        player.seekTo(desired.coerceAtLeast(0))
+                    }
+                }
+            }
+        }
+    }
+
+    private fun releaseAudioPlayers() {
+        audioPlayers.values.forEach { player ->
+            runCatching { player.stop() }
+            runCatching { player.release() }
+        }
+        audioPlayers.clear()
+        preparedAudioIds.clear()
+    }
+
     private fun applySceneLighting(modelViewer: ModelViewer, scene: JSONObject) {
         val config = scene.optJSONObject("lighting") ?: JSONObject()
         val red = config.optDouble("red", 1.0).toFloat().coerceIn(0f, 1f)
@@ -622,6 +726,7 @@ class MultiModelSceneActivity : Activity() {
     }
 
     private fun releaseModels() {
+        releaseAudioPlayers()
         val modelViewer = viewer
         sceneLightEntities.forEach { entity ->
             try { modelViewer?.scene?.removeEntity(entity) } catch (_: Exception) { }
