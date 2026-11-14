@@ -629,7 +629,7 @@ class SceneEditorActivity : Activity() {
     }
 
     private fun editProductionSettings() {
-        val scene = store.load(projectId).optJSONArray("scenes")?.optJSONObject(0) ?: JSONObject()
+        val scene = store.activeScene(projectId)
         val ground = scene.optJSONObject("ground") ?: JSONObject()
         val production = scene.optJSONObject("production") ?: JSONObject()
         val width = EditText(this).apply {
