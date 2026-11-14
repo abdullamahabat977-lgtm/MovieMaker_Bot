@@ -4,6 +4,9 @@ name: Build Movie Studio APK
 # Run this workflow only when the project is ready for a release candidate.
 on:
   workflow_dispatch:
+  push:
+    branches:
+      - rebuild-v2
 
 jobs:
   android:
