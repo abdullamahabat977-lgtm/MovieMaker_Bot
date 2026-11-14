@@ -23,7 +23,19 @@ class ProjectStore(context: Context) {
         get() = root.absolutePath
 
     val storageReady: Boolean
-        get() = root.isDirectory && root.canRead() && root.canWrite()
+        get() {
+            if (!root.isDirectory || !root.canRead() || !root.canWrite()) return false
+            val probe = File(root, ".storage_check_" + UUID.randomUUID().toString())
+            return try {
+                probe.writeText("Film Studio storage check")
+                val readable = probe.readText() == "Film Studio storage check"
+                val deleted = probe.delete() && !probe.exists()
+                readable && deleted
+            } catch (_: Exception) {
+                probe.delete()
+                false
+            }
+        }
 
     fun projectDirectory(projectId: String): File = projectFolder(projectId)
 
