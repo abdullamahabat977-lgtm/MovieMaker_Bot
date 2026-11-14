@@ -372,7 +372,7 @@ class ProjectStore(context: Context) {
                 .put("id", "environment_ibl_$token").put("type", "environment_ibl")
                 .put("name", iblDisplayName.take(100)).put("path", iblPath)
                 .put("sizeBytes", iblFile.length()))
-            assets.put(JSONObject()
+            retainedAssets.put(JSONObject()
                 .put("id", "environment_skybox_$token").put("type", "environment_skybox")
                 .put("name", skyboxDisplayName.take(100)).put("path", skyboxPath)
                 .put("sizeBytes", skyboxFile.length()))
