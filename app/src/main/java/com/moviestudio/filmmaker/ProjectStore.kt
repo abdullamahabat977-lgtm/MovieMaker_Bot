@@ -640,6 +640,15 @@ class ProjectStore(context: Context) {
             val filmEnd = clockSeconds(production.optString("endTime"))
             require(start >= filmStart && end <= filmEnd) { "د کمرې شاټ باید د فلم د ټاکلي وخت دننه وي" }
         }
+        val cameras = scene.optJSONArray("cameraShots") ?: JSONArray().also { scene.put("cameraShots", it) }
+        for (index in 0 until cameras.length()) {
+            val other = cameras.optJSONObject(index) ?: continue
+            val otherStart = clockSeconds(other.optString("startTime"))
+            val otherEnd = clockSeconds(other.optString("endTime"))
+            require(end <= otherStart || start >= otherEnd) {
+                "د کمرې دا وخت د «${other.optString("name", "بل شاټ")}» له وخت سره ټکر لري؛ د شاټونو وختونه جلا کړه"
+            }
+        }
         val shot = JSONObject()
             .put("id", "camera_" + UUID.randomUUID().toString())
             .put("name", name.trim().ifBlank { "کمره" }.take(60))
@@ -647,7 +656,6 @@ class ProjectStore(context: Context) {
             .put("targetX", targetX).put("targetY", targetY).put("targetZ", targetZ)
             .put("fieldOfView", fieldOfView)
             .put("startTime", startTime).put("endTime", endTime)
-        val cameras = scene.optJSONArray("cameraShots") ?: JSONArray().also { scene.put("cameraShots", it) }
         require(cameras.length() < 32) { "په یوه صحنه کې تر ۳۲ زیات د کمرې شاټونه نه شي ثبتېدای" }
         cameras.put(shot)
         save(project)
@@ -682,6 +690,15 @@ class ProjectStore(context: Context) {
             val filmStart = clockSeconds(production.optString("startTime"))
             val filmEnd = clockSeconds(production.optString("endTime"))
             require(start >= filmStart && end <= filmEnd) { "د کمرې شاټ باید د فلم د ټاکلي وخت دننه وي" }
+        }
+        for (index in 0 until cameras.length()) {
+            val other = cameras.optJSONObject(index) ?: continue
+            if (other.optString("id") == cameraId) continue
+            val otherStart = clockSeconds(other.optString("startTime"))
+            val otherEnd = clockSeconds(other.optString("endTime"))
+            require(end <= otherStart || start >= otherEnd) {
+                "د کمرې دا وخت د «${other.optString("name", "بل شاټ")}» له وخت سره ټکر لري؛ د شاټونو وختونه جلا کړه"
+            }
         }
         shot.put("name", name.trim().ifBlank { "کمره" }.take(60))
             .put("x", x).put("y", y).put("z", z)
@@ -767,6 +784,15 @@ class ProjectStore(context: Context) {
             val shotEnd = clockSeconds(shot.optString("endTime"))
             require(shotStart >= start && shotEnd <= end) {
                 "د فلم نوی وخت د موجودې کمرې له شاټ سره ټکر لري؛ لومړی هغه شاټ سم یا حذف کړه"
+            }
+        }
+        val existingAudio = scene.optJSONArray("audioTracks") ?: JSONArray()
+        for (index in 0 until existingAudio.length()) {
+            val clip = existingAudio.optJSONObject(index) ?: continue
+            val offset = clip.optDouble("startOffsetSeconds", -1.0)
+            val duration = clip.optDouble("durationSeconds", 0.0)
+            require(offset >= 0.0 && duration > 0.0 && offset + duration <= (end - start)) {
+                "د فلم نوی وخت د موجود غږ ټریک له مودې سره ټکر لري؛ لومړی غږ سم یا حذف کړه"
             }
         }
 
