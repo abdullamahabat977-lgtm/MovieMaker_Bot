@@ -124,6 +124,15 @@ class ProjectStore(context: Context) {
         }
     }
 
+    fun setAutoAdvanceScenes(projectId: String, enabled: Boolean): JSONObject {
+        val project = load(projectId)
+        val timeline = project.optJSONObject("timeline")
+            ?: JSONObject().also { project.put("timeline", it) }
+        timeline.put("autoAdvanceScenes", enabled)
+        save(project)
+        return JSONObject(timeline.toString())
+    }
+
     fun setActiveScene(projectId: String, sceneId: String): JSONObject {
         val project = load(projectId)
         val scenes = project.optJSONArray("scenes") ?: JSONArray()
