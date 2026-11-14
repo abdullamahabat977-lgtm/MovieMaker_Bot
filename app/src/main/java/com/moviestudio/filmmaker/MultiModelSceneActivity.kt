@@ -20,6 +20,7 @@ import com.google.android.filament.gltfio.FilamentAsset
 import com.google.android.filament.gltfio.ResourceLoader
 import com.google.android.filament.gltfio.UbershaderProvider
 import com.google.android.filament.utils.ModelViewer
+import com.google.android.filament.utils.KTX1Loader
 import com.google.android.filament.utils.Utils
 import java.io.File
 import java.io.FileInputStream
@@ -74,6 +75,7 @@ class MultiModelSceneActivity : Activity() {
     private val models = mutableListOf<SceneModel>()
     private val sceneLightEntities = mutableListOf<Int>()
     private var sceneSkybox: com.google.android.filament.Skybox? = null
+    private var sceneIndirectLight: com.google.android.filament.IndirectLight? = null
     private var loadingLabel: TextView? = null
     private var transitionOverlay: View? = null
     private var projectId: String = ""
@@ -870,19 +872,64 @@ class MultiModelSceneActivity : Activity() {
         val defaultSkyRed = if (preset == "night") 0.025 else if (preset == "sunset") 0.28 else 0.12
         val defaultSkyGreen = if (preset == "night") 0.035 else if (preset == "sunset") 0.12 else 0.16
         val defaultSkyBlue = if (preset == "night") 0.10 else if (preset == "sunset") 0.07 else 0.22
-        val sky = com.google.android.filament.Skybox.Builder()
-            .color(
-                config.optDouble("skyRed", defaultSkyRed).toFloat().coerceIn(0f, 1f),
-                config.optDouble("skyGreen", defaultSkyGreen).toFloat().coerceIn(0f, 1f),
-                config.optDouble("skyBlue", defaultSkyBlue).toFloat().coerceIn(0f, 1f),
-                1.0f
-            )
-            .build(modelViewer.engine)
+        val baseFolder = ProjectStore(this).projectDirectory(projectId).canonicalFile
+        val iblPath = config.optString("environmentIblPath")
+        val skyboxPath = config.optString("environmentSkyboxPath")
+        var loadedIndirect: com.google.android.filament.IndirectLight? = null
+        var loadedSkybox: com.google.android.filament.Skybox? = null
+        if (iblPath.isNotBlank() && skyboxPath.isNotBlank()) {
+            try {
+                val iblFile = File(baseFolder, iblPath).canonicalFile
+                val skyboxFile = File(baseFolder, skyboxPath).canonicalFile
+                require(
+                    iblFile.path.startsWith(baseFolder.path + File.separator) && iblFile.isFile &&
+                    skyboxFile.path.startsWith(baseFolder.path + File.separator) && skyboxFile.isFile
+                ) { "د HDRI چاپېریال KTX فایلونه ونه موندل شول" }
+                val iblBuffer = FileInputStream(iblFile).channel.use { channel ->
+                    channel.map(FileChannel.MapMode.READ_ONLY, 0L, iblFile.length())
+                }
+                loadedIndirect = KTX1Loader.createIndirectLight(modelViewer.engine, iblBuffer).apply {
+                    intensity = config.optDouble("environmentIntensityLux", 30000.0)
+                        .toFloat().coerceIn(0f, 100000f)
+                }
+                val skyboxBuffer = FileInputStream(skyboxFile).channel.use { channel ->
+                    channel.map(FileChannel.MapMode.READ_ONLY, 0L, skyboxFile.length())
+                }
+                loadedSkybox = KTX1Loader.createSkybox(modelViewer.engine, skyboxBuffer)
+            } catch (error: Exception) {
+                loadedIndirect?.let { runCatching { modelViewer.engine.destroyIndirectLight(it) } }
+                loadedSkybox?.let { runCatching { modelViewer.engine.destroySkybox(it) } }
+                loadedIndirect = null
+                loadedSkybox = null
+                Toast.makeText(this, error.message ?: "د HDRI چاپېریال لوډ نه شو؛ رنګین شالید کارول کېږي", Toast.LENGTH_LONG).show()
+            }
+        }
         val previousSky = sceneSkybox
-        sceneSkybox = sky
-        modelViewer.scene.skybox = sky
-        if (previousSky != null && previousSky !== sky) {
+        val previousIndirect = sceneIndirectLight
+        if (loadedIndirect != null && loadedSkybox != null) {
+            modelViewer.scene.indirectLight = loadedIndirect
+            modelViewer.scene.skybox = loadedSkybox
+            sceneIndirectLight = loadedIndirect
+            sceneSkybox = loadedSkybox
+        } else {
+            modelViewer.scene.indirectLight = null
+            val sky = com.google.android.filament.Skybox.Builder()
+                .color(
+                    config.optDouble("skyRed", defaultSkyRed).toFloat().coerceIn(0f, 1f),
+                    config.optDouble("skyGreen", defaultSkyGreen).toFloat().coerceIn(0f, 1f),
+                    config.optDouble("skyBlue", defaultSkyBlue).toFloat().coerceIn(0f, 1f),
+                    1.0f
+                )
+                .build(modelViewer.engine)
+            modelViewer.scene.skybox = sky
+            sceneSkybox = sky
+            sceneIndirectLight = null
+        }
+        if (previousSky != null && previousSky !== sceneSkybox) {
             try { modelViewer.engine.destroySkybox(previousSky) } catch (_: Exception) { }
+        }
+        if (previousIndirect != null && previousIndirect !== sceneIndirectLight) {
+            try { modelViewer.engine.destroyIndirectLight(previousIndirect) } catch (_: Exception) { }
         }
         val red = config.optDouble("red", 1.0).toFloat().coerceIn(0f, 1f)
         val green = config.optDouble("green", 0.96).toFloat().coerceIn(0f, 1f)
@@ -992,6 +1039,10 @@ class MultiModelSceneActivity : Activity() {
             try { viewer?.engine?.destroySkybox(skybox) } catch (_: Exception) { }
         }
         sceneSkybox = null
+        sceneIndirectLight?.let { indirect ->
+            try { viewer?.engine?.destroyIndirectLight(indirect) } catch (_: Exception) { }
+        }
+        sceneIndirectLight = null
         super.onDestroy()
     }
 
