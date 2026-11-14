@@ -26,6 +26,9 @@ class RealisticModelPreviewActivity : Activity() {
     private var userY = 0f
     private var userZ = 0f
     private var userScale = 1f
+    private var userRotationX = 0f
+    private var userRotationY = 0f
+    private var userRotationZ = 0f
     private var animationStartTimeNanos = 0L
     private var currentAnimationIndex = 0
     private var animationPlaying = true
@@ -87,6 +90,9 @@ class RealisticModelPreviewActivity : Activity() {
             userY = intent.getFloatExtra(EXTRA_Y, 0f)
             userZ = intent.getFloatExtra(EXTRA_Z, 0f)
             userScale = intent.getFloatExtra(EXTRA_SCALE, 1f).coerceIn(0.25f, 3f)
+            userRotationX = intent.getFloatExtra(EXTRA_ROTATION_X, 0f)
+            userRotationY = intent.getFloatExtra(EXTRA_ROTATION_Y, 0f)
+            userRotationZ = intent.getFloatExtra(EXTRA_ROTATION_Z, 0f)
             applyObjectTransform(viewer)
             val resetCamera = Button(this).apply {
                 text = "کمره بېرته برابره کړه"
@@ -167,11 +173,15 @@ class RealisticModelPreviewActivity : Activity() {
         val asset = viewer.asset ?: return
         val manager = viewer.engine.transformManager
         val instance = manager.getInstance(asset.root)
-        val matrix = manager.getTransform(instance, FloatArray(16))
+        val matrix = FloatArray(16)
+        android.opengl.Matrix.setRotateEulerM(
+            matrix, 0, userRotationX, userRotationY, userRotationZ
+        )
         for (column in 0..2) for (row in 0..2) matrix[column * 4 + row] *= userScale
-        matrix[12] += userX
-        matrix[13] += userY
-        matrix[14] += userZ
+        matrix[12] = userX
+        matrix[13] = userY
+        matrix[14] = userZ
+        matrix[15] = 1f
         manager.setTransform(instance, matrix)
     }
 
@@ -193,5 +203,8 @@ class RealisticModelPreviewActivity : Activity() {
         const val EXTRA_Y = "model_y"
         const val EXTRA_Z = "model_z"
         const val EXTRA_SCALE = "model_scale"
+        const val EXTRA_ROTATION_X = "model_rotation_x"
+        const val EXTRA_ROTATION_Y = "model_rotation_y"
+        const val EXTRA_ROTATION_Z = "model_rotation_z"
     }
 }
