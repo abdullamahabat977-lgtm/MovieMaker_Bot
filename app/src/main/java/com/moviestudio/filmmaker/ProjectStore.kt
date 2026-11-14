@@ -161,7 +161,6 @@ class ProjectStore(context: Context) {
             .replace(Regex("[\\\\/:*?\"<>|]"), "_").trim().take(60)
             .ifBlank { modelType }
         val relativePath = "assets/$folderName/${modelFile.name}"
-        val project = load(projectId)
         val scene = firstScene(project)
         val objects = scene.optJSONArray("objects") ?: JSONArray().also { scene.put("objects", it) }
         val objectId = "object_" + UUID.randomUUID().toString()
