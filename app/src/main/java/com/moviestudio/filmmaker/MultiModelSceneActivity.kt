@@ -189,6 +189,15 @@ class MultiModelSceneActivity : Activity() {
                 FrameLayout.LayoutParams.WRAP_CONTENT, FrameLayout.LayoutParams.WRAP_CONTENT,
                 Gravity.TOP or Gravity.END
             ).apply { topMargin = 16; marginEnd = 16 })
+            val scenePicker = Button(this).apply {
+                text = "د فلم صحنې"
+                isAllCaps = false
+                setOnClickListener { showScenePicker() }
+            }
+            frame.addView(scenePicker, FrameLayout.LayoutParams(
+                FrameLayout.LayoutParams.WRAP_CONTENT, FrameLayout.LayoutParams.WRAP_CONTENT,
+                Gravity.TOP or Gravity.START
+            ).apply { topMargin = 64; marginStart = 16 })
             val cameraShots = Button(this).apply {
                 text = "د ثبت شوو کمرې شاټونه"
                 isAllCaps = false
@@ -248,6 +257,43 @@ class MultiModelSceneActivity : Activity() {
         if (viewer != null && !framePosted) {
             Choreographer.getInstance().postFrameCallback(frameCallback)
             framePosted = true
+        }
+    }
+
+    private fun showScenePicker() {
+        try {
+            val store = ProjectStore(this)
+            val scenes = store.listScenes(projectId)
+            if (scenes.isEmpty()) {
+                Toast.makeText(this, "په پروژه کې صحنه نشته", Toast.LENGTH_LONG).show()
+                return
+            }
+            val activeId = store.load(projectId).optString("activeSceneId")
+            val labels = scenes.mapIndexed { index, scene ->
+                "${index + 1}. ${scene.optString("name", "صحنه")}" +
+                    if (scene.optString("id") == activeId) " ✓ فعاله" else ""
+            }.toTypedArray()
+            AlertDialog.Builder(this)
+                .setTitle("د 3D لید لپاره صحنه وټاکه")
+                .setItems(labels) { _, which ->
+                    val chosen = scenes.getOrNull(which) ?: return@setItems
+                    try {
+                        store.setActiveScene(projectId, chosen.optString("id"))
+                        releaseModels()
+                        timelinePositionSeconds = 0.0
+                        timelineStartNanos = 0L
+                        timelinePlaying = true
+                        activeCameraShotId = null
+                        loadProjectModels()
+                        Toast.makeText(this, "صحنه «${chosen.optString("name")}» پرانیستل شوه", Toast.LENGTH_SHORT).show()
+                    } catch (error: Exception) {
+                        Toast.makeText(this, error.message ?: "صحنه پرانیستل نه شوه", Toast.LENGTH_LONG).show()
+                    }
+                }
+                .setNegativeButton("بند", null)
+                .show()
+        } catch (error: Exception) {
+            Toast.makeText(this, error.message ?: "د صحنو لېست نه لوستل کېږي", Toast.LENGTH_LONG).show()
         }
     }
 
