@@ -82,6 +82,8 @@ class MultiModelSceneActivity : Activity() {
     private val audioPlayers = mutableMapOf<String, MediaPlayer>()
     private val preparedAudioIds = mutableSetOf<String>()
     private var activeCameraShotId: String? = null
+    private var sceneSequenceIds: List<String> = emptyList()
+    private var autoAdvanceScenes = true
     private var timelineDurationSeconds = 0.0
     private var timelinePositionSeconds = 0.0
     private var timelineStartNanos = 0L
@@ -144,7 +146,11 @@ class MultiModelSceneActivity : Activity() {
                     (timelinePositionSeconds * 1_000_000_000.0).toLong()
                 timelinePositionSeconds = ((frameTimeNanos - timelineStartNanos).coerceAtLeast(0L) / 1_000_000_000.0)
                     .coerceAtMost(timelineDurationSeconds)
-                if (timelinePositionSeconds >= timelineDurationSeconds) timelinePlaying = false
+                if (timelinePositionSeconds >= timelineDurationSeconds) {
+                    timelinePositionSeconds = timelineDurationSeconds
+                    val advanced = autoAdvanceScenes && advanceToNextScene(showMessage = false)
+                    if (!advanced) timelinePlaying = false
+                }
                 applyCameraForTimelinePosition()
                 updateTimelineStatus()
             }
@@ -246,6 +252,25 @@ class MultiModelSceneActivity : Activity() {
                 isAllCaps = false
                 setOnClickListener { restartTimeline() }
             })
+            playbackButtons.addView(Button(this).apply {
+                text = "راتلونکې صحنه"
+                isAllCaps = false
+                setOnClickListener { advanceToNextScene(showMessage = true) }
+            })
+            playbackButtons.addView(Button(this).apply {
+                text = if (autoAdvanceScenes) "اتومات صحنې: هو" else "اتومات صحنې: نه"
+                isAllCaps = false
+                setOnClickListener {
+                    autoAdvanceScenes = !autoAdvanceScenes
+                    text = if (autoAdvanceScenes) "اتومات صحنې: هو" else "اتومات صحنې: نه"
+                    Toast.makeText(
+                        this@MultiModelSceneActivity,
+                        if (autoAdvanceScenes) "صحنې به د هرې صحنې د Timeline په پای کې پرله‌پسې بدلېږي"
+                        else "اتومات صحنه‌بدلون بند شو",
+                        Toast.LENGTH_SHORT
+                    ).show()
+                }
+            })
             playbackControls.addView(playbackButtons)
             frame.addView(playbackControls, FrameLayout.LayoutParams(
                 FrameLayout.LayoutParams.WRAP_CONTENT, FrameLayout.LayoutParams.WRAP_CONTENT,
@@ -272,6 +297,39 @@ class MultiModelSceneActivity : Activity() {
         if (viewer != null && !framePosted) {
             Choreographer.getInstance().postFrameCallback(frameCallback)
             framePosted = true
+        }
+    }
+
+    private fun advanceToNextScene(showMessage: Boolean): Boolean {
+        return try {
+            val store = ProjectStore(this)
+            val project = store.load(projectId)
+            val activeId = project.optString("activeSceneId")
+            val currentIndex = sceneSequenceIds.indexOf(activeId)
+            val nextId = sceneSequenceIds.getOrNull(currentIndex + 1) ?: return false
+            val nextScene = store.listScenes(projectId).firstOrNull {
+                it.optString("id") == nextId
+            } ?: return false
+            store.setActiveScene(projectId, nextId)
+            releaseModels()
+            timelinePositionSeconds = 0.0
+            timelineStartNanos = 0L
+            timelinePlaying = true
+            activeCameraShotId = null
+            loadProjectModels()
+            if (showMessage) {
+                Toast.makeText(
+                    this,
+                    "راتلونکې صحنه: ${nextScene.optString("name", "صحنه")}",
+                    Toast.LENGTH_SHORT
+                ).show()
+            }
+            true
+        } catch (error: Exception) {
+            if (showMessage) Toast.makeText(
+                this, error.message ?: "راتلونکې صحنې ته تګ ناکام شو", Toast.LENGTH_LONG
+            ).show()
+            false
         }
     }
 
@@ -476,6 +534,13 @@ class MultiModelSceneActivity : Activity() {
             val store = ProjectStore(this)
             val project = store.load(projectId)
             val scene = store.activeScene(projectId)
+            val allScenes = store.listScenes(projectId)
+            val validSceneIds = allScenes.map { it.optString("id") }.toSet()
+            val savedOrder = project.optJSONObject("timeline")?.optJSONArray("sceneOrder")
+            val orderedIds = if (savedOrder == null) emptyList() else
+                (0 until savedOrder.length()).mapNotNull { savedOrder.optString(it).takeIf { id -> id in validSceneIds } }
+            sceneSequenceIds = (orderedIds + allScenes.map { it.optString("id") })
+                .filter { it.isNotBlank() }.distinct()
             applySceneLighting(modelViewer, scene)
             val projectFps = (project.optJSONObject("project")?.optJSONObject("settings")?.optInt("fps", 24) ?: 24)
                 .coerceIn(1, 120)
