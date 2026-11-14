@@ -96,6 +96,14 @@ class MultiModelSceneActivity : Activity() {
     private val frameCallback = object : Choreographer.FrameCallback {
         override fun doFrame(frameTimeNanos: Long) {
             val modelViewer = viewer ?: return
+            // Advance the shared film clock before evaluating skeletal animation on this frame.
+            if ((timelineClips.isNotEmpty() || cameraShots.isNotEmpty() || audioClips.isNotEmpty() ||
+                    timelineDurationSeconds > 0.0) && timelinePlaying) {
+                if (timelineStartNanos == 0L) timelineStartNanos = frameTimeNanos -
+                    (timelinePositionSeconds * 1_000_000_000.0).toLong()
+                timelinePositionSeconds = ((frameTimeNanos - timelineStartNanos).coerceAtLeast(0L) /
+                    1_000_000_000.0).coerceAtMost(timelineDurationSeconds)
+            }
             var readyCount = 0
             models.forEach { model ->
                 model.resources.asyncUpdateLoad()
@@ -143,11 +151,8 @@ class MultiModelSceneActivity : Activity() {
                     }
                 }
             }
-            if ((timelineClips.isNotEmpty() || cameraShots.isNotEmpty() || audioClips.isNotEmpty() || timelineDurationSeconds > 0.0) && timelinePlaying) {
-                if (timelineStartNanos == 0L) timelineStartNanos = frameTimeNanos -
-                    (timelinePositionSeconds * 1_000_000_000.0).toLong()
-                timelinePositionSeconds = ((frameTimeNanos - timelineStartNanos).coerceAtLeast(0L) / 1_000_000_000.0)
-                    .coerceAtMost(timelineDurationSeconds)
+            if ((timelineClips.isNotEmpty() || cameraShots.isNotEmpty() || audioClips.isNotEmpty() ||
+                    timelineDurationSeconds > 0.0) && timelinePlaying) {
                 if (timelinePositionSeconds >= timelineDurationSeconds) {
                     timelinePositionSeconds = timelineDurationSeconds
                     val advanced = autoAdvanceScenes && advanceToNextScene(showMessage = false)
