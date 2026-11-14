@@ -898,7 +898,8 @@ class ProjectStore(context: Context) {
             "intensityLux", "red", "green", "blue",
             "directionX", "directionY", "directionZ", "fillIntensityCandela",
             "skyRed", "skyGreen", "skyBlue",
-            "fillRed", "fillGreen", "fillBlue", "fillX", "fillY", "fillZ", "fillFalloff"
+            "fillRed", "fillGreen", "fillBlue", "fillX", "fillY", "fillZ", "fillFalloff",
+            "environmentIntensityLux"
         )
         keys.forEach { key ->
             if (changes.has(key)) {
@@ -906,6 +907,7 @@ class ProjectStore(context: Context) {
                 require(value.isFinite()) { "د رڼا د $key ارزښت ناسم دی" }
                 val range = when (key) {
                     "intensityLux" -> 500.0..120000.0
+                    "environmentIntensityLux" -> 0.0..100000.0
                     "fillIntensityCandela" -> 0.0..60000.0
                     "fillFalloff" -> 1.0..1000.0
                     "fillX", "fillY", "fillZ" -> -1000.0..1000.0
@@ -946,6 +948,7 @@ class ProjectStore(context: Context) {
             .put("skyRed", if (preset == "night") 0.025 else if (preset == "sunset") 0.28 else 0.12)
             .put("skyGreen", if (preset == "night") 0.035 else if (preset == "sunset") 0.12 else 0.16)
             .put("skyBlue", if (preset == "night") 0.10 else if (preset == "sunset") 0.07 else 0.22)
+            .put("environmentIntensityLux", 30000.0)
             .put("fillRed", 0.78).put("fillGreen", 0.84).put("fillBlue", 1.0)
             .put("fillX", 4.0).put("fillY", 5.0).put("fillZ", 1.5).put("fillFalloff", 15.0)
             .put("shadows", true)
