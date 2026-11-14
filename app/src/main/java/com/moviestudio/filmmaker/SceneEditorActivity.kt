@@ -82,6 +82,7 @@ class SceneEditorActivity : Activity() {
         content.addView(label("د صحنې توکي", 17, true))
         content.addView(label("د انسان، حیوان، موټر، کور، ونې، فرنیچر او نورو شیانو حقیقي 3D ماډلونه د GLB 2.0 په بڼه وارد کړه. کارتوني نمونه‌یي شکلونه د فلم د توکو په توګه نه کارېږي.", 12))
         content.addView(button("＋ حقیقي 3D توکی واردول (GLB)") { chooseModelType() })
+        content.addView(button("🌐 د حقیقي 3D ماډلونو وړیا کتابتون") { openModelLibrary() })
         content.addView(button("ټاکل شوی حقیقي ماډل په 3D کې وګوره") { openSelectedRealisticModel() })
         content.addView(button("ټول حقیقي توکي په یوه 3D صحنه کې وګوره") { openWholeScene() })
         objectPanel = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
@@ -214,6 +215,33 @@ class SceneEditorActivity : Activity() {
             }, LinearLayout.LayoutParams(0, dp(46), 1f))
             objectPanel.addView(row)
         }
+    }
+
+    private fun openModelLibrary() {
+        val names = arrayOf(
+            "حقیقي انسان — Daniel (CC0، 26.3 MB)",
+            "د کورونو او ودانیو ماډلونه (CC BY 4.0)",
+            "حقیقي موټر — Car Concept (CC BY 4.0)",
+            "تاریخي او سیمه‌ییزې ودانۍ (CC BY-SA 4.0)"
+        )
+        val urls = arrayOf(
+            "https://www.innerscene.com/tools/library/3d-parts/daniel-3d-person-standing-casual-f788af5a",
+            "https://www.sloyd.ai/free-3d-models/architecture-buildings/houses-homes",
+            "https://github.com/KhronosGroup/glTF-Sample-Assets/blob/main/Models/CarConcept/glTF-Binary/CarConcept.glb",
+            "https://github.com/bilol-makhmudov/monuments"
+        )
+        AlertDialog.Builder(this)
+            .setTitle("د حقیقي 3D ماډلونو کتابتون")
+            .setMessage("له سرچینې څخه GLB فایل ډاونلوډ کړه، بیا بېرته فلم سټوډیو ته راشه او د «حقیقي 3D توکی واردول» تڼۍ وکاروه. ماډلونه د پروژې په محلي Film Studio فولډر کې ساتل کېږي. د هر ماډل د جواز او د لیکوال د کریډیټ شرطونه مراعت کړه.")
+            .setItems(names) { _, which ->
+                try {
+                    startActivity(Intent(Intent.ACTION_VIEW, android.net.Uri.parse(urls[which])))
+                } catch (_: Exception) {
+                    toast("د ماډل سرچینه نه پرانیستل کېږي؛ انټرنېټ او براوزر وڅېړه")
+                }
+            }
+            .setNegativeButton("بند", null)
+            .show()
     }
 
     private fun chooseModelType() {
