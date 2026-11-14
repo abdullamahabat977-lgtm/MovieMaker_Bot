@@ -4,6 +4,7 @@ import android.content.Context
 import org.json.JSONArray
 import org.json.JSONObject
 import java.io.File
+import java.io.FileInputStream
 import java.io.InputStream
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -139,7 +140,9 @@ class ProjectStore(context: Context) {
 
         val project = load(projectId)
         val existingBytes = project.optJSONArray("assets")?.let { assets ->
-            (0 until assets.length()).sumOf { assets.optJSONObject(it)?.optLong("sizeBytes") ?: 0L }
+            (0 until assets.length()).mapNotNull { index ->
+                assets.optJSONObject(index)?.let { it.optString("path") to it.optLong("sizeBytes") }
+            }.distinctBy { it.first }.sumOf { it.second }
         } ?: 0L
         require(existingBytes + modelFile.length() <= MAX_PROJECT_MODEL_BYTES) {
             "د دې پروژې د 3D فایلونو ټول حجم له ۲۵۶ MB څخه زیات نه شي کېدای"
