@@ -727,7 +727,8 @@ class SceneEditorActivity : Activity() {
                     val imported = store.importEnvironmentMap(
                         projectId, iblStream, iblEntry.second, skyboxStream, skyEntry.second
                     )
-                    status.text = "حقیقي HDRI / IBL چاپېریال په پروژه کې خوندي شو."
+                    val totalKb = (imported.optLong("iblBytes") + imported.optLong("skyboxBytes")) / 1024
+                    status.text = "حقیقي HDRI / IBL چاپېریال خوندي شو؛ ټول حجم: ${totalKb} KB."
                     toast("HDRI چاپېریال وارد شو؛ د 3D لید بیا پرانیځه")
                 } catch (error: Exception) {
                     toast(error.message ?: "د HDRI چاپېریال واردول ناکام شول")
