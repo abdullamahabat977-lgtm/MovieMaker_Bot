@@ -357,6 +357,7 @@ class MultiModelSceneActivity : Activity() {
             }
             true
         } catch (error: Exception) {
+            finishSceneTransition()
             if (showMessage) Toast.makeText(
                 this, error.message ?: "راتلونکې صحنې ته تګ ناکام شو", Toast.LENGTH_LONG
             ).show()
@@ -393,6 +394,7 @@ class MultiModelSceneActivity : Activity() {
                         finishSceneTransition()
                         Toast.makeText(this, "صحنه «${chosen.optString("name")}» پرانیستل شوه", Toast.LENGTH_SHORT).show()
                     } catch (error: Exception) {
+                        finishSceneTransition()
                         Toast.makeText(this, error.message ?: "صحنه پرانیستل نه شوه", Toast.LENGTH_LONG).show()
                     }
                 }
