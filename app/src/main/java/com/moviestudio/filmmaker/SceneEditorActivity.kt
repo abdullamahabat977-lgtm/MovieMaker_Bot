@@ -401,7 +401,11 @@ class SceneEditorActivity : Activity() {
             "د Poly Haven فوتوریالیستي ماډلونه (CC0؛ GLB بڼه وګوره)",
             "واقعي دوه پوړیز کور (CC0، GLB، 2.7 MB)",
             "واقعي عامه کتابتون ودانۍ (CC0، GLB، 26.4 MB)",
-            "د دوو لینونو سړک او پلي‌لارې (CC0، GLB، 6.7 MB)"
+            "د دوو لینونو سړک او پلي‌لارې (CC0، GLB، 6.7 MB)",
+            "واقعي خټین/افغانۍ بڼه کور (CC0، GLB)",
+            "دوه پوړیزه واقعي ویلا (CC0، GLB، 12.4 MB)",
+            "د کورنۍ عصري کور (CC0، GLB، 2.6 MB)",
+            "د لرګیو چوکاټ لرونکی کلیوالي کور (CC0، GLB، 1.6 MB)"
         )
         val urls = arrayOf(
             "https://www.innerscene.com/tools/library/3d-parts/daniel-3d-person-standing-casual-f788af5a",
@@ -414,7 +418,11 @@ class SceneEditorActivity : Activity() {
             "https://polyhaven.com/models",
             "https://www.innerscene.com/tools/library/3d-parts/3bhk-house-on-a-60-x-120-ft-plot-3d-model-163b8736",
             "https://www.innerscene.com/tools/library/3d-parts/library-building-362b4104",
-            "https://www.innerscene.com/tools/library/3d-parts/two-lane-straight-road-with-markings-8d2ba089"
+            "https://www.innerscene.com/tools/library/3d-parts/two-lane-straight-road-with-markings-8d2ba089",
+            "https://grab3d.com/models/buildings/adobe-house/",
+            "https://www.innerscene.com/tools/library/3d-parts/two-storey-villa-3d-model-8107d738",
+            "https://grab3d.com/models/buildings/suburban-family-house/",
+            "https://grab3d.com/models/buildings/timber-frame-house/"
         )
         AlertDialog.Builder(this)
             .setTitle("د حقیقي 3D ماډلونو کتابتون")
@@ -580,6 +588,7 @@ class SceneEditorActivity : Activity() {
             addCategory(Intent.CATEGORY_OPENABLE)
             type = "*/*"
             putExtra(Intent.EXTRA_MIME_TYPES, arrayOf("model/gltf-binary", "application/octet-stream"))
+            putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true)
         }
         startActivityForResult(intent, REQUEST_IMPORT_GLB)
     }
@@ -618,31 +627,53 @@ class SceneEditorActivity : Activity() {
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
         if (resultCode != RESULT_OK) return
-        val uri = data?.data ?: return
         when (requestCode) {
-            REQUEST_IMPORT_GLB -> try {
-                val stream = contentResolver.openInputStream(uri)
-                    ?: throw IllegalStateException("فایل نه پرانیستل کېږي")
-                val name = queryDisplayName(uri, "3D-${pendingModelType}.glb")
-                val imported = store.importSceneModel(projectId, stream, name, pendingModelType)
-                selectedObjectId = imported.optString("id")
-                selectedObject = imported
-                refreshPanels()
-                status.text = "حقیقي GLB ماډل په موبایل کې وارد او خوندي شو."
-                toast("حقیقي 3D ماډل وارد شو")
-            } catch (error: Exception) {
-                toast(error.message ?: "د حقیقي 3D ماډل واردول ناکام شول")
+            REQUEST_IMPORT_GLB -> {
+                val selectedUris = mutableListOf<android.net.Uri>()
+                data?.clipData?.let { clips ->
+                    for (index in 0 until clips.itemCount) selectedUris.add(clips.getItemAt(index).uri)
+                }
+                data?.data?.let { if (selectedUris.isEmpty()) selectedUris.add(it) }
+                if (selectedUris.isEmpty()) {
+                    toast("د GLB فایلونه ونه ټاکل شول")
+                    return
+                }
+                var importedCount = 0
+                val failures = mutableListOf<String>()
+                selectedUris.take(8).forEach { selectedUri ->
+                    try {
+                        val stream = contentResolver.openInputStream(selectedUri)
+                            ?: throw IllegalStateException("فایل نه پرانیستل کېږي")
+                        val name = queryDisplayName(selectedUri, "3D-${pendingModelType}.glb")
+                        val imported = store.importSceneModel(projectId, stream, name, pendingModelType)
+                        selectedObjectId = imported.optString("id")
+                        selectedObject = imported
+                        importedCount++
+                    } catch (error: Exception) {
+                        failures.add(error.message ?: "یو GLB فایل وارد نه شو")
+                    }
+                }
+                if (importedCount > 0) {
+                    refreshPanels()
+                    status.text = "$importedCount حقیقي GLB ماډلونه په موبایل کې وارد او خوندي شول."
+                    toast("$importedCount ماډلونه وارد شول")
+                }
+                if (selectedUris.size > 8) toast("په یو ځل یوازې ۸ فایلونه واردېږي؛ پاتې فایلونه بیا وټاکه")
+                failures.firstOrNull()?.let { toast("ځینې فایلونه وارد نه شول: $it") }
             }
-            REQUEST_IMPORT_AUDIO -> try {
-                val stream = contentResolver.openInputStream(uri)
-                    ?: throw IllegalStateException("غږ فایل نه پرانیستل کېږي")
-                val name = queryDisplayName(uri, "audio.m4a")
-                val imported = store.importAudioAsset(projectId, stream, name, contentResolver.getType(uri))
-                refreshPanels()
-                status.text = "غږ فایل په محلي پروژه کې خوندي شو: ${imported.optString("name")}"
-                toast("غږ فایل وارد شو؛ اوس یې Timeline ته ورزیات کړه")
-            } catch (error: Exception) {
-                toast(error.message ?: "د غږ فایل واردول ناکام شول")
+            REQUEST_IMPORT_AUDIO -> {
+                val uri = data?.data ?: return
+                try {
+                    val stream = contentResolver.openInputStream(uri)
+                        ?: throw IllegalStateException("غږ فایل نه پرانیستل کېږي")
+                    val name = queryDisplayName(uri, "audio.m4a")
+                    val imported = store.importAudioAsset(projectId, stream, name, contentResolver.getType(uri))
+                    refreshPanels()
+                    status.text = "غږ فایل په محلي پروژه کې خوندي شو: ${imported.optString("name")}"
+                    toast("غږ فایل وارد شو؛ اوس یې Timeline ته ورزیات کړه")
+                } catch (error: Exception) {
+                    toast(error.message ?: "د غږ فایل واردول ناکام شول")
+                }
             }
         }
     }
