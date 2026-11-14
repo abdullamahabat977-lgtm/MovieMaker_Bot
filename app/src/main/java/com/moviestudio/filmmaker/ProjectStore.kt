@@ -319,6 +319,85 @@ class ProjectStore(context: Context) {
         }
     }
 
+    fun updateProductionSettings(
+        projectId: String,
+        groundWidthMeters: Double,
+        groundDepthMeters: Double,
+        filmStartTime: String,
+        filmEndTime: String
+    ): JSONObject {
+        require(groundWidthMeters in 1.0..1000.0 && groundDepthMeters in 1.0..1000.0) {
+            "د ځمکې هر اړخ باید له ۱ تر ۱۰۰۰ مترو وي"
+        }
+        val start = clockSeconds(filmStartTime)
+        val end = clockSeconds(filmEndTime)
+        require(end > start) { "د فلم د پای وخت باید د پیل له وخت وروسته وي" }
+        require(end - start <= 24 * 60 * 60) { "د فلم موده تر ۲۴ ساعتونو زیاته نه شي کېدای" }
+        val project = load(projectId)
+        val scene = firstScene(project)
+        scene.put("ground", JSONObject()
+            .put("widthMeters", groundWidthMeters)
+            .put("depthMeters", groundDepthMeters)
+            .put("areaSquareMeters", groundWidthMeters * groundDepthMeters))
+        scene.put("production", JSONObject()
+            .put("startTime", filmStartTime)
+            .put("endTime", filmEndTime)
+            .put("durationSeconds", end - start))
+        save(project)
+        return scene
+    }
+
+    fun addTimedTimelineClip(
+        projectId: String,
+        objectId: String,
+        action: String,
+        startTime: String,
+        endTime: String,
+        speed: Double
+    ): JSONObject {
+        require(action in setOf("idle", "walk", "run", "talk", "custom")) { "د حرکت ډول ناسم دی" }
+        require(speed in 0.1..5.0) { "د حرکت سرعت باید له ۰.۱ تر ۵ برابرو وي" }
+        val project = load(projectId)
+        val scene = firstScene(project)
+        val objects = scene.optJSONArray("objects") ?: JSONArray()
+        require((0 until objects.length()).any { objects.optJSONObject(it)?.optString("id") == objectId }) {
+            "ټاکل شوی کرکټر یا توکی په صحنه کې نشته"
+        }
+        val start = clockSeconds(startTime)
+        val end = clockSeconds(endTime)
+        require(end > start) { "د حرکت د پای وخت باید د پیل له وخت وروسته وي" }
+        val production = scene.optJSONObject("production")
+            ?: throw IllegalStateException("لومړی د فلم د پیل او پای وختونه تنظیم کړه")
+        val filmStart = clockSeconds(production.optString("startTime"))
+        val filmEnd = clockSeconds(production.optString("endTime"))
+        require(start >= filmStart && end <= filmEnd) { "د حرکت وخت باید د فلم د ټاکلي وخت دننه وي" }
+        val fps = project.optJSONObject("project")?.optJSONObject("settings")?.optInt("fps", 24) ?: 24
+        val clip = JSONObject()
+            .put("id", "clip_" + UUID.randomUUID().toString())
+            .put("objectId", objectId)
+            .put("action", action)
+            .put("startTime", startTime)
+            .put("endTime", endTime)
+            .put("startOffsetSeconds", start - filmStart)
+            .put("durationSeconds", end - start)
+            .put("startFrame", (start - filmStart) * fps)
+            .put("durationFrames", (end - start) * fps)
+            .put("speed", speed)
+            .put("timingMode", "film_clock")
+        val clips = scene.optJSONArray("timeline") ?: JSONArray().also { scene.put("timeline", it) }
+        clips.put(clip)
+        save(project)
+        return clip
+    }
+
+    private fun clockSeconds(value: String): Int {
+        require(value.matches(Regex("^(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d$"))) {
+            "وخت باید د HH:mm:ss په بڼه وي، لکه 09:01:00"
+        }
+        val parts = value.split(":").map { it.toInt() }
+        return parts[0] * 3600 + parts[1] * 60 + parts[2]
+    }
+
     fun addTimelineClip(projectId: String, objectId: String, action: String, durationFrames: Int = 48): JSONObject {
         require(action in setOf("idle", "walk", "run", "talk", "custom")) { "د حرکت ډول ناسم دی" }
         val project = load(projectId)
