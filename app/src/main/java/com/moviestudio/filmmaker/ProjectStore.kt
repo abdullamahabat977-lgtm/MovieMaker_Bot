@@ -329,6 +329,42 @@ class ProjectStore(context: Context) {
         return clip
     }
 
+    fun updateAudioClip(
+        projectId: String,
+        clipId: String,
+        startTime: String,
+        volume: Double,
+        trackType: String
+    ): JSONObject {
+        require(volume in 0.0..1.0) { "د غږ حجم باید له ۰ تر ۱۰۰ سلنې وي" }
+        require(trackType in setOf("dialogue", "music", "effect")) { "د غږ ټریک ډول ناسم دی" }
+        val project = load(projectId)
+        val scene = firstScene(project)
+        val clips = scene.optJSONArray("audioTracks") ?: JSONArray()
+        val clip = (0 until clips.length()).mapNotNull { clips.optJSONObject(it) }
+            .firstOrNull { it.optString("id") == clipId }
+            ?: throw IllegalArgumentException("د غږ کلیپ ونه موندل شو")
+        val start = clockSeconds(startTime)
+        val duration = clip.optDouble("durationSeconds", 0.0)
+        require(duration > 0.0) { "د غږ کلیپ موده ناسمه ده" }
+        val production = scene.optJSONObject("production")
+        if (production != null) {
+            val filmStart = clockSeconds(production.optString("startTime"))
+            val filmEnd = clockSeconds(production.optString("endTime"))
+            require(start >= filmStart && start + duration <= filmEnd) {
+                "د غږ کلیپ باید د فلم د پیل او پای ترمنځ وي"
+            }
+        }
+        clip.put("startTime", startTime)
+            .put("startOffsetSeconds", (start - (production?.let {
+                clockSeconds(it.optString("startTime"))
+            } ?: start)).toDouble())
+            .put("volume", volume)
+            .put("trackType", trackType)
+        save(project)
+        return JSONObject(clip.toString())
+    }
+
     fun removeAudioClip(projectId: String, clipId: String) {
         val project = load(projectId)
         val scene = firstScene(project)
