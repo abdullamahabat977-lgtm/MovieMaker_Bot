@@ -138,18 +138,23 @@ class ProjectStore(context: Context) {
             throw error
         }
 
-        val project = load(projectId)
+        val project = try { load(projectId) } catch (error: Exception) {
+            modelFile.delete()
+            throw error
+        }
         val existingBytes = project.optJSONArray("assets")?.let { assets ->
             (0 until assets.length()).mapNotNull { index ->
                 assets.optJSONObject(index)?.let { it.optString("path") to it.optLong("sizeBytes") }
             }.distinctBy { it.first }.sumOf { it.second }
         } ?: 0L
-        require(existingBytes + modelFile.length() <= MAX_PROJECT_MODEL_BYTES) {
-            "د دې پروژې د 3D فایلونو ټول حجم له ۲۵۶ MB څخه زیات نه شي کېدای"
+        if (existingBytes + modelFile.length() > MAX_PROJECT_MODEL_BYTES) {
+            modelFile.delete()
+            throw IllegalArgumentException("د دې پروژې د 3D فایلونو ټول حجم له ۲۵۶ MB څخه زیات نه شي کېدای")
         }
         val existingObjects = firstScene(project).optJSONArray("objects") ?: JSONArray()
-        require(existingObjects.length() < MAX_SCENE_OBJECTS) {
-            "په یوه صحنه کې تر ۳۲ زیات توکي مه واردوه"
+        if (existingObjects.length() >= MAX_SCENE_OBJECTS) {
+            modelFile.delete()
+            throw IllegalArgumentException("په یوه صحنه کې تر ۳۲ زیات توکي مه واردوه")
         }
 
         val cleanName = displayName.substringBeforeLast('.', displayName)
