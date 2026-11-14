@@ -178,6 +178,7 @@ class ProjectStore(context: Context) {
             .put("format", "glb")
             .put("modelPath", relativePath)
             .put("x", position.first).put("y", 0.0).put("z", depth).put("scale", 1.0)
+            .put("rotationX", 0.0).put("rotationY", 0.0).put("rotationZ", 0.0)
         try {
             objects.put(item)
             val assets = project.optJSONArray("assets") ?: JSONArray().also { project.put("assets", it) }
@@ -230,13 +231,17 @@ class ProjectStore(context: Context) {
             if (item.optString("id") == objectId) { found = item; break }
         }
         val item = found ?: throw IllegalArgumentException("د صحنې توکی ونه موندل شو")
-        listOf("name", "x", "y", "z", "scale").forEach { key ->
+        listOf("name", "x", "y", "z", "scale", "rotationX", "rotationY", "rotationZ").forEach { key ->
             if (changes.has(key)) item.put(key, changes.get(key))
         }
         item.put("scale", item.optDouble("scale", 1.0).coerceIn(0.25, 3.0))
         item.put("x", item.optDouble("x").coerceIn(-3.0, 3.0))
         item.put("y", item.optDouble("y").coerceIn(-1.0, 3.0))
         item.put("z", item.optDouble("z").coerceIn(-3.0, 3.0))
+        listOf("rotationX", "rotationY", "rotationZ").forEach { key ->
+            val normalized = ((item.optDouble(key) % 360.0) + 360.0) % 360.0
+            item.put(key, normalized)
+        }
         save(project)
         return item
     }
