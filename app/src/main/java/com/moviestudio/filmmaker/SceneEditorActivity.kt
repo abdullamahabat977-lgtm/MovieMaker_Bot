@@ -103,6 +103,7 @@ class SceneEditorActivity : Activity() {
         content.addView(label("د HDRI چاپېریال د حقیقي انعکاس او غیرمستقیمې رڼا لپاره د Filament دوه KTX1 فایلونه غواړي: IBL او Skybox.", 11))
         content.addView(button("🌄 د HDRI / IBL چاپېریال واردول") { pickEnvironmentFiles() })
         content.addView(button("د وړیا Filament HDRI فایلونه") { openEnvironmentLibrary() })
+        content.addView(button("د فعاله صحنې HDRI چاپېریال لرې کول") { clearSceneEnvironmentDialog() })
         content.addView(label("د صحنې توکي", 17, true))
         content.addView(label("د انسان، حیوان، موټر، کور، ونې، فرنیچر او نورو شیانو حقیقي 3D ماډلونه د GLB 2.0 په بڼه وارد کړه. کارتوني نمونه‌یي شکلونه د فلم د توکو په توګه نه کارېږي. د صحنو ترتیب د فلم د پرله‌پسې پلې کېدو ترتیب دی؛ په 3D لید کې اتومات صحنه‌بدلون فعال یا بندولای شې.", 12))
         content.addView(button("＋ حقیقي 3D توکی واردول (GLB)") { chooseModelType() })
@@ -596,6 +597,18 @@ class SceneEditorActivity : Activity() {
             putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true)
         }
         startActivityForResult(intent, REQUEST_IMPORT_ENVIRONMENT)
+    }
+
+    private fun clearSceneEnvironmentDialog() {
+        AlertDialog.Builder(this).setTitle("HDRI چاپېریال لرې کول")
+            .setMessage("د فعاله صحنې HDRI / IBL نقشه لرې شي او د رنګین اسماني شالید حالت ته بېرته وګرځي؟")
+            .setNegativeButton("لغوه", null)
+            .setPositiveButton("لرې کول") { _, _ ->
+                try {
+                    store.clearSceneEnvironment(projectId)
+                    status.text = "د فعاله صحنې HDRI لرې شو؛ رنګین اسماني شالید به وکارول شي."
+                } catch (error: Exception) { toast(error.message ?: "HDRI لرې نه شو") }
+            }.show()
     }
 
     private fun openEnvironmentLibrary() {
