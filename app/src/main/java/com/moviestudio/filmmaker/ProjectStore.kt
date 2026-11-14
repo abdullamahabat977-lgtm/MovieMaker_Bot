@@ -10,6 +10,7 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 import java.util.UUID
+import java.util.TimeZone
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
 
@@ -712,7 +713,9 @@ class ProjectStore(context: Context) {
     }
 
     private fun timestamp(): String =
-        SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.US).format(Date())
+        SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.US).apply {
+            timeZone = TimeZone.getTimeZone("UTC")
+        }.format(Date())
 
     private fun writeSafely(target: File, content: String) {
         val temp = File(target.parentFile, target.name + ".tmp")
