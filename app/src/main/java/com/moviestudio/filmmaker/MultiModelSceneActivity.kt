@@ -383,7 +383,7 @@ class MultiModelSceneActivity : Activity() {
     }
 
     private fun restartTimeline() {
-        if (timelineClips.isEmpty() && cameraShots.isEmpty()) {
+        if (timelineClips.isEmpty() && cameraShots.isEmpty() && audioClips.isEmpty()) {
             Toast.makeText(this, "د دې پروژې Timeline تش دی", Toast.LENGTH_SHORT).show()
             return
         }
