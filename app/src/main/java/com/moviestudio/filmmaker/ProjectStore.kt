@@ -604,6 +604,9 @@ class ProjectStore(context: Context) {
         listOf("name", "x", "y", "z", "scale", "rotationX", "rotationY", "rotationZ").forEach { key ->
             if (changes.has(key)) item.put(key, changes.get(key))
         }
+        if (changes.has("preserveModelScale")) {
+            item.put("preserveModelScale", changes.optBoolean("preserveModelScale"))
+        }
         val ground = firstScene(project).optJSONObject("ground") ?: JSONObject()
         val halfWidth = (ground.optDouble("widthMeters", 6.0) / 2.0).coerceAtLeast(0.5)
         val halfDepth = (ground.optDouble("depthMeters", 6.0) / 2.0).coerceAtLeast(0.5)
