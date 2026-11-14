@@ -236,7 +236,7 @@ class ProjectStore(context: Context) {
             input.readFully(jsonBytes)
             val document = JSONObject(String(jsonBytes, Charsets.UTF_8).trim { it.code <= 32 })
             val animations = document.optJSONArray("animations") ?: JSONArray()
-            return (0 until animations.length()).map { index ->
+            return (0 until minOf(animations.length(), 256)).map { index ->
                 val name = animations.optJSONObject(index)?.optString("name").orEmpty().trim()
                 name.ifBlank { "حرکت ${index + 1}" }.take(80)
             }
