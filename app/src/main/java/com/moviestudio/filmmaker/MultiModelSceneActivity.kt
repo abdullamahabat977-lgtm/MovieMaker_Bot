@@ -2,6 +2,7 @@ package com.moviestudio.filmmaker
 
 import android.app.Activity
 import android.app.ActivityManager
+import android.app.AlertDialog
 import android.os.Bundle
 import android.view.Choreographer
 import android.view.Gravity
@@ -20,6 +21,7 @@ import com.google.android.filament.utils.Utils
 import java.io.File
 import java.io.FileInputStream
 import java.nio.channels.FileChannel
+import org.json.JSONObject
 
 /**
  * Displays every imported GLB model in the same Filament scene.
@@ -127,6 +129,15 @@ class MultiModelSceneActivity : Activity() {
                 FrameLayout.LayoutParams.WRAP_CONTENT, FrameLayout.LayoutParams.WRAP_CONTENT,
                 Gravity.TOP or Gravity.END
             ).apply { topMargin = 16; marginEnd = 16 })
+            val cameraShots = Button(this).apply {
+                text = "د ثبت شوو کمرې شاټونه"
+                isAllCaps = false
+                setOnClickListener { showCameraShotPicker() }
+            }
+            frame.addView(cameraShots, FrameLayout.LayoutParams(
+                FrameLayout.LayoutParams.WRAP_CONTENT, FrameLayout.LayoutParams.WRAP_CONTENT,
+                Gravity.BOTTOM or Gravity.END
+            ).apply { bottomMargin = 24; marginEnd = 16 })
             setContentView(frame)
             title = "د صحنې حقیقي 3D لید"
         } catch (error: Exception) {
@@ -142,6 +153,52 @@ class MultiModelSceneActivity : Activity() {
             Choreographer.getInstance().postFrameCallback(frameCallback)
             framePosted = true
         }
+    }
+
+    private fun showCameraShotPicker() {
+        try {
+            val scene = ProjectStore(this).load(projectId)
+                .optJSONArray("scenes")?.optJSONObject(0)
+            val shots = scene?.optJSONArray("cameraShots")
+            if (shots == null || shots.length() == 0) {
+                Toast.makeText(this, "په دې پروژه کې د کمرې ثبت شوی شاټ نشته؛ لومړی یې په Scene Editor کې جوړ کړه", Toast.LENGTH_LONG).show()
+                return
+            }
+            val available = (0 until shots.length()).mapNotNull { shots.optJSONObject(it) }
+            if (available.isEmpty()) return
+            val labels = available.mapIndexed { index, shot ->
+                "${index + 1}. ${shot.optString("name", "کمره")} • FOV ${shot.optDouble("fieldOfView", 50.0)}°"
+            }.toTypedArray()
+            AlertDialog.Builder(this)
+                .setTitle("د صحنې د کمرې شاټ وټاکه")
+                .setItems(labels) { _, which ->
+                    available.getOrNull(which)?.let { applyCameraShot(it) }
+                }
+                .setNegativeButton("بند", null)
+                .show()
+        } catch (error: Exception) {
+            Toast.makeText(this, error.message ?: "د کمرې شاټونه نه لوستل کېږي", Toast.LENGTH_LONG).show()
+        }
+    }
+
+    private fun applyCameraShot(shot: JSONObject) {
+        val modelViewer = viewer ?: return
+        val eyeX = shot.optDouble("x", 0.0)
+        val eyeY = shot.optDouble("y", 3.0)
+        val eyeZ = shot.optDouble("z", 5.0) - 4.0
+        val targetX = shot.optDouble("targetX", 0.0)
+        val targetY = shot.optDouble("targetY", 1.0)
+        val targetZ = shot.optDouble("targetZ", 0.0) - 4.0
+        val fov = shot.optDouble("fieldOfView", 50.0).coerceIn(20.0, 100.0)
+        val metrics = resources.displayMetrics
+        val aspect = (metrics.widthPixels.toDouble() / metrics.heightPixels.toDouble()).coerceAtLeast(0.1)
+        modelViewer.camera.lookAt(
+            eyeX, eyeY, eyeZ,
+            targetX, targetY, targetZ,
+            0.0, 1.0, 0.0
+        )
+        modelViewer.camera.setProjection(fov, aspect, 0.1, 1000.0)
+        Toast.makeText(this, "د «${shot.optString("name", "کمره")}» شاټ فعال شو", Toast.LENGTH_SHORT).show()
     }
 
     private fun loadProjectModels() {
