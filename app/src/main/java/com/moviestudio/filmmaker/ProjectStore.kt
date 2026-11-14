@@ -147,6 +147,7 @@ class ProjectStore(context: Context) {
             .put("objects", JSONArray())
             .put("timeline", JSONArray())
             .put("cameraShots", JSONArray())
+            .put("audioTracks", JSONArray())
         current.optJSONObject("ground")?.let { scene.put("ground", JSONObject(it.toString())) }
         current.optJSONObject("production")?.let { scene.put("production", JSONObject(it.toString())) }
         scene.put("lighting", JSONObject((current.optJSONObject("lighting") ?: defaultLighting("day")).toString()))
