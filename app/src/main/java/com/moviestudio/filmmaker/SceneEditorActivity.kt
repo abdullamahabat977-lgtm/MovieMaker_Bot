@@ -162,15 +162,6 @@ class SceneEditorActivity : Activity() {
         audioPanel = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
         content.addView(audioPanel)
 
-        content.addView(label("د صحنې رڼا او فضا", 17, true).apply { setPadding(0, dp(14), 0, dp(4)) })
-        content.addView(label("د ورځې، لمر لوېدو، شپې او سټوډیو رڼا وټاکه. دا تنظیمات د فعاله صحنې لپاره خوندي کېږي او په حقیقي 3D لید کې عملي کېږي.", 12))
-        val lightingRow = horizontal()
-        lightingRow.addView(button("☀️ ورځ") { setSceneLighting("day", "د ورځې رڼا") }, weighted())
-        lightingRow.addView(button("🌇 ماښام") { setSceneLighting("sunset", "د ماښام رڼا") }, weighted())
-        lightingRow.addView(button("🌙 شپه") { setSceneLighting("night", "د شپې رڼا") }, weighted())
-        lightingRow.addView(button("💡 سټوډیو") { setSceneLighting("studio", "سټوډیو رڼا") }, weighted())
-        content.addView(lightingRow)
-
         content.addView(label("د فلم کمرې او شاټونه", 17, true).apply { setPadding(0, dp(14), 0, dp(4)) })
         content.addView(label("د کمرې نوم، ځای، د لید هدف، FOV او د شاټ وخت ثبت کړه. د 3D صحنې په لید کې شاټونه د فلم د مهالویش له مخې اتومات بدلېږي؛ لاسي انتخاب هم شته.", 12))
         content.addView(button("＋ نوې کمره / شاټ اضافه کړه") { addCameraShotDialog() })
