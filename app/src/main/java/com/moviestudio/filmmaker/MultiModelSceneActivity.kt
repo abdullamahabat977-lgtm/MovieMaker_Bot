@@ -965,7 +965,7 @@ class MultiModelSceneActivity : Activity() {
                         config.optDouble("fillGreen", 0.84).toFloat().coerceIn(0f, 1f),
                         config.optDouble("fillBlue", 1.0).toFloat().coerceIn(0f, 1f)
                     )
-                    .intensity(fillIntensity)
+                    .intensityCandela(fillIntensity)
                     .position(
                         config.optDouble("fillX", 4.0).toFloat().coerceIn(-1000f, 1000f),
                         config.optDouble("fillY", 5.0).toFloat().coerceIn(-1000f, 1000f),
