@@ -141,7 +141,7 @@ class MultiModelSceneActivity : Activity() {
                     }
                 }
             }
-            if ((timelineClips.isNotEmpty() || cameraShots.isNotEmpty() || audioClips.isNotEmpty()) && timelinePlaying) {
+            if ((timelineClips.isNotEmpty() || cameraShots.isNotEmpty() || audioClips.isNotEmpty() || timelineDurationSeconds > 0.0) && timelinePlaying) {
                 if (timelineStartNanos == 0L) timelineStartNanos = frameTimeNanos -
                     (timelinePositionSeconds * 1_000_000_000.0).toLong()
                 timelinePositionSeconds = ((frameTimeNanos - timelineStartNanos).coerceAtLeast(0L) / 1_000_000_000.0)
@@ -287,7 +287,7 @@ class MultiModelSceneActivity : Activity() {
     override fun onResume() {
         super.onResume()
         if (viewer != null && models.isEmpty()) loadProjectModels()
-        if (resumeTimelineAfterPause && (timelineClips.isNotEmpty() || cameraShots.isNotEmpty() || audioClips.isNotEmpty()) &&
+        if (resumeTimelineAfterPause && (timelineClips.isNotEmpty() || cameraShots.isNotEmpty() || audioClips.isNotEmpty() || timelineDurationSeconds > 0.0) &&
             timelinePositionSeconds < timelineDurationSeconds) {
             timelinePlaying = true
             timelineStartNanos = System.nanoTime() -
@@ -423,7 +423,7 @@ class MultiModelSceneActivity : Activity() {
     }
 
     private fun toggleTimelinePlayback() {
-        if (timelineClips.isEmpty() && cameraShots.isEmpty() && audioClips.isEmpty()) {
+        if (timelineClips.isEmpty() && cameraShots.isEmpty() && audioClips.isEmpty() && timelineDurationSeconds <= 0.0) {
             Toast.makeText(this, "د دې پروژې Timeline او د کمرې شاټونه تش دي", Toast.LENGTH_LONG).show()
             return
         }
@@ -442,7 +442,7 @@ class MultiModelSceneActivity : Activity() {
     }
 
     private fun restartTimeline() {
-        if (timelineClips.isEmpty() && cameraShots.isEmpty() && audioClips.isEmpty()) {
+        if (timelineClips.isEmpty() && cameraShots.isEmpty() && audioClips.isEmpty() && timelineDurationSeconds <= 0.0) {
             Toast.makeText(this, "د دې پروژې Timeline تش دی", Toast.LENGTH_SHORT).show()
             return
         }
@@ -457,7 +457,7 @@ class MultiModelSceneActivity : Activity() {
         val total = timelineDurationSeconds.coerceAtLeast(0.0)
         val current = timelinePositionSeconds.coerceAtLeast(0.0)
         val state = when {
-            timelineClips.isEmpty() && cameraShots.isEmpty() && audioClips.isEmpty() -> "Timeline تش دی"
+            timelineClips.isEmpty() && cameraShots.isEmpty() && audioClips.isEmpty() && total <= 0.0 -> "Timeline تش دی"
             timelinePlaying -> "چلېږي"
             current >= total -> "پای ته ورسېد"
             else -> "درېدلی"
@@ -597,7 +597,7 @@ class MultiModelSceneActivity : Activity() {
             val productionEnd = production.optString("endTime").takeIf { it.isNotBlank() }
                 ?.let { runCatching { (clockSeconds(it) - filmStartSeconds).toDouble() }.getOrNull() } ?: 0.0
             timelineDurationSeconds = maxOf(clipEnd, cameraEnd, audioEnd, productionEnd)
-            val hasPlayback = timelineClips.isNotEmpty() || cameraShots.isNotEmpty() || audioClips.isNotEmpty()
+            val hasPlayback = timelineClips.isNotEmpty() || cameraShots.isNotEmpty() || audioClips.isNotEmpty() || productionEnd > 0.0
             if (!hasPlayback) {
                 timelinePositionSeconds = 0.0
                 timelineStartNanos = 0L
