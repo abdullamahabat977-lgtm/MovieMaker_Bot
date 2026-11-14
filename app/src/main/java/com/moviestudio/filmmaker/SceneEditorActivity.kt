@@ -100,6 +100,9 @@ class SceneEditorActivity : Activity() {
         content.addView(lightingRow)
         content.addView(label("د رڼا پرمختللي تنظیمات: شدت، RGB رنګ، لوری، مرستندویه رڼا او سیوري.", 12))
         content.addView(button("⚙️ د رڼا دقیق تنظیمات") { editAdvancedLighting() })
+        content.addView(label("د HDRI چاپېریال د حقیقي انعکاس او غیرمستقیمې رڼا لپاره د Filament دوه KTX1 فایلونه غواړي: IBL او Skybox.", 11))
+        content.addView(button("🌄 د HDRI / IBL چاپېریال واردول") { pickEnvironmentFiles() })
+        content.addView(button("د وړیا Filament HDRI فایلونه") { openEnvironmentLibrary() })
         content.addView(label("د صحنې توکي", 17, true))
         content.addView(label("د انسان، حیوان، موټر، کور، ونې، فرنیچر او نورو شیانو حقیقي 3D ماډلونه د GLB 2.0 په بڼه وارد کړه. کارتوني نمونه‌یي شکلونه د فلم د توکو په توګه نه کارېږي. د صحنو ترتیب د فلم د پرله‌پسې پلې کېدو ترتیب دی؛ په 3D لید کې اتومات صحنه‌بدلون فعال یا بندولای شې.", 12))
         content.addView(button("＋ حقیقي 3D توکی واردول (GLB)") { chooseModelType() })
@@ -894,7 +897,8 @@ class SceneEditorActivity : Activity() {
             "intensityLux", "red", "green", "blue",
             "directionX", "directionY", "directionZ", "fillIntensityCandela",
             "skyRed", "skyGreen", "skyBlue",
-            "fillRed", "fillGreen", "fillBlue", "fillX", "fillY", "fillZ", "fillFalloff"
+            "fillRed", "fillGreen", "fillBlue", "fillX", "fillY", "fillZ", "fillFalloff",
+            "environmentIntensityLux"
         )
         val captions = listOf(
             "د اصلي رڼا شدت (۵۰۰–۱۲۰۰۰۰ Lux)",
@@ -906,7 +910,8 @@ class SceneEditorActivity : Activity() {
             "د مرستندویه رڼا سور رنګ (۰–۱)", "د مرستندویه رڼا شین رنګ (۰–۱)",
             "د مرستندویه رڼا آبي رنګ (۰–۱)",
             "د مرستندویه رڼا موقعیت X", "د مرستندویه رڼا موقعیت Y",
-            "د مرستندویه رڼا موقعیت Z", "د مرستندویه رڼا د خپرېدو واټن (۱–۱۰۰۰)"
+            "د مرستندویه رڼا موقعیت Z", "د مرستندویه رڼا د خپرېدو واټن (۱–۱۰۰۰)",
+            "د HDRI / IBL د چاپېریال رڼا شدت (۰–۱۰۰۰۰۰ Lux)"
         )
         val preset = lighting.optString("preset", "day")
         val defaults = listOf(
@@ -915,7 +920,7 @@ class SceneEditorActivity : Activity() {
             if (preset == "night") 0.025 else if (preset == "sunset") 0.28 else 0.12,
             if (preset == "night") 0.035 else if (preset == "sunset") 0.12 else 0.16,
             if (preset == "night") 0.10 else if (preset == "sunset") 0.07 else 0.22,
-            0.78, 0.84, 1.0, 4.0, 5.0, 1.5, 15.0
+            0.78, 0.84, 1.0, 4.0, 5.0, 1.5, 15.0, 30000.0
         )
         val fields = keys.mapIndexed { index, key ->
             EditText(this).apply {
