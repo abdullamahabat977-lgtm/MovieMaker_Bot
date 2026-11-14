@@ -971,6 +971,40 @@ class ProjectStore(context: Context) {
             .put("shadows", true)
     }
 
+    fun clearSceneEnvironment(projectId: String) {
+        val project = load(projectId)
+        val scene = firstScene(project)
+        val lighting = scene.optJSONObject("lighting") ?: return
+        val oldPaths = listOf(
+            lighting.optString("environmentIblPath"),
+            lighting.optString("environmentSkyboxPath")
+        ).filter { it.isNotBlank() }.toSet()
+        lighting.remove("environmentIblPath")
+        lighting.remove("environmentSkyboxPath")
+        val referenced = mutableSetOf<String>()
+        val scenes = project.optJSONArray("scenes") ?: JSONArray()
+        for (index in 0 until scenes.length()) {
+            val other = scenes.optJSONObject(index)?.optJSONObject("lighting") ?: continue
+            listOf("environmentIblPath", "environmentSkyboxPath").forEach { key ->
+                other.optString(key).takeIf { it.isNotBlank() }?.let { referenced.add(it) }
+            }
+        }
+        val obsolete = oldPaths.filter { it !in referenced }.toSet()
+        val assets = project.optJSONArray("assets") ?: JSONArray()
+        val retained = JSONArray()
+        for (index in 0 until assets.length()) {
+            val asset = assets.optJSONObject(index) ?: continue
+            if (asset.optString("path") !in obsolete) retained.put(asset)
+        }
+        project.put("assets", retained)
+        save(project)
+        val base = projectFolder(projectId).canonicalFile
+        obsolete.forEach { relative ->
+            val file = File(base, relative).canonicalFile
+            if (file.path.startsWith(base.path + File.separator) && file.isFile) file.delete()
+        }
+    }
+
     fun updateRenderSettings(
         projectId: String,
         width: Int,
