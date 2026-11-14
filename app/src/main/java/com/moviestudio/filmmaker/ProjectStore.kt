@@ -369,6 +369,44 @@ class ProjectStore(context: Context) {
         return shot
     }
 
+    fun updateCameraShot(
+        projectId: String,
+        cameraId: String,
+        name: String,
+        x: Double, y: Double, z: Double,
+        targetX: Double, targetY: Double, targetZ: Double,
+        fieldOfView: Double,
+        startTime: String,
+        endTime: String
+    ): JSONObject {
+        require(fieldOfView in 20.0..100.0) { "د کمرې FOV باید له ۲۰ تر ۱۰۰ درجو وي" }
+        listOf(x, y, z, targetX, targetY, targetZ).forEach {
+            require(it.isFinite() && it in -1000.0..1000.0) { "د کمرې موقعیت له ټاکلي حد څخه بهر دی" }
+        }
+        val start = clockSeconds(startTime)
+        val end = clockSeconds(endTime)
+        require(end > start) { "د کمرې د شاټ پای وخت باید د پیل له وخت وروسته وي" }
+        val project = load(projectId)
+        val scene = firstScene(project)
+        val cameras = scene.optJSONArray("cameraShots") ?: JSONArray()
+        val shot = (0 until cameras.length()).mapNotNull { cameras.optJSONObject(it) }
+            .firstOrNull { it.optString("id") == cameraId }
+            ?: throw IllegalArgumentException("د کمرې شاټ ونه موندل شو")
+        val production = scene.optJSONObject("production")
+        if (production != null) {
+            val filmStart = clockSeconds(production.optString("startTime"))
+            val filmEnd = clockSeconds(production.optString("endTime"))
+            require(start >= filmStart && end <= filmEnd) { "د کمرې شاټ باید د فلم د ټاکلي وخت دننه وي" }
+        }
+        shot.put("name", name.trim().ifBlank { "کمره" }.take(60))
+            .put("x", x).put("y", y).put("z", z)
+            .put("targetX", targetX).put("targetY", targetY).put("targetZ", targetZ)
+            .put("fieldOfView", fieldOfView)
+            .put("startTime", startTime).put("endTime", endTime)
+        save(project)
+        return shot
+    }
+
     fun removeCameraShot(projectId: String, cameraId: String) {
         val project = load(projectId)
         val scene = firstScene(project)
