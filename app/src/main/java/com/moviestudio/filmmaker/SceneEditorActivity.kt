@@ -327,6 +327,7 @@ class SceneEditorActivity : Activity() {
                 "🔊 ${clip.optString("name")} • $typeLabel • ${clip.optString("startTime")} • حجم ${(clip.optDouble("volume", 1.0) * 100).toInt()}%",
                 12
             ))
+            audioPanel.addView(button("✏️ د غږ وخت، حجم او ډول سمول") { editAudioClipDialog(clip) })
             audioPanel.addView(button("دا غږ کلیپ حذف کړه") {
                 try {
                     store.removeAudioClip(projectId, clip.optString("id"))
@@ -524,6 +525,51 @@ class SceneEditorActivity : Activity() {
                     refreshPanels()
                     status.text = "غږ د فلم په Timeline کې ثبت شو."
                 } catch (error: Exception) { toast(error.message ?: "غږ Timeline ته ورزیات نه شو") }
+            }.show()
+    }
+
+    private fun editAudioClipDialog(clip: JSONObject) {
+        val start = EditText(this).apply {
+            setSingleLine(true)
+            setText(clip.optString("startTime"))
+            hint = "HH:mm:ss"
+        }
+        val volume = EditText(this).apply {
+            setSingleLine(true)
+            inputType = android.text.InputType.TYPE_CLASS_NUMBER or android.text.InputType.TYPE_NUMBER_FLAG_DECIMAL
+            setText(clip.optDouble("volume", 1.0).toString())
+        }
+        val trackOptions = listOf("خبرې اترې", "موسیقي", "غږیز اغېز")
+        val trackTypes = listOf("dialogue", "music", "effect")
+        val typePicker = Spinner(this).apply {
+            adapter = ArrayAdapter(this@SceneEditorActivity, android.R.layout.simple_spinner_item, trackOptions).also {
+                it.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
+            }
+            setSelection(trackTypes.indexOf(clip.optString("trackType")).coerceAtLeast(0))
+        }
+        val panel = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(dp(18), dp(8), dp(18), dp(4))
+            addView(label("د غږ پیل (HH:mm:ss)", 12, true))
+            addView(start)
+            addView(label("حجم (۰ تر ۱، لکه ۰.۸)", 12, true))
+            addView(volume)
+            addView(label("د غږ ټریک ډول", 12, true))
+            addView(typePicker)
+        }
+        AlertDialog.Builder(this).setTitle("د غږ کلیپ سمول")
+            .setView(panel).setNegativeButton("لغوه", null)
+            .setPositiveButton("بدلون خوندي کړه") { _, _ ->
+                try {
+                    val level = volume.text.toString().toDoubleOrNull()
+                        ?: throw IllegalArgumentException("د غږ حجم سم ولیکه")
+                    store.updateAudioClip(
+                        projectId, clip.optString("id"), start.text.toString().trim(),
+                        level, trackTypes[typePicker.selectedItemPosition]
+                    )
+                    refreshPanels()
+                    status.text = "د غږ وخت، حجم او ټریک ډول بدل او خوندي شول."
+                } catch (error: Exception) { toast(error.message ?: "د غږ بدلون خوندي نه شو") }
             }.show()
     }
 
