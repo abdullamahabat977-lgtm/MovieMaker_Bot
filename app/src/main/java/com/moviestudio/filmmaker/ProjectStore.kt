@@ -28,14 +28,12 @@ class ProjectStore(context: Context) {
     fun projectDirectory(projectId: String): File = projectFolder(projectId)
 
     private fun createProjectRoot(context: Context): File {
-        val base = context.getExternalFilesDir(null) ?: context.filesDir
-        val destination = File(base, "Film Studio/MovieProjects")
-        if (!destination.exists() && !destination.mkdirs()) {
-            throw IllegalStateException("د Film Studio د فایلونو فولډر نه جوړېږي؛ د موبایل ذخیره وڅېړه")
-        }
-        if (!destination.isDirectory || !destination.canRead() || !destination.canWrite()) {
-            throw IllegalStateException("اپک د Film Studio فولډر ته د لوستلو او لیکلو لاسرسی نه لري")
-        }
+        val external = context.getExternalFilesDir(null)?.let { File(it, "Film Studio/MovieProjects") }
+        val internal = File(context.filesDir, "Film Studio/MovieProjects")
+        val destination = listOfNotNull(external, internal).firstOrNull { candidate ->
+            (candidate.isDirectory || candidate.mkdirs()) &&
+                candidate.isDirectory && candidate.canRead() && candidate.canWrite()
+        } ?: throw IllegalStateException("د Film Studio فولډر نه جوړېږي؛ د موبایل ذخیره وڅېړه")
 
         // Copy projects from the previous private filesDir location without overwriting newer data.
         val legacy = File(context.filesDir, "MovieProjects")
