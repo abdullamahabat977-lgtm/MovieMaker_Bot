@@ -879,14 +879,14 @@ class SceneEditorActivity : Activity() {
         val lighting = store.activeScene(projectId).optJSONObject("lighting") ?: JSONObject()
         val keys = listOf(
             "intensityLux", "red", "green", "blue",
-            "directionX", "directionY", "directionZ", "fillIntensityLux",
+            "directionX", "directionY", "directionZ", "fillIntensityCandela",
             "skyRed", "skyGreen", "skyBlue"
         )
         val captions = listOf(
             "د اصلي رڼا شدت (۵۰۰–۱۲۰۰۰۰ Lux)",
             "سور رنګ (۰–۱)", "شین رنګ (۰–۱)", "آبي رنګ (۰–۱)",
             "د رڼا لوری X (-۱ تر ۱)", "د رڼا لوری Y (-۱ تر ۱)", "د رڼا لوری Z (-۱ تر ۱)",
-            "مرستندویه رڼا (۰–۶۰۰۰۰ Lux)",
+            "مرستندویه نقطوي رڼا (۰–۶۰۰۰۰ Candela)",
             "د چاپېریال اسماني سور رنګ (۰–۱)", "د چاپېریال اسماني شین رنګ (۰–۱)",
             "د چاپېریال اسماني آبي رنګ (۰–۱)"
         )
