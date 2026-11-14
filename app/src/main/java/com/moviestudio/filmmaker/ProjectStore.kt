@@ -785,7 +785,8 @@ class ProjectStore(context: Context) {
         val current = scene.optJSONObject("lighting") ?: defaultLighting("day")
         val keys = listOf(
             "intensityLux", "red", "green", "blue",
-            "directionX", "directionY", "directionZ", "fillIntensityLux"
+            "directionX", "directionY", "directionZ", "fillIntensityLux",
+            "skyRed", "skyGreen", "skyBlue"
         )
         keys.forEach { key ->
             if (changes.has(key)) {
@@ -794,7 +795,7 @@ class ProjectStore(context: Context) {
                 val range = when (key) {
                     "intensityLux" -> 500.0..120000.0
                     "fillIntensityLux" -> 0.0..60000.0
-                    "red", "green", "blue" -> 0.0..1.0
+                    "red", "green", "blue", "skyRed", "skyGreen", "skyBlue" -> 0.0..1.0
                     else -> -1.0..1.0
                 }
                 require(value in range) { "د رڼا د $key ارزښت له ټاکلي حد څخه بهر دی" }
@@ -827,6 +828,9 @@ class ProjectStore(context: Context) {
             .put("red", values[1]).put("green", values[2]).put("blue", values[3])
             .put("directionX", values[4]).put("directionY", values[5]).put("directionZ", values[6])
             .put("fillIntensityLux", if (preset == "night") 900.0 else 9000.0)
+            .put("skyRed", if (preset == "night") 0.025 else if (preset == "sunset") 0.28 else 0.12)
+            .put("skyGreen", if (preset == "night") 0.035 else if (preset == "sunset") 0.12 else 0.16)
+            .put("skyBlue", if (preset == "night") 0.10 else if (preset == "sunset") 0.07 else 0.22)
             .put("shadows", true)
     }
 
