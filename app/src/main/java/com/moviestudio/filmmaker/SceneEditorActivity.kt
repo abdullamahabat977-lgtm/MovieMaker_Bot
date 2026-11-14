@@ -247,20 +247,26 @@ class SceneEditorActivity : Activity() {
         val names = arrayOf(
             "حقیقي انسان — Daniel (CC0، 26.3 MB، ثابت ماډل)",
             "د حرکت لپاره 53-هډوکيز انسان بنسټ (CC0، بې لباسه)",
+            "د 163-هډوکيز انسان بنسټ (CC0، 4.3 MB؛ بې حرکت)",
             "د کورونو او ودانیو ماډلونه (CC BY 4.0)",
             "حقیقي موټر — Car Concept (CC BY 4.0)",
-            "تاریخي او سیمه‌ییزې ودانۍ (CC BY-SA 4.0)"
+            "تاریخي او سیمه‌ییزې ودانۍ (CC BY-SA 4.0)",
+            "د Khronos وړیا GLB ماډلونو کتلاګ (د هر ماډل جواز وګوره)",
+            "د Poly Haven فوتوریالیستي ماډلونه (CC0؛ GLB بڼه وګوره)"
         )
         val urls = arrayOf(
             "https://www.innerscene.com/tools/library/3d-parts/daniel-3d-person-standing-casual-f788af5a",
             "https://www.innerscene.com/tools/library/3d-parts/human-base-mesh-with-editable-53-bone-rig-8e7c8ab1",
+            "https://www.innerscene.com/tools/library/3d-parts/male-base-mesh-3d-person-rigged-a-pose-380e6d89",
             "https://www.sloyd.ai/free-3d-models/architecture-buildings/houses-homes",
             "https://github.com/KhronosGroup/glTF-Sample-Assets/blob/main/Models/CarConcept/glTF-Binary/CarConcept.glb",
-            "https://github.com/bilol-makhmudov/monuments"
+            "https://github.com/bilol-makhmudov/monuments",
+            "https://github.khronos.org/glTF-Assets/",
+            "https://polyhaven.com/models"
         )
         AlertDialog.Builder(this)
             .setTitle("د حقیقي 3D ماډلونو کتابتون")
-            .setMessage("له سرچینې څخه GLB فایل ډاونلوډ کړه، بیا بېرته فلم سټوډیو ته راشه او د «حقیقي 3D توکی واردول» تڼۍ وکاروه. ماډلونه د پروژې په محلي Film Studio فولډر کې ساتل کېږي. د هر ماډل د جواز او د لیکوال د کریډیټ شرطونه مراعت کړه.")
+            .setMessage("له سرچینې څخه GLB فایل ډاونلوډ کړه، بیا بېرته فلم سټوډیو ته راشه او د «حقیقي 3D توکی واردول» تڼۍ وکاروه. ماډلونه د پروژې په محلي Film Studio فولډر کې ساتل کېږي. د هر ماډل د جواز او د لیکوال د کریډیټ شرطونه مراعت کړه. پام: ځینې انسان ماډلونه یوازې rig لري، خو تیار animation نه لري؛ د حرکت لپاره باید GLB خپله animation ولري.")
             .setItems(names) { _, which ->
                 try {
                     startActivity(Intent(Intent.ACTION_VIEW, android.net.Uri.parse(urls[which])))
