@@ -417,11 +417,33 @@ class SceneEditorActivity : Activity() {
 
     private fun addClip(action: String) {
         val id = selectedObjectId ?: run { toast("لومړی یو کرکټر یا توکی وټاکه"); return }
-        try {
-            store.addTimelineClip(projectId, id, action)
-            refreshPanels()
-            status.text = "د حرکت کلیپ Timeline ته ورزیات شو."
-        } catch (error: Exception) { toast(error.message ?: "کلیپ نه شو ورزیاتېدای") }
+        val durationInput = EditText(this).apply {
+            setSingleLine(true)
+            inputType = android.text.InputType.TYPE_CLASS_NUMBER
+            setText("48")
+            hint = "د فریمونو شمېر"
+        }
+        val prompt = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(dp(20), dp(8), dp(20), dp(4))
+            addView(label("د کلیپ موده په فریمونو کې (۲۴ فریم = ۱ ثانیه)", 13))
+            addView(durationInput)
+        }
+        AlertDialog.Builder(this).setTitle("د حرکت کلیپ موده")
+            .setView(prompt)
+            .setNegativeButton("لغوه", null)
+            .setPositiveButton("Timeline ته ورزیاتول") { _, _ ->
+                val frames = durationInput.text.toString().toIntOrNull()
+                if (frames == null || frames !in 1..2400) {
+                    toast("موده باید له ۱ تر ۲۴۰۰ فریمونو وي")
+                    return@setPositiveButton
+                }
+                try {
+                    store.addTimelineClip(projectId, id, action, frames)
+                    refreshPanels()
+                    status.text = "د $action کلیپ د $frames فریمونو مودې سره ثبت شو. دا لا د حقیقي skeletal playback سره نه دی تړل شوی."
+                } catch (error: Exception) { toast(error.message ?: "کلیپ نه شو ورزیاتېدای") }
+            }.show()
     }
 
     private fun saveAndRefresh() {
