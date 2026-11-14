@@ -23,10 +23,12 @@
 - د GLB اصلي texture او PBR موادو ساتل؛ د مصنوعي کارتوني پوستکي/کمیس رنګ‌بدلوونکي لرې کول.
 - د Timeline د حرکت کلیپونو ثبت، ترتیب او حذف.
 - د GL view د Activity lifecycle اداره.
+- د Filament ګډ GLB scene renderer: تر ۸ ماډلونو او ۸۰ MB پورې؛ د اصلي mesh، PBR موادو، textures او د هر ماډل transform ساتل.
+- د جلا GLB مخکتنې embedded skeletal animation ټاکل، درول او بیا چلول.
 
 ### پاتې پړاوونه
-1. د ګډ scene renderer لپاره د حافظې، رڼا، سیوري او animation فعالیت لا ښه کول؛ بنسټیز څو-GLB لید ورزیات شوی (تر ۸ ماډلونو او ۸۰ MB پورې).
-2. د څو ماډلونو هممهاله رینډر، د انتخاب/ټچ له لارې د توکي ټاکل او مستقل transform کنټرول.
+1. د ګډ scene renderer د حافظې، رڼا، سیوري او animation فعالیت لا ښه کول.
+2. په ګډ 3D لید کې د انتخاب/ټچ له لارې د توکي ټاکل او مستقل transform کنټرول.
 3. د Timeline له لارې د embedded animation انتخاب، د حرکتونو blend او keyframe کنټرول؛ له GLB بهر د نوي skeletal rig جوړول.
 4. د کمرې شاټونه، رڼا، مواد او scene settings.
 5. د غږ او ډیالوګ ټریکونه، waveform او sync.
