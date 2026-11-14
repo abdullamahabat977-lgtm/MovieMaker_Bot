@@ -638,14 +638,18 @@ class MultiModelSceneActivity : Activity() {
             runCatching { player?.release() }
         }
         active.forEach { clip ->
-            var player = audioPlayers[clip.id]
-            if (player == null) {
+            val existingPlayer = audioPlayers[clip.id]
+            if (existingPlayer == null) {
+                val createdPlayer = MediaPlayer()
+                audioPlayers[clip.id] = createdPlayer
                 try {
-                    player = MediaPlayer()
-                    audioPlayers[clip.id] = player
-                    player.setDataSource(clip.path)
-                    player.setVolume(clip.volume, clip.volume)
-                    player.setOnPreparedListener { prepared ->
+                    createdPlayer.setDataSource(clip.path)
+                    createdPlayer.setVolume(clip.volume, clip.volume)
+                    createdPlayer.setOnPreparedListener { prepared ->
+                        if (audioPlayers[clip.id] !== prepared) {
+                            runCatching { prepared.release() }
+                            return@setOnPreparedListener
+                        }
                         preparedAudioIds.add(clip.id)
                         if (timelinePlaying && timelinePositionSeconds >= clip.startSeconds &&
                             timelinePositionSeconds < clip.endSeconds) {
@@ -657,17 +661,17 @@ class MultiModelSceneActivity : Activity() {
                             }
                         }
                     }
-                    player.setOnErrorListener { failed, _, _ ->
+                    createdPlayer.setOnErrorListener { failed, _, _ ->
                         audioPlayers.remove(clip.id)
                         preparedAudioIds.remove(clip.id)
                         runCatching { failed.release() }
                         true
                     }
-                    player.prepareAsync()
+                    createdPlayer.prepareAsync()
                 } catch (error: Exception) {
                     audioPlayers.remove(clip.id)
                     preparedAudioIds.remove(clip.id)
-                    runCatching { player?.release() }
+                    runCatching { createdPlayer.release() }
                     Toast.makeText(this, "د «${clip.id}» غږ پلی نه شو", Toast.LENGTH_SHORT).show()
                 }
                 return@forEach
@@ -675,11 +679,11 @@ class MultiModelSceneActivity : Activity() {
             if (clip.id in preparedAudioIds) {
                 runCatching {
                     val desired = ((timelinePositionSeconds - clip.startSeconds) * 1000.0).toInt()
-                    if (!player.isPlaying) {
-                        player.seekTo(desired.coerceAtLeast(0))
-                        player.start()
-                    } else if (kotlin.math.abs(player.currentPosition - desired) > 650) {
-                        player.seekTo(desired.coerceAtLeast(0))
+                    if (!existingPlayer.isPlaying) {
+                        existingPlayer.seekTo(desired.coerceAtLeast(0))
+                        existingPlayer.start()
+                    } else if (kotlin.math.abs(existingPlayer.currentPosition - desired) > 650) {
+                        existingPlayer.seekTo(desired.coerceAtLeast(0))
                     }
                 }
             }
