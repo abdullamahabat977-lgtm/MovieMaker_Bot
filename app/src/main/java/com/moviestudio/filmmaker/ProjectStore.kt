@@ -6,6 +6,7 @@ import org.json.JSONObject
 import java.io.File
 import java.io.FileInputStream
 import java.io.InputStream
+import java.io.RandomAccessFile
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -107,6 +108,46 @@ class ProjectStore(context: Context) {
         val objects = firstScene(load(projectId)).optJSONArray("objects") ?: JSONArray()
         return (0 until objects.length()).mapNotNull { index ->
             objects.optJSONObject(index)?.let { JSONObject(it.toString()) }
+        }
+    }
+
+    /** Reads embedded GLB animation names without loading the model into the renderer. */
+    fun listModelAnimations(projectId: String, objectId: String): List<String> {
+        val project = load(projectId)
+        val objects = firstScene(project).optJSONArray("objects") ?: JSONArray()
+        val item = (0 until objects.length()).mapNotNull { objects.optJSONObject(it) }
+            .firstOrNull { it.optString("id") == objectId }
+            ?: throw IllegalArgumentException("ټاکل شوی 3D توکی ونه موندل شو")
+        val relativePath = item.optString("modelPath")
+        require(relativePath.isNotBlank()) { "دا توکی وارد شوی GLB فایل نه لري" }
+        val folder = projectFolder(projectId).canonicalFile
+        val file = File(folder, relativePath).canonicalFile
+        require(file.path.startsWith(folder.path + File.separator) && file.isFile) {
+            "د توکي GLB فایل ونه موندل شو"
+        }
+        require(file.length() in 20L..MAX_MODEL_BYTES) { "د GLB فایل اندازه ناسمه ده" }
+        RandomAccessFile(file, "r").use { input ->
+            val header = ByteArray(20)
+            input.readFully(header)
+            val info = ByteBuffer.wrap(header).order(ByteOrder.LITTLE_ENDIAN)
+            require(String(header, 0, 4, Charsets.US_ASCII) == "glTF" && info.getInt(4) == 2) {
+                "یوازې GLB 2.0 ماډلونه ملاتړ کېږي"
+            }
+            val declaredLength = info.getInt(8).toLong() and 0xffffffffL
+            val jsonLength = info.getInt(12).toLong() and 0xffffffffL
+            require(declaredLength == file.length() && info.getInt(16) == 0x4E4F534A &&
+                jsonLength in 2L..(8L * 1024L * 1024L) && jsonLength % 4L == 0L &&
+                20L + jsonLength <= file.length()) {
+                "د GLB د JSON برخه ناسمه ده"
+            }
+            val jsonBytes = ByteArray(jsonLength.toInt())
+            input.readFully(jsonBytes)
+            val document = JSONObject(String(jsonBytes, Charsets.UTF_8).trim { it.code <= 32 })
+            val animations = document.optJSONArray("animations") ?: JSONArray()
+            return (0 until animations.length()).map { index ->
+                val name = animations.optJSONObject(index)?.optString("name").orEmpty().trim()
+                name.ifBlank { "حرکت ${index + 1}" }.take(80)
+            }
         }
     }
 
@@ -500,10 +541,13 @@ class ProjectStore(context: Context) {
         action: String,
         startTime: String,
         endTime: String,
-        speed: Double
+        speed: Double,
+        animationIndex: Int = -1,
+        animationName: String = ""
     ): JSONObject {
         require(action in setOf("idle", "walk", "run", "talk", "custom")) { "د حرکت ډول ناسم دی" }
         require(speed in 0.1..5.0) { "د حرکت سرعت باید له ۰.۱ تر ۵ برابرو وي" }
+        require(animationIndex in -1..255) { "د Animation ټاکنه ناسمه ده" }
         val project = load(projectId)
         val scene = firstScene(project)
         val objects = scene.optJSONArray("objects") ?: JSONArray()
@@ -554,6 +598,8 @@ class ProjectStore(context: Context) {
             .put("startFrame", (start - filmStart) * fps)
             .put("durationFrames", (end - start) * fps)
             .put("speed", speed)
+            .put("animationIndex", animationIndex)
+            .put("animationName", animationName.take(80))
             .put("timingMode", "film_clock")
         val ordered = (0 until clips.length()).mapNotNull { clips.optJSONObject(it) } + clip
         val sorted = JSONArray()
@@ -574,9 +620,17 @@ class ProjectStore(context: Context) {
         return parts[0] * 3600 + parts[1] * 60 + parts[2]
     }
 
-    fun addTimelineClip(projectId: String, objectId: String, action: String, durationFrames: Int = 48): JSONObject {
+    fun addTimelineClip(
+        projectId: String,
+        objectId: String,
+        action: String,
+        durationFrames: Int = 48,
+        animationIndex: Int = -1,
+        animationName: String = ""
+    ): JSONObject {
         require(action in setOf("idle", "walk", "run", "talk", "custom")) { "د حرکت ډول ناسم دی" }
         require(durationFrames in 1..2400) { "د Timeline موده باید له ۱ تر ۲۴۰۰ فریمونو وي" }
+        require(animationIndex in -1..255) { "د Animation ټاکنه ناسمه ده" }
         val project = load(projectId)
         val scene = firstScene(project)
         val objects = scene.optJSONArray("objects") ?: JSONArray()
@@ -593,6 +647,8 @@ class ProjectStore(context: Context) {
             .put("id", "clip_" + UUID.randomUUID().toString())
             .put("objectId", objectId).put("action", action)
             .put("startFrame", start).put("durationFrames", durationFrames)
+            .put("animationIndex", animationIndex)
+            .put("animationName", animationName.take(80))
         clips.put(clip)
         save(project)
         return clip
