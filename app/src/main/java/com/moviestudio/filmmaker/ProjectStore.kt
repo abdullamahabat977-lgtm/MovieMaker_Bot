@@ -525,13 +525,21 @@ class ProjectStore(context: Context) {
         require(clips.length() < MAX_TIMELINE_CLIPS) {
             "په یوه صحنه کې تر ۵۰۰ زیات Timeline کلیپونه نه شي ثبتېدای"
         }
+        val newStartOffset = (start - filmStart).toDouble()
+        val newEndOffset = (end - filmStart).toDouble()
         for (index in 0 until clips.length()) {
             val existing = clips.optJSONObject(index) ?: continue
-            if (existing.optString("objectId") != objectId ||
-                !existing.has("startTime") || !existing.has("endTime")) continue
-            val existingStart = clockSeconds(existing.optString("startTime"))
-            val existingEnd = clockSeconds(existing.optString("endTime"))
-            require(end <= existingStart || start >= existingEnd) {
+            if (existing.optString("objectId") != objectId) continue
+            val existingStart: Double
+            val existingEnd: Double
+            if (existing.has("startTime") && existing.has("endTime")) {
+                existingStart = (clockSeconds(existing.optString("startTime")) - filmStart).toDouble()
+                existingEnd = (clockSeconds(existing.optString("endTime")) - filmStart).toDouble()
+            } else {
+                existingStart = existing.optInt("startFrame").toDouble() / fps.toDouble()
+                existingEnd = (existing.optInt("startFrame") + existing.optInt("durationFrames")).toDouble() / fps.toDouble()
+            }
+            require(newEndOffset <= existingStart || newStartOffset >= existingEnd) {
                 "د همدې کرکټر بل حرکت له دې وخت سره ټکر لري؛ وختونه جلا کړه"
             }
         }
