@@ -7,10 +7,12 @@ import android.graphics.Color
 import android.os.Bundle
 import android.view.Gravity
 import android.view.View
+import android.widget.ArrayAdapter
 import android.widget.Button
 import android.widget.EditText
 import android.widget.LinearLayout
 import android.widget.ScrollView
+import android.widget.Spinner
 import android.widget.TextView
 import android.widget.Toast
 import android.provider.OpenableColumns
@@ -605,6 +607,14 @@ class SceneEditorActivity : Activity() {
             inputType = android.text.InputType.TYPE_CLASS_NUMBER or android.text.InputType.TYPE_NUMBER_FLAG_DECIMAL
             setText("1.0")
         }
+        val animationNames = try { store.listModelAnimations(projectId, objectId) }
+            catch (error: Exception) { toast(error.message ?: "د GLB حرکتونه ونه لوستل شول"); emptyList() }
+        val animationOptions = listOf("اتومات: د حرکت له نوم سره سم") + animationNames
+        val animationPicker = Spinner(this).apply {
+            adapter = ArrayAdapter(this@SceneEditorActivity, android.R.layout.simple_spinner_item, animationOptions).also {
+                it.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
+            }
+        }
         val panel = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
             setPadding(dp(18), dp(8), dp(18), dp(4))
@@ -614,6 +624,11 @@ class SceneEditorActivity : Activity() {
                 panel.addView(label(caption, 12, true))
                 panel.addView(field)
             }
+        panel.addView(label("د GLB اصلي Animation وټاکه", 12, true))
+        panel.addView(animationPicker)
+        if (animationNames.isEmpty()) {
+            panel.addView(label("په دې ماډل کې Animation نشته؛ د اتومات انتخاب لپاره هم حقیقي حرکت ته اړتیا ده.", 11))
+        }
         AlertDialog.Builder(this).setTitle("د کرکټر د حرکت دقیق مهالویش")
             .setView(panel).setNegativeButton("لغوه", null)
             .setPositiveButton("Timeline ته ثبت کړه") { _, _ ->
@@ -622,7 +637,9 @@ class SceneEditorActivity : Activity() {
                         ?: throw IllegalArgumentException("د حرکت سرعت سم ولیکه")
                     store.addTimedTimelineClip(
                         projectId, objectId, action,
-                        start.text.toString().trim(), end.text.toString().trim(), velocity
+                        start.text.toString().trim(), end.text.toString().trim(), velocity,
+                        animationPicker.selectedItemPosition - 1,
+                        animationNames.getOrNull(animationPicker.selectedItemPosition - 1).orEmpty()
                     )
                     refreshPanels()
                     status.text = "حرکت د ټاکلي ساعت، پای او سرعت سره Timeline ته ثبت شو؛ د 3D صحنې د لید له «پلې / درول» کنټرول څخه یې وګوره."
@@ -638,11 +655,22 @@ class SceneEditorActivity : Activity() {
             setText("48")
             hint = "د فریمونو شمېر"
         }
+        val animationNames = try { store.listModelAnimations(projectId, id) }
+            catch (error: Exception) { toast(error.message ?: "د GLB حرکتونه ونه لوستل شول"); emptyList() }
+        val animationOptions = listOf("اتومات: د حرکت له نوم سره سم") + animationNames
+        val animationPicker = Spinner(this).apply {
+            adapter = ArrayAdapter(this@SceneEditorActivity, android.R.layout.simple_spinner_item, animationOptions).also {
+                it.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
+            }
+        }
         val prompt = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
             setPadding(dp(20), dp(8), dp(20), dp(4))
             addView(label("د کلیپ موده په فریمونو کې (۲۴ فریم = ۱ ثانیه)", 13))
             addView(durationInput)
+            addView(label("د GLB اصلي Animation وټاکه", 12, true))
+            addView(animationPicker)
+            if (animationNames.isEmpty()) addView(label("په دې GLB کې Animation نشته؛ د کرکټر د حرکت لپاره متحرک GLB وارد کړه.", 11))
         }
         AlertDialog.Builder(this).setTitle("د حرکت کلیپ موده")
             .setView(prompt)
@@ -654,7 +682,11 @@ class SceneEditorActivity : Activity() {
                     return@setPositiveButton
                 }
                 try {
-                    store.addTimelineClip(projectId, id, action, frames)
+                    store.addTimelineClip(
+                        projectId, id, action, frames,
+                        animationPicker.selectedItemPosition - 1,
+                        animationNames.getOrNull(animationPicker.selectedItemPosition - 1).orEmpty()
+                    )
                     refreshPanels()
                     status.text = "د $action کلیپ د $frames فریمونو مودې سره ثبت شو؛ د 3D صحنې په لید کې یې د پلې / درول له لارې وګوره."
                 } catch (error: Exception) { toast(error.message ?: "کلیپ نه شو ورزیاتېدای") }
