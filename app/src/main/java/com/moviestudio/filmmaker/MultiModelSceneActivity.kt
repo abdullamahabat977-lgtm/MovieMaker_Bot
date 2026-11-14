@@ -45,7 +45,9 @@ class MultiModelSceneActivity : Activity() {
         val action: String,
         val startSeconds: Double,
         val endSeconds: Double,
-        val speed: Float
+        val speed: Float,
+        val animationIndex: Int,
+        val animationName: String
     )
 
     private var viewer: ModelViewer? = null
@@ -90,7 +92,7 @@ class MultiModelSceneActivity : Activity() {
                                     timelinePositionSeconds < it.endSeconds
                             }
                             if (activeClip != null) {
-                                val animationIndex = resolveAnimationIndex(animator, activeClip.action)
+                                val animationIndex = resolveAnimationIndex(animator, activeClip)
                                 val duration = animator.getAnimationDuration(animationIndex)
                                 val clipTime = ((timelinePositionSeconds - activeClip.startSeconds) * activeClip.speed).toFloat()
                                 val animationTime = if (duration > 0f) clipTime % duration else clipTime
@@ -267,9 +269,15 @@ class MultiModelSceneActivity : Activity() {
 
     private fun resolveAnimationIndex(
         animator: com.google.android.filament.gltfio.Animator,
-        action: String
+        clip: PlaybackClip
     ): Int {
-        val keywords = when (action.lowercase()) {
+        if (clip.animationIndex in 0 until animator.animationCount) return clip.animationIndex
+        if (clip.animationName.isNotBlank()) {
+            for (index in 0 until animator.animationCount) {
+                if (animator.getAnimationName(index).equals(clip.animationName, ignoreCase = true)) return index
+            }
+        }
+        val keywords = when (clip.action.lowercase()) {
             "idle" -> listOf("idle", "stand", "rest", "wait", "breath")
             "walk" -> listOf("walk", "walking")
             "run" -> listOf("run", "running", "jog")
@@ -374,7 +382,9 @@ class MultiModelSceneActivity : Activity() {
                     clip.optString("action", "custom"),
                     start.coerceAtLeast(0.0),
                     (start + duration).coerceAtLeast(0.0),
-                    clip.optDouble("speed", 1.0).toFloat().coerceIn(0.1f, 5f)
+                    clip.optDouble("speed", 1.0).toFloat().coerceIn(0.1f, 5f),
+                    clip.optInt("animationIndex", -1),
+                    clip.optString("animationName")
                 )
             }.sortedBy { it.startSeconds }
             timelineDurationSeconds = timelineClips.maxOfOrNull { it.endSeconds } ?: 0.0
