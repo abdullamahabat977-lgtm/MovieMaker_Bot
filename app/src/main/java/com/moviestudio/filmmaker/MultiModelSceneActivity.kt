@@ -681,13 +681,13 @@ class MultiModelSceneActivity : Activity() {
                 loadingLabel?.text = "په دې پروژه کې حقیقي GLB ماډل نشته."
                 return
             }
-            val projectFolder = ProjectStore(this).projectDirectory(projectId).canonicalFile
+            val modelProjectFolder = ProjectStore(this).projectDirectory(projectId).canonicalFile
             val candidates = mutableListOf<Pair<org.json.JSONObject, File>>()
             var totalBytes = 0L
             for (item in objects) {
                 if (candidates.size >= MAX_MODELS) break
-                val file = File(projectFolder, item.optString("modelPath")).canonicalFile
-                if (!file.path.startsWith(projectFolder.path + File.separator) || !file.isFile) continue
+                val file = File(modelProjectFolder, item.optString("modelPath")).canonicalFile
+                if (!file.path.startsWith(modelProjectFolder.path + File.separator) || !file.isFile) continue
                 if (totalBytes + file.length() > MAX_TOTAL_BYTES) continue
                 totalBytes += file.length()
                 candidates.add(item to file)
@@ -877,7 +877,9 @@ class MultiModelSceneActivity : Activity() {
     }
 
     private fun applySceneLighting(modelViewer: ModelViewer, scene: JSONObject) {
-        // Reapplying a preset must replace, not accumulate, the previous fill light.\n        clearSceneLightEntities(modelViewer)\n        val config = scene.optJSONObject("lighting") ?: JSONObject()
+        // Reapplying a preset must replace, not accumulate, the previous fill light.
+        clearSceneLightEntities(modelViewer)
+        val config = scene.optJSONObject("lighting") ?: JSONObject()
         val preset = config.optString("preset", "day")
         val defaultSkyRed = if (preset == "night") 0.025 else if (preset == "sunset") 0.28 else 0.12
         val defaultSkyGreen = if (preset == "night") 0.035 else if (preset == "sunset") 0.12 else 0.16
