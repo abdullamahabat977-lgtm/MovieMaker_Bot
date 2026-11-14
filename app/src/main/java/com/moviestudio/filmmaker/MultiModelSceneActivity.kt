@@ -263,16 +263,16 @@ class MultiModelSceneActivity : Activity() {
                 setOnClickListener { restartTimeline() }
             })
             playbackButtons.addView(Button(this).apply {
-                text = "راتلونکې صحنه"
+                text = "بل صحنه"
                 isAllCaps = false
                 setOnClickListener { advanceToNextScene(showMessage = true) }
             })
             playbackButtons.addView(Button(this).apply {
-                text = if (autoAdvanceScenes) "اتومات صحنې: هو" else "اتومات صحنې: نه"
+                text = if (autoAdvanceScenes) "اتومات: هو" else "اتومات: نه"
                 isAllCaps = false
                 setOnClickListener {
                     autoAdvanceScenes = !autoAdvanceScenes
-                    text = if (autoAdvanceScenes) "اتومات صحنې: هو" else "اتومات صحنې: نه"
+                    text = if (autoAdvanceScenes) "اتومات: هو" else "اتومات: نه"
                     Toast.makeText(
                         this@MultiModelSceneActivity,
                         if (autoAdvanceScenes) "صحنې به د هرې صحنې د Timeline په پای کې پرله‌پسې بدلېږي"
