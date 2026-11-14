@@ -63,7 +63,7 @@
 د هر فلم معلومات او شتمنۍ په موبایل کې ساتل کېږي:
 
 ```text
-MovieProjects/
+Film Studio/MovieProjects/
   project_<id>/
     project.json
     assets/
