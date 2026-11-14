@@ -328,12 +328,12 @@ class MultiModelSceneActivity : Activity() {
         animator: com.google.android.filament.gltfio.Animator,
         clip: PlaybackClip
     ): Int {
-        if (clip.animationIndex in 0 until animator.animationCount) return clip.animationIndex
         if (clip.animationName.isNotBlank()) {
             for (index in 0 until animator.animationCount) {
                 if (animator.getAnimationName(index).equals(clip.animationName, ignoreCase = true)) return index
             }
         }
+        if (clip.animationIndex in 0 until animator.animationCount) return clip.animationIndex
         val keywords = when (clip.action.lowercase()) {
             "idle" -> listOf("idle", "stand", "rest", "wait", "breath")
             "walk" -> listOf("walk", "walking")
@@ -417,6 +417,7 @@ class MultiModelSceneActivity : Activity() {
 
     private fun applyCameraShot(shot: JSONObject, showMessage: Boolean = true) {
         val modelViewer = viewer ?: return
+        activeCameraShotId = shot.optString("id").ifBlank { null }
         val eyeX = shot.optDouble("x", 0.0)
         val eyeY = shot.optDouble("y", 3.0)
         val eyeZ = shot.optDouble("z", 5.0) - 4.0
