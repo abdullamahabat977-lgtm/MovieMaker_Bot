@@ -251,7 +251,7 @@ class SceneEditorActivity : Activity() {
             toast("دا پخوانی ساده توکی دی؛ د حقیقي لید لپاره GLB ماډل وارد کړه")
             return
         }
-        val projectFolder = java.io.File(filesDir, "MovieProjects/$projectId").canonicalFile
+        val projectFolder = store.projectDirectory(projectId).canonicalFile
         val file = java.io.File(projectFolder, relativePath).canonicalFile
         if (!file.path.startsWith(projectFolder.path + java.io.File.separator) || !file.isFile) {
             toast("د 3D ماډل GLB فایل ونه موندل شو")
