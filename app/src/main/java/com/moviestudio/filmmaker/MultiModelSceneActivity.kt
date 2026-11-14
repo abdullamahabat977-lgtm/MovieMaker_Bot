@@ -12,6 +12,7 @@ import android.widget.FrameLayout
 import android.widget.TextView
 import android.widget.Toast
 import com.google.android.filament.EntityManager
+import com.google.android.filament.LightManager
 import com.google.android.filament.gltfio.AssetLoader
 import com.google.android.filament.gltfio.FilamentAsset
 import com.google.android.filament.gltfio.ResourceLoader
@@ -61,6 +62,7 @@ class MultiModelSceneActivity : Activity() {
     private var assetLoader: AssetLoader? = null
     private var materialProvider: UbershaderProvider? = null
     private val models = mutableListOf<SceneModel>()
+    private val sceneLightEntities = mutableListOf<Int>()
     private var loadingLabel: TextView? = null
     private var projectId: String = ""
     private var framePosted = false
@@ -439,6 +441,7 @@ class MultiModelSceneActivity : Activity() {
             val store = ProjectStore(this)
             val project = store.load(projectId)
             val scene = store.activeScene(projectId)
+            applySceneLighting(modelViewer, scene)
             val projectFps = (project.optJSONObject("project")?.optJSONObject("settings")?.optInt("fps", 24) ?: 24)
                 .coerceIn(1, 120)
             val production = scene?.optJSONObject("production") ?: JSONObject()
@@ -587,8 +590,44 @@ class MultiModelSceneActivity : Activity() {
         transforms.setTransform(transforms.getInstance(asset.root), matrix)
     }
 
+    private fun applySceneLighting(modelViewer: ModelViewer, scene: JSONObject) {
+        val config = scene.optJSONObject("lighting") ?: JSONObject()
+        val red = config.optDouble("red", 1.0).toFloat().coerceIn(0f, 1f)
+        val green = config.optDouble("green", 0.96).toFloat().coerceIn(0f, 1f)
+        val blue = config.optDouble("blue", 0.88).toFloat().coerceIn(0f, 1f)
+        val intensity = config.optDouble("intensityLux", 85000.0).toFloat().coerceIn(500f, 120000f)
+        var dx = config.optDouble("directionX", -0.30).toFloat()
+        var dy = config.optDouble("directionY", -0.90).toFloat()
+        var dz = config.optDouble("directionZ", -0.30).toFloat()
+        val length = kotlin.math.sqrt(dx * dx + dy * dy + dz * dz).coerceAtLeast(0.0001f)
+        dx /= length
+        dy /= length
+        dz /= length
+        val entity = EntityManager.get().create()
+        try {
+            LightManager.Builder(LightManager.Type.DIRECTIONAL)
+                .color(red, green, blue)
+                .intensity(intensity)
+                .direction(dx, dy, dz)
+                .castShadows(config.optBoolean("shadows", true))
+                .build(modelViewer.engine, entity)
+            modelViewer.scene.addEntity(entity)
+            sceneLightEntities.add(entity)
+        } catch (error: Exception) {
+            try { modelViewer.engine.destroyEntity(entity) } catch (_: Exception) { }
+            try { EntityManager.get().destroy(entity) } catch (_: Exception) { }
+            throw error
+        }
+    }
+
     private fun releaseModels() {
         val modelViewer = viewer
+        sceneLightEntities.forEach { entity ->
+            try { modelViewer?.scene?.removeEntity(entity) } catch (_: Exception) { }
+            try { modelViewer?.engine?.destroyEntity(entity) } catch (_: Exception) { }
+            try { EntityManager.get().destroy(entity) } catch (_: Exception) { }
+        }
+        sceneLightEntities.clear()
         val loader = assetLoader
         models.forEach { model ->
             try { model.resources.asyncCancelLoad() } catch (_: Exception) { }
