@@ -588,6 +588,36 @@ class SceneEditorActivity : Activity() {
             }.show()
     }
 
+    private fun pickEnvironmentFiles() {
+        val intent = Intent(Intent.ACTION_OPEN_DOCUMENT).apply {
+            addCategory(Intent.CATEGORY_OPENABLE)
+            type = "*/*"
+            putExtra(Intent.EXTRA_MIME_TYPES, arrayOf("application/octet-stream", "application/x-ktx"))
+            putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true)
+        }
+        startActivityForResult(intent, REQUEST_IMPORT_ENVIRONMENT)
+    }
+
+    private fun openEnvironmentLibrary() {
+        val labels = arrayOf(
+            "Filament default_env_ibl.ktx — د حقیقي موادو رڼا",
+            "Filament default_env_skybox.ktx — د چاپېریال ۳۶۰ درجې انځور"
+        )
+        val urls = arrayOf(
+            "https://raw.githubusercontent.com/google/filament/v1.56.0/docs/webgl/default_env/default_env_ibl.ktx",
+            "https://raw.githubusercontent.com/google/filament/v1.56.0/docs/webgl/default_env/default_env_skybox.ktx"
+        )
+        AlertDialog.Builder(this).setTitle("وړیا HDRI / IBL فایلونه")
+            .setMessage("دواړه KTX فایلونه جلا ډاونلوډ کړه. بیا «HDRI / IBL چاپېریال واردول» ووهه او دواړه فایلونه په یو ځل وټاکه. د فایل نومونه باید _ibl او _skybox ولري.")
+            .setItems(labels) { _, which ->
+                try {
+                    startActivity(Intent(Intent.ACTION_VIEW, android.net.Uri.parse(urls[which])))
+                } catch (_: Exception) { toast("د Filament سرچینه نه پرانیستل کېږي") }
+            }
+            .setNegativeButton("بند", null)
+            .show()
+    }
+
     private fun pickRealisticModel() {
         val intent = Intent(Intent.ACTION_OPEN_DOCUMENT).apply {
             addCategory(Intent.CATEGORY_OPENABLE)
@@ -665,6 +695,43 @@ class SceneEditorActivity : Activity() {
                 }
                 if (selectedUris.size > 8) toast("په یو ځل یوازې ۸ فایلونه واردېږي؛ پاتې فایلونه بیا وټاکه")
                 failures.firstOrNull()?.let { toast("ځینې فایلونه وارد نه شول: $it") }
+            }
+            REQUEST_IMPORT_ENVIRONMENT -> {
+                val selectedUris = mutableListOf<android.net.Uri>()
+                data?.clipData?.let { clips ->
+                    for (index in 0 until clips.itemCount) selectedUris.add(clips.getItemAt(index).uri)
+                }
+                data?.data?.let { if (selectedUris.isEmpty()) selectedUris.add(it) }
+                if (selectedUris.size != 2) {
+                    toast("د HDRI لپاره باید دوه KTX فایلونه یوځای وټاکې: IBL او Skybox")
+                    return
+                }
+                val named = selectedUris.map { it to queryDisplayName(it, "environment.ktx") }
+                val iblEntry = named.firstOrNull { it.second.lowercase().contains("ibl") } ?: named[0]
+                val skyEntry = named.firstOrNull { it.second.lowercase().contains("skybox") }
+                    ?: named.firstOrNull { it.first != iblEntry.first }
+                if (skyEntry == null || skyEntry.first == iblEntry.first) {
+                    toast("د IBL او Skybox دوه جلا فایلونه وټاکه")
+                    return
+                }
+                try {
+                    val iblStream = contentResolver.openInputStream(iblEntry.first)
+                        ?: throw IllegalStateException("د IBL فایل نه پرانیستل کېږي")
+                    val skyboxStream = try {
+                        contentResolver.openInputStream(skyEntry.first)
+                            ?: throw IllegalStateException("د Skybox فایل نه پرانیستل کېږي")
+                    } catch (error: Exception) {
+                        iblStream.close()
+                        throw error
+                    }
+                    val imported = store.importEnvironmentMap(
+                        projectId, iblStream, iblEntry.second, skyboxStream, skyEntry.second
+                    )
+                    status.text = "حقیقي HDRI / IBL چاپېریال په پروژه کې خوندي شو."
+                    toast("HDRI چاپېریال وارد شو؛ د 3D لید بیا پرانیځه")
+                } catch (error: Exception) {
+                    toast(error.message ?: "د HDRI چاپېریال واردول ناکام شول")
+                }
             }
             REQUEST_IMPORT_AUDIO -> {
                 val uri = data?.data ?: return
@@ -1201,5 +1268,6 @@ class SceneEditorActivity : Activity() {
         const val EXTRA_PROJECT_ID = "project_id"
         private const val REQUEST_IMPORT_GLB = 7301
         private const val REQUEST_IMPORT_AUDIO = 7302
+        private const val REQUEST_IMPORT_ENVIRONMENT = 7303
     }
 }
