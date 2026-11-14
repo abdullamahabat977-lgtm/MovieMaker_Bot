@@ -154,7 +154,7 @@ class MultiModelSceneActivity : Activity() {
                 loadingLabel?.text = "په دې پروژه کې حقیقي GLB ماډل نشته."
                 return
             }
-            val projectFolder = File(filesDir, "MovieProjects/$projectId").canonicalFile
+            val projectFolder = ProjectStore(this).projectDirectory(projectId).canonicalFile
             val candidates = mutableListOf<Pair<org.json.JSONObject, File>>()
             var totalBytes = 0L
             for (item in objects) {
