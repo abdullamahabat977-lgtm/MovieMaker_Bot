@@ -477,17 +477,21 @@ class MainActivity : Activity() {
     }
 
     private fun createProjectDialog() {
+        if (!projectStore.storageReady) {
+            Toast.makeText(this, "د Film Studio ذخیره د لوستلو او لیکلو اجازه نه لري.", Toast.LENGTH_LONG).show()
+            return
+        }
         val input = EditText(this).apply { hint = "د فلم نوم"; setSingleLine(true) }
         AlertDialog.Builder(this).setTitle("نوې پروژه")
-            .setMessage("پروژه او فایلونه به یوازې په موبایل کې خوندي شي.")
+            .setMessage("پروژه، 3D ماډلونه، صحنې او صادر شوي فلمونه به د Film Studio په ځانګړي محلي فولډر کې ساتل کېږي.\n\nد ذخیرې ځای:\n${projectStore.storageDescription}\n\nد اپک ځانګړې ذخیره ده؛ په Android 11 او پورته نسخو کې د عمومي فایلونو اجازه نه غواړي.")
             .setView(input).setNegativeButton("لغوه", null)
             .setPositiveButton("جوړه کړه") { _, _ ->
                 try {
                     val project = projectStore.create(input.text.toString())
                     val name = project.optJSONObject("project")?.optString("name") ?: "نوی فلم"
-                    Toast.makeText(this, "پروژه «$name» په موبایل کې خوندي شوه.", Toast.LENGTH_LONG).show()
-                } catch (_: Exception) {
-                    Toast.makeText(this, "پروژه خوندي نه شوه؛ بیا هڅه وکړه.", Toast.LENGTH_LONG).show()
+                    Toast.makeText(this, "پروژه «$name» په Film Studio کې خوندي شوه.", Toast.LENGTH_LONG).show()
+                } catch (error: Exception) {
+                    Toast.makeText(this, error.message ?: "پروژه خوندي نه شوه؛ د موبایل ذخیره وڅېړه.", Toast.LENGTH_LONG).show()
                 }
             }.show()
     }
