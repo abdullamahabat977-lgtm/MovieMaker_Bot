@@ -98,7 +98,7 @@ class SceneEditorActivity : Activity() {
         lightingRow.addView(button("💡 سټوډیو") { setSceneLighting("studio", "د سټوډیو رڼا") }, weighted())
         content.addView(lightingRow)
         content.addView(label("د صحنې توکي", 17, true))
-        content.addView(label("د انسان، حیوان، موټر، کور، ونې، فرنیچر او نورو شیانو حقیقي 3D ماډلونه د GLB 2.0 په بڼه وارد کړه. کارتوني نمونه‌یي شکلونه د فلم د توکو په توګه نه کارېږي.", 12))
+        content.addView(label("د انسان، حیوان، موټر، کور، ونې، فرنیچر او نورو شیانو حقیقي 3D ماډلونه د GLB 2.0 په بڼه وارد کړه. کارتوني نمونه‌یي شکلونه د فلم د توکو په توګه نه کارېږي. د صحنو ترتیب د فلم د پرله‌پسې پلې کېدو ترتیب دی؛ په 3D لید کې اتومات صحنه‌بدلون فعال یا بندولای شې.", 12))
         content.addView(button("＋ حقیقي 3D توکی واردول (GLB)") { chooseModelType() })
         content.addView(button("🌐 د حقیقي 3D ماډلونو وړیا کتابتون") { openModelLibrary() })
         content.addView(button("ټاکل شوی حقیقي ماډل په 3D کې وګوره") { openSelectedRealisticModel() })
