@@ -120,7 +120,7 @@ class RealisticModelPreviewActivity : Activity() {
             ))
             controls.addView(controlButton("بل حرکت") { selectAnimation(1) })
             controls.addView(controlButton("ودرول / چلول") {
-                val count = modelViewer.animator?.animationCount ?: 0
+                val count = viewer.animator?.animationCount ?: 0
                 if (count > 0) {
                     animationPlaying = !animationPlaying
                     animationStartTimeNanos = 0L
@@ -141,11 +141,11 @@ class RealisticModelPreviewActivity : Activity() {
 
     private fun selectAnimation(delta: Int) {
         val animator = modelViewer?.animator
-        val count = animator?.animationCount ?: 0
-        if (count <= 0) {
+        if (animator == null || animator.animationCount <= 0) {
             Toast.makeText(this, "په دې GLB ماډل کې ثبت شوی skeletal animation نشته", Toast.LENGTH_LONG).show()
             return
         }
+        val count = animator.animationCount
         currentAnimationIndex = (currentAnimationIndex + delta + count) % count
         animationStartTimeNanos = 0L
         animator.applyAnimation(currentAnimationIndex, 0f)
