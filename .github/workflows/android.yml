@@ -1,8 +1,8 @@
 name: Build Movie Studio APK
 
+# APK builds are intentionally manual while core features are under development.
+# Run this workflow only when the project is ready for a release candidate.
 on:
-  push:
-    branches: [main, rebuild-v2]
   workflow_dispatch:
 
 jobs:
