@@ -83,6 +83,8 @@ class ProjectStore(context: Context) {
             .put("name", "لومړۍ صحنه")
             .put("objects", JSONArray())
             .put("timeline", JSONArray())
+            .put("cameraShots", JSONArray())
+            .put("lighting", defaultLighting("day"))
         val project = JSONObject()
             .put("schemaVersion", 1)
             .put("project", JSONObject()
@@ -146,6 +148,7 @@ class ProjectStore(context: Context) {
             .put("cameraShots", JSONArray())
         current.optJSONObject("ground")?.let { scene.put("ground", JSONObject(it.toString())) }
         current.optJSONObject("production")?.let { scene.put("production", JSONObject(it.toString())) }
+        scene.put("lighting", JSONObject((current.optJSONObject("lighting") ?: defaultLighting("day")).toString()))
         scenes.put(scene)
         project.put("activeSceneId", scene.optString("id"))
         val order = JSONArray()
@@ -563,6 +566,31 @@ class ProjectStore(context: Context) {
         save(project)
     }
 
+    fun updateSceneLighting(projectId: String, preset: String): JSONObject {
+        val project = load(projectId)
+        val scene = firstScene(project)
+        val lighting = defaultLighting(preset)
+        scene.put("lighting", lighting)
+        save(project)
+        return lighting
+    }
+
+    private fun defaultLighting(preset: String): JSONObject {
+        val values = when (preset) {
+            "sunset" -> arrayOf(30000.0, 1.0, 0.58, 0.34, 0.25, -0.90, -0.36)
+            "night" -> arrayOf(3500.0, 0.42, 0.56, 1.0, -0.18, -0.96, 0.22)
+            "studio" -> arrayOf(50000.0, 1.0, 1.0, 1.0, 0.0, -1.0, 0.0)
+            else -> arrayOf(85000.0, 1.0, 0.96, 0.88, -0.30, -0.90, -0.30)
+        }
+        val actualPreset = if (preset in setOf("day", "sunset", "night", "studio")) preset else "day"
+        return JSONObject()
+            .put("preset", actualPreset)
+            .put("intensityLux", values[0])
+            .put("red", values[1]).put("green", values[2]).put("blue", values[3])
+            .put("directionX", values[4]).put("directionY", values[5]).put("directionZ", values[6])
+            .put("shadows", true)
+    }
+
     fun updateProductionSettings(
         projectId: String,
         groundWidthMeters: Double,
@@ -787,6 +815,7 @@ class ProjectStore(context: Context) {
         if (!scene.has("objects")) scene.put("objects", JSONArray())
         if (!scene.has("timeline")) scene.put("timeline", JSONArray())
         if (!scene.has("cameraShots")) scene.put("cameraShots", JSONArray())
+        if (!scene.has("lighting")) scene.put("lighting", defaultLighting("day"))
         return scene
     }
 
