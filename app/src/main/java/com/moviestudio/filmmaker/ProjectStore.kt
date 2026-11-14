@@ -778,6 +778,41 @@ class ProjectStore(context: Context) {
         return lighting
     }
 
+    /** Saves validated per-scene key light, fill light and shadow controls. */
+    fun updateSceneLighting(projectId: String, changes: JSONObject): JSONObject {
+        val project = load(projectId)
+        val scene = firstScene(project)
+        val current = scene.optJSONObject("lighting") ?: defaultLighting("day")
+        val keys = listOf(
+            "intensityLux", "red", "green", "blue",
+            "directionX", "directionY", "directionZ", "fillIntensityLux"
+        )
+        keys.forEach { key ->
+            if (changes.has(key)) {
+                val value = changes.optDouble(key, Double.NaN)
+                require(value.isFinite()) { "د رڼا د $key ارزښت ناسم دی" }
+                val range = when (key) {
+                    "intensityLux" -> 500.0..120000.0
+                    "fillIntensityLux" -> 0.0..60000.0
+                    "red", "green", "blue" -> 0.0..1.0
+                    else -> -1.0..1.0
+                }
+                require(value in range) { "د رڼا د $key ارزښت له ټاکلي حد څخه بهر دی" }
+                current.put(key, value)
+            }
+        }
+        require(
+            current.optDouble("directionX") * current.optDouble("directionX") +
+            current.optDouble("directionY") * current.optDouble("directionY") +
+            current.optDouble("directionZ") * current.optDouble("directionZ") > 0.0001
+        ) { "د اصلي رڼا لوری صفر نه شي کېدای" }
+        if (changes.has("shadows")) current.put("shadows", changes.optBoolean("shadows"))
+        current.put("preset", "custom")
+        scene.put("lighting", current)
+        save(project)
+        return JSONObject(current.toString())
+    }
+
     private fun defaultLighting(preset: String): JSONObject {
         val values = when (preset) {
             "sunset" -> arrayOf(30000.0, 1.0, 0.58, 0.34, 0.25, -0.90, -0.36)
@@ -791,6 +826,7 @@ class ProjectStore(context: Context) {
             .put("intensityLux", values[0])
             .put("red", values[1]).put("green", values[2]).put("blue", values[3])
             .put("directionX", values[4]).put("directionY", values[5]).put("directionZ", values[6])
+            .put("fillIntensityLux", if (preset == "night") 900.0 else 9000.0)
             .put("shadows", true)
     }
 
