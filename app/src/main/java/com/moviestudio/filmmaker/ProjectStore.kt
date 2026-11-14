@@ -481,7 +481,9 @@ class ProjectStore(context: Context) {
         val filmStart = clockSeconds(production.optString("startTime"))
         val filmEnd = clockSeconds(production.optString("endTime"))
         require(start >= filmStart && end <= filmEnd) { "د حرکت وخت باید د فلم د ټاکلي وخت دننه وي" }
-        val fps = project.optJSONObject("project")?.optJSONObject("settings")?.optInt("fps", 24) ?: 24
+        // Keep frame math safe even if an older or manually edited project has invalid FPS.
+        val fps = (project.optJSONObject("project")?.optJSONObject("settings")?.optInt("fps", 24) ?: 24)
+            .coerceIn(1, 120)
         val clips = scene.optJSONArray("timeline") ?: JSONArray().also { scene.put("timeline", it) }
         for (index in 0 until clips.length()) {
             val existing = clips.optJSONObject(index) ?: continue
@@ -508,8 +510,8 @@ class ProjectStore(context: Context) {
         val ordered = (0 until clips.length()).mapNotNull { clips.optJSONObject(it) } + clip
         val sorted = JSONArray()
         ordered.sortedBy { item ->
-            if (item.has("startOffsetSeconds")) item.optInt("startOffsetSeconds")
-            else item.optInt("startFrame") / fps
+            if (item.has("startOffsetSeconds")) item.optDouble("startOffsetSeconds")
+            else item.optInt("startFrame").toDouble() / fps.toDouble()
         }.forEach { sorted.put(it) }
         scene.put("timeline", sorted)
         save(project)
