@@ -866,8 +866,18 @@ class MultiModelSceneActivity : Activity() {
         preparedAudioIds.clear()
     }
 
+    /** Removes the previous scene's fill lights before a new lighting setup is applied. */
+    private fun clearSceneLightEntities(modelViewer: ModelViewer?) {
+        sceneLightEntities.forEach { entity ->
+            try { modelViewer?.scene?.removeEntity(entity) } catch (_: Exception) { }
+            try { modelViewer?.engine?.destroyEntity(entity) } catch (_: Exception) { }
+            try { EntityManager.get().destroy(entity) } catch (_: Exception) { }
+        }
+        sceneLightEntities.clear()
+    }
+
     private fun applySceneLighting(modelViewer: ModelViewer, scene: JSONObject) {
-        val config = scene.optJSONObject("lighting") ?: JSONObject()
+        // Reapplying a preset must replace, not accumulate, the previous fill light.\n        clearSceneLightEntities(modelViewer)\n        val config = scene.optJSONObject("lighting") ?: JSONObject()
         val preset = config.optString("preset", "day")
         val defaultSkyRed = if (preset == "night") 0.025 else if (preset == "sunset") 0.28 else 0.12
         val defaultSkyGreen = if (preset == "night") 0.035 else if (preset == "sunset") 0.12 else 0.16
@@ -987,12 +997,7 @@ class MultiModelSceneActivity : Activity() {
     private fun releaseModels() {
         releaseAudioPlayers()
         val modelViewer = viewer
-        sceneLightEntities.forEach { entity ->
-            try { modelViewer?.scene?.removeEntity(entity) } catch (_: Exception) { }
-            try { modelViewer?.engine?.destroyEntity(entity) } catch (_: Exception) { }
-            try { EntityManager.get().destroy(entity) } catch (_: Exception) { }
-        }
-        sceneLightEntities.clear()
+        clearSceneLightEntities(modelViewer)
         val loader = assetLoader
         models.forEach { model ->
             try { model.resources.asyncCancelLoad() } catch (_: Exception) { }
