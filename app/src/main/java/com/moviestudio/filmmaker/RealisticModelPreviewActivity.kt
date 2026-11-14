@@ -27,16 +27,19 @@ class RealisticModelPreviewActivity : Activity() {
     private var userZ = 0f
     private var userScale = 1f
     private var animationStartTimeNanos = 0L
+    private var currentAnimationIndex = 0
+    private var animationPlaying = true
+    private var animationStatus: android.widget.TextView? = null
     private val frameCallback = object : Choreographer.FrameCallback {
         override fun doFrame(frameTimeNanos: Long) {
             val viewer = modelViewer ?: return
             val animator = viewer.animator
-            if (animator != null && animator.animationCount > 0) {
+            if (animationPlaying && animator != null && animator.animationCount > 0) {
                 if (animationStartTimeNanos == 0L) animationStartTimeNanos = frameTimeNanos
                 val elapsedSeconds = (frameTimeNanos - animationStartTimeNanos) / 1_000_000_000f
-                val duration = animator.getAnimationDuration(0)
+                val duration = animator.getAnimationDuration(currentAnimationIndex)
                 val animationTime = if (duration > 0f) elapsedSeconds % duration else elapsedSeconds
-                animator.applyAnimation(0, animationTime)
+                animator.applyAnimation(currentAnimationIndex, animationTime)
                 animator.updateBoneMatrices()
             }
             viewer.render(frameTimeNanos)
@@ -94,11 +97,65 @@ class RealisticModelPreviewActivity : Activity() {
                 FrameLayout.LayoutParams.WRAP_CONTENT, FrameLayout.LayoutParams.WRAP_CONTENT,
                 Gravity.TOP or Gravity.END
             ).apply { topMargin = 18; marginEnd = 18 })
+
+            val controls = android.widget.LinearLayout(this).apply {
+                orientation = android.widget.LinearLayout.HORIZONTAL
+                gravity = Gravity.CENTER
+                setPadding(10, 6, 10, 6)
+                setBackgroundColor(0xCC17243A.toInt())
+            }
+            fun controlButton(text: String, action: () -> Unit) =
+                Button(this).apply { this.text = text; isAllCaps = false; setOnClickListener { action() } }
+            controls.addView(controlButton("مخکینی") { selectAnimation(-1) })
+            animationStatus = android.widget.TextView(this).apply {
+                setTextColor(android.graphics.Color.WHITE)
+                textSize = 13f
+                gravity = Gravity.CENTER
+                setPadding(10, 0, 10, 0)
+            }
+            controls.addView(animationStatus, android.widget.LinearLayout.LayoutParams(
+                android.widget.LinearLayout.LayoutParams.WRAP_CONTENT,
+                android.widget.LinearLayout.LayoutParams.WRAP_CONTENT
+            ))
+            controls.addView(controlButton("بل حرکت") { selectAnimation(1) })
+            controls.addView(controlButton("ودرول / چلول") {
+                val count = modelViewer.animator?.animationCount ?: 0
+                if (count > 0) {
+                    animationPlaying = !animationPlaying
+                    animationStartTimeNanos = 0L
+                    updateAnimationStatus()
+                }
+            })
+            frame.addView(controls, FrameLayout.LayoutParams(
+                FrameLayout.LayoutParams.WRAP_CONTENT, FrameLayout.LayoutParams.WRAP_CONTENT,
+                Gravity.BOTTOM or Gravity.CENTER_HORIZONTAL
+            ).apply { bottomMargin = 20 })
+            updateAnimationStatus()
             title = intent.getStringExtra(EXTRA_MODEL_NAME) ?: "واقعي 3D ماډل"
         } catch (error: Exception) {
             Toast.makeText(this, error.message ?: "د 3D ماډل پرانیستل ناکام شول", Toast.LENGTH_LONG).show()
             finish()
         }
+    }
+
+    private fun selectAnimation(delta: Int) {
+        val animator = modelViewer?.animator
+        val count = animator?.animationCount ?: 0
+        if (count <= 0) {
+            Toast.makeText(this, "په دې GLB ماډل کې ثبت شوی skeletal animation نشته", Toast.LENGTH_LONG).show()
+            return
+        }
+        currentAnimationIndex = (currentAnimationIndex + delta + count) % count
+        animationStartTimeNanos = 0L
+        animator.applyAnimation(currentAnimationIndex, 0f)
+        animator.updateBoneMatrices()
+        updateAnimationStatus()
+    }
+
+    private fun updateAnimationStatus() {
+        val count = modelViewer?.animator?.animationCount ?: 0
+        animationStatus?.text = "حرکت " + (currentAnimationIndex + 1) + "/" + count +
+            if (animationPlaying) " • چلېږي" else " • درېدلی"
     }
 
     private fun applyObjectTransform(viewer: ModelViewer) {
