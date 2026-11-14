@@ -245,6 +245,9 @@ class ProjectStore(context: Context) {
     fun duplicateSceneObject(projectId: String, objectId: String): JSONObject {
         val project = load(projectId)
         val objects = firstScene(project).optJSONArray("objects") ?: JSONArray()
+        require(objects.length() < MAX_SCENE_OBJECTS) {
+            "په یوه صحنه کې تر ۳۲ زیات توکي نه شي کېدای"
+        }
         val source = (0 until objects.length()).mapNotNull { objects.optJSONObject(it) }
             .firstOrNull { it.optString("id") == objectId }
             ?: throw IllegalArgumentException("د صحنې توکی ونه موندل شو")
@@ -609,39 +612,67 @@ class ProjectStore(context: Context) {
     }
 
     private fun validateGlb2(file: File) {
-        require(file.length() >= 20L) { "GLB فایل ډېر کوچنی یا تش دی" }
-        FileInputStream(file).use { input ->
+        val fileLength = file.length()
+        require(fileLength >= 20L) { "GLB فایل ډېر کوچنی یا تش دی" }
+        java.io.RandomAccessFile(file, "r").use { input ->
             val header = ByteArray(20)
-            var offset = 0
-            while (offset < header.size) {
-                val count = input.read(header, offset, header.size - offset)
-                if (count < 0) break
-                offset += count
-            }
-            require(offset == header.size) { "GLB سرلیک نیمګړی دی" }
+            input.readFully(header)
             require(String(header, 0, 4, Charsets.US_ASCII) == "glTF") { "دا GLB فایل نه دی" }
-            val bytes = ByteBuffer.wrap(header).order(ByteOrder.LITTLE_ENDIAN)
-            require(bytes.getInt(4) == 2) { "یوازې GLB 2.0 ملاتړ کېږي" }
-            val declaredLength = bytes.getInt(8).toLong() and 0xffffffffL
-            require(declaredLength == file.length()) { "د GLB فایل اندازه له سرلیک سره برابره نه ده" }
-            val jsonLength = bytes.getInt(12).toLong() and 0xffffffffL
-            val jsonType = bytes.getInt(16)
-            require(jsonType == 0x4E4F534A) { "د GLB لومړی chunk باید JSON وي" }
+            val headerBytes = ByteBuffer.wrap(header).order(ByteOrder.LITTLE_ENDIAN)
+            require(headerBytes.getInt(4) == 2) { "یوازې GLB 2.0 ملاتړ کېږي" }
+            val declaredLength = headerBytes.getInt(8).toLong() and 0xffffffffL
+            require(declaredLength == fileLength) { "د GLB فایل اندازه له سرلیک سره برابره نه ده" }
+
+            val jsonLength = headerBytes.getInt(12).toLong() and 0xffffffffL
+            require(headerBytes.getInt(16) == 0x4E4F534A) {
+                "د GLB لومړی chunk باید JSON وي"
+            }
             require(jsonLength in 2L..(8L * 1024L * 1024L) && jsonLength % 4L == 0L) {
                 "د GLB JSON برخه ناسمه یا ډېره لویه ده"
             }
-            require(20L + jsonLength <= file.length()) { "د GLB JSON برخه نیمګړې ده" }
+            require(20L + jsonLength <= fileLength) { "د GLB JSON برخه نیمګړې ده" }
+
             val jsonBytes = ByteArray(jsonLength.toInt())
-            var read = 0
-            while (read < jsonBytes.size) {
-                val count = input.read(jsonBytes, read, jsonBytes.size - read)
-                if (count < 0) break
-                read += count
-            }
-            require(read == jsonBytes.size) { "د GLB JSON برخه نه لوستل کېږي" }
+            input.readFully(jsonBytes)
             val jsonText = String(jsonBytes, Charsets.UTF_8).trim { it.code <= 32 }
-            val assetVersion = JSONObject(jsonText).optJSONObject("asset")?.optString("version")
+            val document = JSONObject(jsonText)
+            val assetVersion = document.optJSONObject("asset")?.optString("version")
             require(assetVersion == "2.0") { "په GLB کې د asset.version باید 2.0 وي" }
+
+            // Walk every remaining chunk to reject truncated or out-of-range chunk data.
+            var offset = 20L + jsonLength
+            var binaryChunkLength = -1L
+            while (offset < fileLength) {
+                require(fileLength - offset >= 8L) { "د GLB د chunk سرلیک نیمګړی دی" }
+                input.seek(offset)
+                val chunkHeader = ByteArray(8)
+                input.readFully(chunkHeader)
+                val chunkInfo = ByteBuffer.wrap(chunkHeader).order(ByteOrder.LITTLE_ENDIAN)
+                val chunkLength = chunkInfo.getInt(0).toLong() and 0xffffffffL
+                val chunkType = chunkInfo.getInt(4)
+                require(chunkLength % 4L == 0L) { "د GLB د chunk اندازه باید د ۴ بایټونو مضرب وي" }
+                require(chunkLength <= fileLength - offset - 8L) {
+                    "د GLB یوه برخه له فایل څخه بهر اشاره کوي"
+                }
+                if (chunkType == 0x004E4942) {
+                    require(binaryChunkLength < 0L) { "په GLB کې له یوې زیاتې BIN برخې نشي کېدای" }
+                    binaryChunkLength = chunkLength
+                }
+                offset += 8L + chunkLength
+            }
+            require(offset == fileLength) { "د GLB د برخو ترتیب یا اندازه ناسمه ده" }
+
+            val buffers = document.optJSONArray("buffers") ?: JSONArray()
+            for (index in 0 until buffers.length()) {
+                val buffer = buffers.optJSONObject(index) ?: continue
+                if (!buffer.has("uri")) {
+                    require(binaryChunkLength >= 0L) { "د GLB داخلي buffer شته، خو BIN برخه نشته" }
+                    val requiredBytes = buffer.optLong("byteLength", -1L)
+                    require(requiredBytes >= 0L && requiredBytes <= binaryChunkLength) {
+                        "د GLB داخلي buffer د BIN برخې له اندازې لوی دی"
+                    }
+                }
+            }
         }
     }
 
