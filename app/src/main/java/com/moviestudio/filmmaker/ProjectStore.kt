@@ -359,13 +359,23 @@ class ProjectStore(context: Context) {
                 .put("environmentSkyboxPath", skyboxPath)
                 .put("environmentIntensityLux", 30000.0)
             scene.put("lighting", lighting)
+            val referencedEnvironmentPaths = mutableSetOf<String>()
+            val scenes = project.optJSONArray("scenes") ?: JSONArray()
+            for (sceneIndex in 0 until scenes.length()) {
+                val otherLighting = scenes.optJSONObject(sceneIndex)?.optJSONObject("lighting") ?: continue
+                listOf("environmentIblPath", "environmentSkyboxPath").forEach { key ->
+                    otherLighting.optString(key).takeIf { it.isNotBlank() }?.let {
+                        referencedEnvironmentPaths.add(it)
+                    }
+                }
+            }
+            val obsoletePaths = listOf(oldIbl, oldSkybox)
+                .filter { it.isNotBlank() && it !in referencedEnvironmentPaths }.toSet()
             val assets = project.optJSONArray("assets") ?: JSONArray().also { project.put("assets", it) }
             val retainedAssets = JSONArray()
             for (index in 0 until assets.length()) {
                 val asset = assets.optJSONObject(index) ?: continue
-                if (asset.optString("path") != oldIbl && asset.optString("path") != oldSkybox) {
-                    retainedAssets.put(asset)
-                }
+                if (asset.optString("path") !in obsoletePaths) retainedAssets.put(asset)
             }
             project.put("assets", retainedAssets)
             retainedAssets.put(JSONObject()
@@ -377,7 +387,7 @@ class ProjectStore(context: Context) {
                 .put("name", skyboxDisplayName.take(100)).put("path", skyboxPath)
                 .put("sizeBytes", skyboxFile.length()))
             save(project)
-            listOf(oldIbl, oldSkybox).filter { it.isNotBlank() }.forEach { oldPath ->
+            obsoletePaths.forEach { oldPath ->
                 val oldFile = File(base, oldPath).canonicalFile
                 if (oldFile.path.startsWith(base.path + File.separator) && oldFile.isFile &&
                     oldFile != iblFile && oldFile != skyboxFile) oldFile.delete()
