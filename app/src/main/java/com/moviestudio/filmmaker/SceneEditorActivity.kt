@@ -201,6 +201,7 @@ class SceneEditorActivity : Activity() {
                 "🎥 ${shot.optString("name")} • ${shot.optString("startTime")} – ${shot.optString("endTime")}\nځای: ${shot.optDouble("x")}, ${shot.optDouble("y")}, ${shot.optDouble("z")} • FOV ${shot.optDouble("fieldOfView")}°",
                 12
             ))
+            cameraPanel.addView(button("✏️ د دې کمرې شاټ سمول") { addCameraShotDialog(shot) })
             cameraPanel.addView(button("دا کمره / شاټ حذف کړه") {
                 try {
                     store.removeCameraShot(projectId, shot.optString("id"))
@@ -475,20 +476,20 @@ class SceneEditorActivity : Activity() {
             }.show()
     }
 
-    private fun addCameraShotDialog() {
+    private fun addCameraShotDialog(existing: JSONObject? = null) {
         val scene = store.load(projectId).optJSONArray("scenes")?.optJSONObject(0) ?: JSONObject()
         val production = scene.optJSONObject("production") ?: JSONObject()
         val fields = listOf(
-            EditText(this).apply { setText("اصلي کمره"); setSingleLine(true) },
-            EditText(this).apply { setText("0") },
-            EditText(this).apply { setText("3") },
-            EditText(this).apply { setText("5") },
-            EditText(this).apply { setText("0") },
-            EditText(this).apply { setText("1") },
-            EditText(this).apply { setText("0") },
-            EditText(this).apply { setText("50") },
-            EditText(this).apply { setText(production.optString("startTime", "09:00:00")); setSingleLine(true) },
-            EditText(this).apply { setText(production.optString("endTime", "09:30:00")); setSingleLine(true) }
+            EditText(this).apply { setText(existing?.optString("name") ?: "اصلي کمره"); setSingleLine(true) },
+            EditText(this).apply { setText(existing?.optDouble("x", 0.0)?.toString() ?: "0") },
+            EditText(this).apply { setText(existing?.optDouble("y", 3.0)?.toString() ?: "3") },
+            EditText(this).apply { setText(existing?.optDouble("z", 5.0)?.toString() ?: "5") },
+            EditText(this).apply { setText(existing?.optDouble("targetX", 0.0)?.toString() ?: "0") },
+            EditText(this).apply { setText(existing?.optDouble("targetY", 1.0)?.toString() ?: "1") },
+            EditText(this).apply { setText(existing?.optDouble("targetZ", 0.0)?.toString() ?: "0") },
+            EditText(this).apply { setText(existing?.optDouble("fieldOfView", 50.0)?.toString() ?: "50") },
+            EditText(this).apply { setText(existing?.optString("startTime") ?: production.optString("startTime", "09:00:00")); setSingleLine(true) },
+            EditText(this).apply { setText(existing?.optString("endTime") ?: production.optString("endTime", "09:30:00")); setSingleLine(true) }
         )
         val captions = listOf(
             "د کمرې نوم", "د کمرې X", "د کمرې Y", "د کمرې Z",
@@ -507,19 +508,28 @@ class SceneEditorActivity : Activity() {
             panel.addView(label(captions[index], 12, true))
             panel.addView(field)
         }
-        AlertDialog.Builder(this).setTitle("د فلم کمره ځای پر ځای کول")
+        AlertDialog.Builder(this).setTitle(if (existing == null) "د فلم کمره ځای پر ځای کول" else "د کمرې شاټ سمول")
             .setView(ScrollView(this).apply { addView(panel) })
             .setNegativeButton("لغوه", null)
             .setPositiveButton("کمره ثبت کړه") { _, _ ->
                 try {
                     fun number(index: Int): Double = fields[index].text.toString().toDoubleOrNull()
                         ?: throw IllegalArgumentException("د ${captions[index]} شمېره ناسمه ده")
-                    store.addCameraShot(
-                        projectId, fields[0].text.toString(),
-                        number(1), number(2), number(3),
-                        number(4), number(5), number(6),
-                        number(7), fields[8].text.toString().trim(), fields[9].text.toString().trim()
-                    )
+                    if (existing == null) {
+                        store.addCameraShot(
+                            projectId, fields[0].text.toString(),
+                            number(1), number(2), number(3),
+                            number(4), number(5), number(6),
+                            number(7), fields[8].text.toString().trim(), fields[9].text.toString().trim()
+                        )
+                    } else {
+                        store.updateCameraShot(
+                            projectId, existing.optString("id"), fields[0].text.toString(),
+                            number(1), number(2), number(3),
+                            number(4), number(5), number(6),
+                            number(7), fields[8].text.toString().trim(), fields[9].text.toString().trim()
+                        )
+                    }
                     refreshPanels()
                     status.text = "د کمرې ځای او شاټ وخت په پروژه کې ثبت شو؛ د رینډر نښلول لا پاتې دي."
                 } catch (error: Exception) { toast(error.message ?: "کمره ثبت نه شوه") }
