@@ -449,6 +449,17 @@ class ProjectStore(context: Context) {
             .put("widthMeters", groundWidthMeters)
             .put("depthMeters", groundDepthMeters)
             .put("areaSquareMeters", groundWidthMeters * groundDepthMeters))
+
+        // When the ground is resized, keep every existing object center inside its new bounds.
+        val halfWidth = groundWidthMeters / 2.0
+        val halfDepth = groundDepthMeters / 2.0
+        val objects = scene.optJSONArray("objects") ?: JSONArray()
+        for (index in 0 until objects.length()) {
+            val item = objects.optJSONObject(index) ?: continue
+            item.put("x", item.optDouble("x", 0.0).coerceIn(-halfWidth, halfWidth))
+            item.put("z", item.optDouble("z", 0.0).coerceIn(-halfDepth, halfDepth))
+        }
+
         scene.put("production", JSONObject()
             .put("startTime", filmStartTime)
             .put("endTime", filmEndTime)
