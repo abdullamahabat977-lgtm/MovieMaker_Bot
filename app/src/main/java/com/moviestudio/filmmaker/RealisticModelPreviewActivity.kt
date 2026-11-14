@@ -86,10 +86,12 @@ class RealisticModelPreviewActivity : Activity() {
             viewer.loadModelGlb(glbBuffer)
             viewer.transformToUnitCube()
             check(viewer.asset != null) { "د GLB ماډل لوستل ناکام شول" }
-            userX = intent.getFloatExtra(EXTRA_X, 0f)
-            userY = intent.getFloatExtra(EXTRA_Y, 0f)
-            userZ = intent.getFloatExtra(EXTRA_Z, 0f)
-            userScale = intent.getFloatExtra(EXTRA_SCALE, 1f).coerceIn(0.25f, 3f)
+            // This is an isolated asset preview, not the full scene. Keep the model at
+            // the origin so its saved scene coordinates cannot move it outside the camera.
+            userX = 0f
+            userY = 0f
+            userZ = 0f
+            userScale = intent.getFloatExtra(EXTRA_SCALE, 1f).coerceIn(0.05f, 100f)
             userRotationX = intent.getFloatExtra(EXTRA_ROTATION_X, 0f)
             userRotationY = intent.getFloatExtra(EXTRA_ROTATION_Y, 0f)
             userRotationZ = intent.getFloatExtra(EXTRA_ROTATION_Z, 0f)
