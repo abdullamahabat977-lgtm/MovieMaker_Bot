@@ -8,6 +8,7 @@ import android.os.Bundle
 import android.view.Choreographer
 import android.view.Gravity
 import android.view.SurfaceView
+import android.view.View
 import android.widget.Button
 import android.widget.FrameLayout
 import android.widget.TextView
@@ -73,6 +74,7 @@ class MultiModelSceneActivity : Activity() {
     private val models = mutableListOf<SceneModel>()
     private val sceneLightEntities = mutableListOf<Int>()
     private var loadingLabel: TextView? = null
+    private var transitionOverlay: View? = null
     private var projectId: String = ""
     private var framePosted = false
     private var omittedModelCount = 0
@@ -190,6 +192,14 @@ class MultiModelSceneActivity : Activity() {
             frame.addView(surface, FrameLayout.LayoutParams(
                 FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.MATCH_PARENT
             ))
+            transitionOverlay = View(this).apply {
+                setBackgroundColor(android.graphics.Color.BLACK)
+                visibility = View.GONE
+                alpha = 1f
+            }
+            frame.addView(transitionOverlay, FrameLayout.LayoutParams(
+                FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.MATCH_PARENT
+            ))
             loadingLabel = TextView(this).apply {
                 text = "د حقیقي 3D ماډلونه لوډ کېږي..."
                 setTextColor(android.graphics.Color.WHITE)
@@ -300,6 +310,22 @@ class MultiModelSceneActivity : Activity() {
         }
     }
 
+    private fun beginSceneTransition() {
+        transitionOverlay?.let { overlay ->
+            overlay.animate().cancel()
+            overlay.alpha = 1f
+            overlay.visibility = View.VISIBLE
+        }
+    }
+
+    private fun finishSceneTransition() {
+        transitionOverlay?.let { overlay ->
+            overlay.animate().alpha(0f).setDuration(350).withEndAction {
+                overlay.visibility = View.GONE
+            }.start()
+        }
+    }
+
     private fun advanceToNextScene(showMessage: Boolean): Boolean {
         return try {
             val store = ProjectStore(this)
@@ -313,6 +339,7 @@ class MultiModelSceneActivity : Activity() {
             val nextScene = store.listScenes(projectId).firstOrNull {
                 it.optString("id") == nextId
             } ?: return false
+            beginSceneTransition()
             store.setActiveScene(projectId, nextId)
             releaseModels()
             timelinePositionSeconds = 0.0
@@ -320,6 +347,7 @@ class MultiModelSceneActivity : Activity() {
             timelinePlaying = true
             activeCameraShotId = null
             loadProjectModels()
+            finishSceneTransition()
             if (showMessage) {
                 Toast.makeText(
                     this,
@@ -354,6 +382,7 @@ class MultiModelSceneActivity : Activity() {
                 .setItems(labels) { _, which ->
                     val chosen = scenes.getOrNull(which) ?: return@setItems
                     try {
+                        beginSceneTransition()
                         store.setActiveScene(projectId, chosen.optString("id"))
                         releaseModels()
                         timelinePositionSeconds = 0.0
@@ -361,6 +390,7 @@ class MultiModelSceneActivity : Activity() {
                         timelinePlaying = true
                         activeCameraShotId = null
                         loadProjectModels()
+                        finishSceneTransition()
                         Toast.makeText(this, "صحنه «${chosen.optString("name")}» پرانیستل شوه", Toast.LENGTH_SHORT).show()
                     } catch (error: Exception) {
                         Toast.makeText(this, error.message ?: "صحنه پرانیستل نه شوه", Toast.LENGTH_LONG).show()
