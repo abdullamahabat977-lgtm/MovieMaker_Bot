@@ -238,7 +238,7 @@ class MultiModelSceneActivity : Activity() {
     override fun onResume() {
         super.onResume()
         if (viewer != null && models.isEmpty()) loadProjectModels()
-        if (resumeTimelineAfterPause && timelineClips.isNotEmpty() &&
+        if (resumeTimelineAfterPause && (timelineClips.isNotEmpty() || cameraShots.isNotEmpty()) &&
             timelinePositionSeconds < timelineDurationSeconds) {
             timelinePlaying = true
             timelineStartNanos = System.nanoTime() -
@@ -253,8 +253,7 @@ class MultiModelSceneActivity : Activity() {
 
     private fun showCameraShotPicker() {
         try {
-            val scene = ProjectStore(this).load(projectId)
-                .optJSONArray("scenes")?.optJSONObject(0)
+            val scene = ProjectStore(this).activeScene(projectId)
             val shots = scene?.optJSONArray("cameraShots")
             if (shots == null || shots.length() == 0) {
                 Toast.makeText(this, "په دې پروژه کې د کمرې ثبت شوی شاټ نشته؛ لومړی یې په Scene Editor کې جوړ کړه", Toast.LENGTH_LONG).show()
@@ -393,7 +392,7 @@ class MultiModelSceneActivity : Activity() {
         try {
             val store = ProjectStore(this)
             val project = store.load(projectId)
-            val scene = project.optJSONArray("scenes")?.optJSONObject(0)
+            val scene = store.activeScene(projectId)
             val projectFps = (project.optJSONObject("project")?.optJSONObject("settings")?.optInt("fps", 24) ?: 24)
                 .coerceIn(1, 120)
             val production = scene?.optJSONObject("production") ?: JSONObject()
