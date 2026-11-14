@@ -333,8 +333,13 @@ class ProjectStore(context: Context) {
             )
             FileInputStream(destination).use { input ->
                 val header = ByteArray(identifier.size)
-                input.readFully(header)
-                require(header.contentEquals(identifier)) {
+                var offset = 0
+                while (offset < header.size) {
+                    val count = input.read(header, offset, header.size - offset)
+                    if (count < 0) break
+                    offset += count
+                }
+                require(offset == header.size && header.contentEquals(identifier)) {
                     "دا د KTX 1 چاپېریال فایل نه دی؛ د Filament IBL او Skybox KTX فایلونه وټاکه"
                 }
             }
@@ -355,7 +360,15 @@ class ProjectStore(context: Context) {
                 .put("environmentIntensityLux", 30000.0)
             scene.put("lighting", lighting)
             val assets = project.optJSONArray("assets") ?: JSONArray().also { project.put("assets", it) }
-            assets.put(JSONObject()
+            val retainedAssets = JSONArray()
+            for (index in 0 until assets.length()) {
+                val asset = assets.optJSONObject(index) ?: continue
+                if (asset.optString("path") != oldIbl && asset.optString("path") != oldSkybox) {
+                    retainedAssets.put(asset)
+                }
+            }
+            project.put("assets", retainedAssets)
+            retainedAssets.put(JSONObject()
                 .put("id", "environment_ibl_$token").put("type", "environment_ibl")
                 .put("name", iblDisplayName.take(100)).put("path", iblPath)
                 .put("sizeBytes", iblFile.length()))
@@ -377,6 +390,8 @@ class ProjectStore(context: Context) {
         } catch (error: Exception) {
             iblFile.delete()
             skyboxFile.delete()
+            runCatching { iblSource.close() }
+            runCatching { skyboxSource.close() }
             throw error
         }
     }
