@@ -8,6 +8,9 @@ import java.io.InputStream
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+import java.util.UUID
+import java.nio.ByteBuffer
+import java.nio.ByteOrder
 
 /** Stores all movie projects and their assets locally on the phone only. */
 class ProjectStore(context: Context) {
@@ -110,7 +113,7 @@ class ProjectStore(context: Context) {
             ?: throw IllegalArgumentException("د 3D ماډل ډول ناسم دی")
         val projectDirectory = projectFolder(projectId)
         val assetDirectory = File(projectDirectory, "assets/$folderName").apply { mkdirs() }
-        val modelFile = File(assetDirectory, "${modelType}_${System.currentTimeMillis()}.glb")
+        val modelFile = File(assetDirectory, modelType + "_" + UUID.randomUUID() + ".glb")
 
         try {
             source.use { input ->
@@ -128,26 +131,22 @@ class ProjectStore(context: Context) {
                     }
                 }
             }
-            val header = ByteArray(12)
-            val validHeader = modelFile.inputStream().use { input ->
-                var offset = 0
-                while (offset < header.size) {
-                    val count = input.read(header, offset, header.size - offset)
-                    if (count < 0) break
-                    offset += count
-                }
-                if (offset != 12) false else {
-                    val bytes = java.nio.ByteBuffer.wrap(header).order(java.nio.ByteOrder.LITTLE_ENDIAN)
-                    val magic = String(header, 0, 4, Charsets.US_ASCII) == "glTF"
-                    val version = bytes.getInt(4) == 2
-                    val declaredLength = bytes.getInt(8).toLong() and 0xffffffffL
-                    magic && version && declaredLength == modelFile.length()
-                }
-            }
-            require(validHeader) { "دا سم GLB 2.0 فایل نه دی؛ اصلي .glb فایل وټاکه" }
+            validateGlb2(modelFile)
         } catch (error: Exception) {
             modelFile.delete()
             throw error
+        }
+
+        val project = load(projectId)
+        val existingBytes = project.optJSONArray("assets")?.let { assets ->
+            (0 until assets.length()).sumOf { assets.optJSONObject(it)?.optLong("sizeBytes") ?: 0L }
+        } ?: 0L
+        require(existingBytes + modelFile.length() <= MAX_PROJECT_MODEL_BYTES) {
+            "د دې پروژې د 3D فایلونو ټول حجم له ۲۵۶ MB څخه زیات نه شي کېدای"
+        }
+        val existingObjects = firstScene(project).optJSONArray("objects") ?: JSONArray()
+        require(existingObjects.length() < MAX_SCENE_OBJECTS) {
+            "په یوه صحنه کې تر ۳۲ زیات توکي مه واردوه"
         }
 
         val cleanName = displayName.substringBeforeLast('.', displayName)
@@ -157,7 +156,7 @@ class ProjectStore(context: Context) {
         val project = load(projectId)
         val scene = firstScene(project)
         val objects = scene.optJSONArray("objects") ?: JSONArray().also { scene.put("objects", it) }
-        val objectId = "object_" + System.currentTimeMillis().toString()
+        val objectId = "object_" + UUID.randomUUID().toString()
         val slot = objects.length()
         val layout = arrayOf(
             0.0 to 0.0, -2.2 to 0.0, 2.2 to 0.0,
@@ -201,7 +200,7 @@ class ProjectStore(context: Context) {
             .firstOrNull { it.optString("id") == objectId }
             ?: throw IllegalArgumentException("د صحنې توکی ونه موندل شو")
         val copy = JSONObject(source.toString())
-            .put("id", "object_" + System.currentTimeMillis().toString())
+            .put("id", "object_" + UUID.randomUUID().toString())
             .put("name", source.optString("name") + " - کاپي")
             .put("x", (source.optDouble("x") + 0.35).coerceAtMost(3.0))
         objects.put(copy)
@@ -287,7 +286,7 @@ class ProjectStore(context: Context) {
         val start = (0 until clips.length()).mapNotNull { clips.optJSONObject(it) }
             .maxOfOrNull { it.optInt("startFrame") + it.optInt("durationFrames") } ?: 0
         val clip = JSONObject()
-            .put("id", "clip_" + System.currentTimeMillis().toString())
+            .put("id", "clip_" + UUID.randomUUID().toString())
             .put("objectId", objectId).put("action", action)
             .put("startFrame", start).put("durationFrames", durationFrames.coerceIn(1, 2400))
         clips.put(clip)
@@ -345,7 +344,48 @@ class ProjectStore(context: Context) {
         return folder
     }
 
-    private companion object { const val MAX_MODEL_BYTES = 40L * 1024L * 1024L }
+    private fun validateGlb2(file: File) {
+        require(file.length() >= 20L) { "GLB فایل ډېر کوچنی یا تش دی" }
+        FileInputStream(file).use { input ->
+            val header = ByteArray(20)
+            var offset = 0
+            while (offset < header.size) {
+                val count = input.read(header, offset, header.size - offset)
+                if (count < 0) break
+                offset += count
+            }
+            require(offset == header.size) { "GLB سرلیک نیمګړی دی" }
+            require(String(header, 0, 4, Charsets.US_ASCII) == "glTF") { "دا GLB فایل نه دی" }
+            val bytes = ByteBuffer.wrap(header).order(ByteOrder.LITTLE_ENDIAN)
+            require(bytes.getInt(4) == 2) { "یوازې GLB 2.0 ملاتړ کېږي" }
+            val declaredLength = bytes.getInt(8).toLong() and 0xffffffffL
+            require(declaredLength == file.length()) { "د GLB فایل اندازه له سرلیک سره برابره نه ده" }
+            val jsonLength = bytes.getInt(12).toLong() and 0xffffffffL
+            val jsonType = bytes.getInt(16)
+            require(jsonType == 0x4E4F534A) { "د GLB لومړی chunk باید JSON وي" }
+            require(jsonLength in 2L..(8L * 1024L * 1024L) && jsonLength % 4L == 0L) {
+                "د GLB JSON برخه ناسمه یا ډېره لویه ده"
+            }
+            require(20L + jsonLength <= file.length()) { "د GLB JSON برخه نیمګړې ده" }
+            val jsonBytes = ByteArray(jsonLength.toInt())
+            var read = 0
+            while (read < jsonBytes.size) {
+                val count = input.read(jsonBytes, read, jsonBytes.size - read)
+                if (count < 0) break
+                read += count
+            }
+            require(read == jsonBytes.size) { "د GLB JSON برخه نه لوستل کېږي" }
+            val jsonText = String(jsonBytes, Charsets.UTF_8).trim { it.code <= 32 }
+            val assetVersion = JSONObject(jsonText).optJSONObject("asset")?.optString("version")
+            require(assetVersion == "2.0") { "په GLB کې د asset.version باید 2.0 وي" }
+        }
+    }
+
+    private companion object {
+        const val MAX_MODEL_BYTES = 40L * 1024L * 1024L
+        const val MAX_PROJECT_MODEL_BYTES = 256L * 1024L * 1024L
+        const val MAX_SCENE_OBJECTS = 32
+    }
 
     private fun timestamp(): String =
         SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.US).format(Date())
