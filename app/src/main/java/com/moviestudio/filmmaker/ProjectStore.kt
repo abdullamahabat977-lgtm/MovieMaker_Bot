@@ -893,7 +893,14 @@ class ProjectStore(context: Context) {
     fun updateSceneLighting(projectId: String, preset: String): JSONObject {
         val project = load(projectId)
         val scene = firstScene(project)
+        val previous = scene.optJSONObject("lighting")
         val lighting = defaultLighting(preset)
+        // Changing day/night presets must not silently detach an imported HDRI environment.
+        previous?.let { current ->
+            listOf("environmentIblPath", "environmentSkyboxPath", "environmentIntensityLux").forEach { key ->
+                if (current.has(key)) lighting.put(key, current.get(key))
+            }
+        }
         scene.put("lighting", lighting)
         save(project)
         return lighting
