@@ -92,6 +92,7 @@ class MultiModelSceneActivity : Activity() {
     private var timelinePlaying = true
     private var resumeTimelineAfterPause = false
     private var timelineStatus: TextView? = null
+    private var autoAdvanceButton: Button? = null
 
     private val frameCallback = object : Choreographer.FrameCallback {
         override fun doFrame(frameTimeNanos: Long) {
@@ -273,6 +274,7 @@ class MultiModelSceneActivity : Activity() {
                 setOnClickListener { advanceToNextScene(showMessage = true) }
             })
             playbackButtons.addView(Button(this).apply {
+                autoAdvanceButton = this
                 text = if (autoAdvanceScenes) "اتومات: هو" else "اتومات: نه"
                 isAllCaps = false
                 setOnClickListener {
@@ -583,6 +585,7 @@ class MultiModelSceneActivity : Activity() {
             val store = ProjectStore(this)
             val project = store.load(projectId)
             autoAdvanceScenes = project.optJSONObject("timeline")?.optBoolean("autoAdvanceScenes", true) ?: true
+            autoAdvanceButton?.text = if (autoAdvanceScenes) "اتومات: هو" else "اتومات: نه"
             val scene = store.activeScene(projectId)
             val allScenes = store.listScenes(projectId)
             val validSceneIds = allScenes.map { it.optString("id") }.toSet()
