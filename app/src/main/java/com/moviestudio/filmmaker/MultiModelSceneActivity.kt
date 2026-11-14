@@ -610,6 +610,8 @@ class MultiModelSceneActivity : Activity() {
                 timelinePlaying = true
             }
             activeCameraShotId = null
+            // Reset the previous scene's camera before applying this scene's first timed shot.
+            applyDefaultCamera()
             applyCameraForTimelinePosition()
             updateTimelineStatus()
             val objects = store.listSceneObjects(projectId)
