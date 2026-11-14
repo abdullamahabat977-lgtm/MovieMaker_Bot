@@ -848,15 +848,18 @@ class SceneEditorActivity : Activity() {
         val lighting = store.activeScene(projectId).optJSONObject("lighting") ?: JSONObject()
         val keys = listOf(
             "intensityLux", "red", "green", "blue",
-            "directionX", "directionY", "directionZ", "fillIntensityLux"
+            "directionX", "directionY", "directionZ", "fillIntensityLux",
+            "skyRed", "skyGreen", "skyBlue"
         )
         val captions = listOf(
             "د اصلي رڼا شدت (۵۰۰–۱۲۰۰۰۰ Lux)",
             "سور رنګ (۰–۱)", "شین رنګ (۰–۱)", "آبي رنګ (۰–۱)",
             "د رڼا لوری X (-۱ تر ۱)", "د رڼا لوری Y (-۱ تر ۱)", "د رڼا لوری Z (-۱ تر ۱)",
-            "مرستندویه رڼا (۰–۶۰۰۰۰ Lux)"
+            "مرستندویه رڼا (۰–۶۰۰۰۰ Lux)",
+            "د چاپېریال اسماني سور رنګ (۰–۱)", "د چاپېریال اسماني شین رنګ (۰–۱)",
+            "د چاپېریال اسماني آبي رنګ (۰–۱)"
         )
-        val defaults = listOf(85000.0, 1.0, 0.96, 0.88, -0.30, -0.90, -0.30, 9000.0)
+        val defaults = listOf(85000.0, 1.0, 0.96, 0.88, -0.30, -0.90, -0.30, 9000.0, 0.12, 0.16, 0.22)
         val fields = keys.mapIndexed { index, key ->
             EditText(this).apply {
                 setSingleLine(true)
