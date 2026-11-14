@@ -656,7 +656,7 @@ class SceneEditorActivity : Activity() {
                 try {
                     store.addTimelineClip(projectId, id, action, frames)
                     refreshPanels()
-                    status.text = "د $action کلیپ د $frames فریمونو مودې سره ثبت شو. دا لا د حقیقي skeletal playback سره نه دی تړل شوی."
+                    status.text = "د $action کلیپ د $frames فریمونو مودې سره ثبت شو؛ د 3D صحنې په لید کې یې د پلې / درول له لارې وګوره."
                 } catch (error: Exception) { toast(error.message ?: "کلیپ نه شو ورزیاتېدای") }
             }.show()
     }
