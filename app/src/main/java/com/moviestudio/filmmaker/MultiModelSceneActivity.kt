@@ -277,13 +277,22 @@ class MultiModelSceneActivity : Activity() {
                 isAllCaps = false
                 setOnClickListener {
                     autoAdvanceScenes = !autoAdvanceScenes
-                    text = if (autoAdvanceScenes) "اتومات: هو" else "اتومات: نه"
-                    Toast.makeText(
-                        this@MultiModelSceneActivity,
-                        if (autoAdvanceScenes) "صحنې به د هرې صحنې د Timeline په پای کې پرله‌پسې بدلېږي"
-                        else "اتومات صحنه‌بدلون بند شو",
-                        Toast.LENGTH_SHORT
-                    ).show()
+                    try {
+                        ProjectStore(this@MultiModelSceneActivity)
+                            .setAutoAdvanceScenes(projectId, autoAdvanceScenes)
+                        text = if (autoAdvanceScenes) "اتومات: هو" else "اتومات: نه"
+                        Toast.makeText(
+                            this@MultiModelSceneActivity,
+                            if (autoAdvanceScenes) "اتومات صحنه‌بدلون فعال شو او په پروژه کې خوندي شو"
+                            else "اتومات صحنه‌بدلون بند او په پروژه کې خوندي شو",
+                            Toast.LENGTH_SHORT
+                        ).show()
+                    } catch (error: Exception) {
+                        autoAdvanceScenes = !autoAdvanceScenes
+                        text = if (autoAdvanceScenes) "اتومات: هو" else "اتومات: نه"
+                        Toast.makeText(this@MultiModelSceneActivity,
+                            error.message ?: "د صحنو تنظیمات خوندي نه شول", Toast.LENGTH_LONG).show()
+                    }
                 }
             })
             playbackControls.addView(playbackButtons)
@@ -573,6 +582,7 @@ class MultiModelSceneActivity : Activity() {
         try {
             val store = ProjectStore(this)
             val project = store.load(projectId)
+            autoAdvanceScenes = project.optJSONObject("timeline")?.optBoolean("autoAdvanceScenes", true) ?: true
             val scene = store.activeScene(projectId)
             val allScenes = store.listScenes(projectId)
             val validSceneIds = allScenes.map { it.optString("id") }.toSet()
