@@ -275,10 +275,13 @@ class ProjectStore(context: Context) {
         listOf("name", "x", "y", "z", "scale", "rotationX", "rotationY", "rotationZ").forEach { key ->
             if (changes.has(key)) item.put(key, changes.get(key))
         }
-        item.put("scale", item.optDouble("scale", 1.0).coerceIn(0.25, 3.0))
-        item.put("x", item.optDouble("x").coerceIn(-3.0, 3.0))
-        item.put("y", item.optDouble("y").coerceIn(-1.0, 3.0))
-        item.put("z", item.optDouble("z").coerceIn(-3.0, 3.0))
+        val ground = firstScene(project).optJSONObject("ground") ?: JSONObject()
+        val halfWidth = (ground.optDouble("widthMeters", 6.0) / 2.0).coerceAtLeast(0.5)
+        val halfDepth = (ground.optDouble("depthMeters", 6.0) / 2.0).coerceAtLeast(0.5)
+        item.put("scale", item.optDouble("scale", 1.0).coerceIn(0.05, 100.0))
+        item.put("x", item.optDouble("x").coerceIn(-halfWidth, halfWidth))
+        item.put("y", item.optDouble("y").coerceIn(-10.0, 100.0))
+        item.put("z", item.optDouble("z").coerceIn(-halfDepth, halfDepth))
         listOf("rotationX", "rotationY", "rotationZ").forEach { key ->
             val normalized = ((item.optDouble(key) % 360.0) + 360.0) % 360.0
             item.put(key, normalized)
