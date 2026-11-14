@@ -42,6 +42,7 @@ class MultiModelSceneActivity : Activity() {
     private var loadingLabel: TextView? = null
     private var projectId: String = ""
     private var framePosted = false
+    private var omittedModelCount = 0
 
     private val frameCallback = object : Choreographer.FrameCallback {
         override fun doFrame(frameTimeNanos: Long) {
@@ -71,7 +72,8 @@ class MultiModelSceneActivity : Activity() {
                     }
                 }
             }
-            loadingLabel?.text = "د 3D توکو چمتووالی: $readyCount / ${models.size}"
+            loadingLabel?.text = "د 3D توکو چمتووالی: $readyCount / ${models.size}" +
+                if (omittedModelCount > 0) " • $omittedModelCount نور د حافظې د حد له امله نه ښودل کېږي" else ""
             modelViewer.render(frameTimeNanos)
             Choreographer.getInstance().postFrameCallback(this)
             framePosted = true
@@ -147,6 +149,7 @@ class MultiModelSceneActivity : Activity() {
         try {
             val objects = ProjectStore(this).listSceneObjects(projectId)
                 .filter { it.optString("modelPath").isNotBlank() }
+            omittedModelCount = 0
             if (objects.isEmpty()) {
                 loadingLabel?.text = "په دې پروژه کې حقیقي GLB ماډل نشته."
                 return
@@ -162,6 +165,7 @@ class MultiModelSceneActivity : Activity() {
                 totalBytes += file.length()
                 candidates.add(item to file)
             }
+            omittedModelCount = objects.size - candidates.size
             if (candidates.isEmpty()) {
                 loadingLabel?.text = "د ښودلو لپاره سم GLB فایل ونه موندل شو."
                 return
