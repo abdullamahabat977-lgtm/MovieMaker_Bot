@@ -73,6 +73,7 @@ class MultiModelSceneActivity : Activity() {
     private var materialProvider: UbershaderProvider? = null
     private val models = mutableListOf<SceneModel>()
     private val sceneLightEntities = mutableListOf<Int>()
+    private var sceneSkybox: com.google.android.filament.Skybox? = null
     private var loadingLabel: TextView? = null
     private var transitionOverlay: View? = null
     private var projectId: String = ""
@@ -190,9 +191,10 @@ class MultiModelSceneActivity : Activity() {
             val modelViewer = ModelViewer(surface)
             viewer = modelViewer
             surface.setOnTouchListener(modelViewer)
-            modelViewer.scene.skybox = com.google.android.filament.Skybox.Builder()
+            sceneSkybox = com.google.android.filament.Skybox.Builder()
                 .color(0.12f, 0.16f, 0.22f, 1.0f)
                 .build(modelViewer.engine)
+            modelViewer.scene.skybox = sceneSkybox
 
             val frame = FrameLayout(this)
             frame.addView(surface, FrameLayout.LayoutParams(
@@ -843,6 +845,20 @@ class MultiModelSceneActivity : Activity() {
 
     private fun applySceneLighting(modelViewer: ModelViewer, scene: JSONObject) {
         val config = scene.optJSONObject("lighting") ?: JSONObject()
+        val sky = com.google.android.filament.Skybox.Builder()
+            .color(
+                config.optDouble("skyRed", 0.12).toFloat().coerceIn(0f, 1f),
+                config.optDouble("skyGreen", 0.16).toFloat().coerceIn(0f, 1f),
+                config.optDouble("skyBlue", 0.22).toFloat().coerceIn(0f, 1f),
+                1.0f
+            )
+            .build(modelViewer.engine)
+        val previousSky = sceneSkybox
+        sceneSkybox = sky
+        modelViewer.scene.skybox = sky
+        if (previousSky != null && previousSky !== sky) {
+            try { modelViewer.engine.destroySkybox(previousSky) } catch (_: Exception) { }
+        }
         val red = config.optDouble("red", 1.0).toFloat().coerceIn(0f, 1f)
         val green = config.optDouble("green", 0.96).toFloat().coerceIn(0f, 1f)
         val blue = config.optDouble("blue", 0.88).toFloat().coerceIn(0f, 1f)
@@ -868,6 +884,27 @@ class MultiModelSceneActivity : Activity() {
             try { modelViewer.engine.destroyEntity(entity) } catch (_: Exception) { }
             try { EntityManager.get().destroy(entity) } catch (_: Exception) { }
             throw error
+        }
+
+        // A broad, shadow-free fill light softens dark faces without replacing the key light.
+        val fillIntensity = config.optDouble("fillIntensityLux", 9000.0)
+            .toFloat().coerceIn(0f, 60000f)
+        if (fillIntensity > 0f) {
+            val fillEntity = EntityManager.get().create()
+            try {
+                LightManager.Builder(LightManager.Type.DIRECTIONAL)
+                    .color(0.78f, 0.84f, 1.0f)
+                    .intensity(fillIntensity)
+                    .direction(-dx, -dy, -dz)
+                    .castShadows(false)
+                    .build(modelViewer.engine, fillEntity)
+                modelViewer.scene.addEntity(fillEntity)
+                sceneLightEntities.add(fillEntity)
+            } catch (error: Exception) {
+                try { modelViewer.engine.destroyEntity(fillEntity) } catch (_: Exception) { }
+                try { EntityManager.get().destroy(fillEntity) } catch (_: Exception) { }
+                throw error
+            }
         }
     }
 
