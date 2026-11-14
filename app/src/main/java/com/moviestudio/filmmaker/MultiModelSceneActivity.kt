@@ -341,12 +341,13 @@ class MultiModelSceneActivity : Activity() {
         animator: com.google.android.filament.gltfio.Animator,
         clip: PlaybackClip
     ): Int {
+        // The stored index is authoritative: two GLB animations may share the same label.
+        if (clip.animationIndex in 0 until animator.animationCount) return clip.animationIndex
         if (clip.animationName.isNotBlank()) {
             for (index in 0 until animator.animationCount) {
                 if (animator.getAnimationName(index).equals(clip.animationName, ignoreCase = true)) return index
             }
         }
-        if (clip.animationIndex in 0 until animator.animationCount) return clip.animationIndex
         val keywords = when (clip.action.lowercase()) {
             "idle" -> listOf("idle", "stand", "rest", "wait", "breath")
             "walk" -> listOf("walk", "walking")
@@ -425,7 +426,27 @@ class MultiModelSceneActivity : Activity() {
         val nextId = shot?.id
         if (nextId == activeCameraShotId) return
         activeCameraShotId = nextId
-        if (shot != null) applyCameraShot(shot.data, showMessage = false)
+        if (shot != null) {
+            applyCameraShot(shot.data, showMessage = false)
+        } else {
+            // Do not leave the last timed camera active after its shot has ended.
+            applyDefaultCamera()
+        }
+    }
+
+    private fun applyDefaultCamera() {
+        val modelViewer = viewer ?: return
+        val metrics = resources.displayMetrics
+        val aspect = (metrics.widthPixels.toDouble() / metrics.heightPixels.toDouble()).coerceAtLeast(0.1)
+        modelViewer.camera.lookAt(
+            0.0, 3.0, 2.0,
+            0.0, 1.0, -4.0,
+            0.0, 1.0, 0.0
+        )
+        modelViewer.camera.setProjection(
+            50.0, aspect, 0.1, 1000.0,
+            com.google.android.filament.Camera.Fov.VERTICAL
+        )
     }
 
     private fun applyCameraShot(shot: JSONObject, showMessage: Boolean = true) {
