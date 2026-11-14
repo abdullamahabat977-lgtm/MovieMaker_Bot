@@ -103,6 +103,7 @@ class SceneEditorActivity : Activity() {
         content.addView(label("د صحنې توکي", 17, true))
         content.addView(label("د انسان، حیوان، موټر، کور، ونې، فرنیچر او نورو شیانو حقیقي 3D ماډلونه د GLB 2.0 په بڼه وارد کړه. کارتوني نمونه‌یي شکلونه د فلم د توکو په توګه نه کارېږي. د صحنو ترتیب د فلم د پرله‌پسې پلې کېدو ترتیب دی؛ په 3D لید کې اتومات صحنه‌بدلون فعال یا بندولای شې.", 12))
         content.addView(button("＋ حقیقي 3D توکی واردول (GLB)") { chooseModelType() })
+        content.addView(label("په یو ځل تر ۸ GLB فایلونو پورې ټاکلای شې. ودانۍ، موټر، ونې او چاپېریال د GLB د متري واحدونو واقعي اندازه ساتي؛ د هر ماډل اندازه وروسته هم بدلولای شې.", 11))
         content.addView(button("🌐 د حقیقي 3D ماډلونو وړیا کتابتون") { openModelLibrary() })
         content.addView(button("ټاکل شوی حقیقي ماډل په 3D کې وګوره") { openSelectedRealisticModel() })
         content.addView(button("ټول حقیقي توکي په یوه 3D صحنه کې وګوره") { openWholeScene() })
@@ -138,6 +139,7 @@ class SceneEditorActivity : Activity() {
         scaleRow.addView(button("لوی ＋") { scale(0.1) }, weighted())
         scaleRow.addView(button("حذف") { deleteSelected() }, weighted())
         content.addView(scaleRow)
+        content.addView(button("د ماډل اندازه: واقعي / فټ") { toggleModelScaleMode() })
         val editRow = horizontal()
         editRow.addView(button("نوم بدلول") { renameSelected() }, weighted())
         editRow.addView(button("کاپي") { duplicateSelected() }, weighted())
@@ -692,6 +694,17 @@ class SceneEditorActivity : Activity() {
     private fun scale(delta: Double) {
         val item = selectedObject ?: run { toast("لومړی یو توکی وټاکه"); return }
         updateSelected(JSONObject().put("scale", item.optDouble("scale", 1.0) + delta))
+    }
+
+    private fun toggleModelScaleMode() {
+        val item = selectedObject ?: run { toast("لومړی یو حقیقي 3D ماډل وټاکه"); return }
+        val enabled = !item.optBoolean("preserveModelScale", false)
+        updateSelected(JSONObject().put("preserveModelScale", enabled))
+        status.text = if (enabled) {
+            "د GLB اصلي متري اندازه فعاله شوه؛ د 3D صحنې بیا پرانیستل یې ښکاره کوي."
+        } else {
+            "د ماډل فټ اندازه فعاله شوه؛ د 3D صحنې بیا پرانیستل یې ښکاره کوي."
+        }
     }
 
     private fun rotate(axis: String, delta: Double) {
