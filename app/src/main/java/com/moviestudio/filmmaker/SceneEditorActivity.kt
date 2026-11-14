@@ -90,6 +90,7 @@ class SceneEditorActivity : Activity() {
         content.addView(scenePanel)
         content.addView(label("د فلم د سټوډیو تنظیمات", 17, true))
         content.addView(button("📐 د ځمکې اندازه او د فلم وخت تنظیمول") { editProductionSettings() })
+        content.addView(button("🎞 د ویډیو اندازه، کیفیت او FPS تنظیمول") { editRenderSettings() })
         content.addView(label("د صحنې رڼا او فضا", 15, true))
         val lightingRow = horizontal()
         lightingRow.addView(button("☀️ ورځ") { setSceneLighting("day", "د ورځې رڼا") }, weighted())
@@ -802,6 +803,52 @@ class SceneEditorActivity : Activity() {
             store.updateSceneLighting(projectId, preset)
             status.text = "د فعاله صحنې $label تنظیمات خوندي شول؛ د 3D لید بیا پرانیستل یې عملي کوي."
         } catch (error: Exception) { toast(error.message ?: "د صحنې رڼا بدله نه شوه") }
+    }
+
+    private fun editRenderSettings() {
+        val settings = store.load(projectId).optJSONObject("project")?.optJSONObject("settings") ?: JSONObject()
+        val sizes = listOf(
+            "480p — 854 × 480",
+            "720p — 1280 × 720",
+            "1080p — 1920 × 1080"
+        )
+        val dimensions = listOf(854 to 480, 1280 to 720, 1920 to 1080)
+        val currentSize = dimensions.indexOf(settings.optInt("width", 1280) to settings.optInt("height", 720))
+            .coerceAtLeast(0)
+        val sizePicker = Spinner(this).apply {
+            adapter = ArrayAdapter(this@SceneEditorActivity, android.R.layout.simple_spinner_item, sizes).also {
+                it.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
+            }
+            setSelection(currentSize)
+        }
+        val frameRates = listOf(24, 30, 60)
+        val fpsPicker = Spinner(this).apply {
+            adapter = ArrayAdapter(this@SceneEditorActivity, android.R.layout.simple_spinner_item,
+                frameRates.map { "$it FPS" }).also {
+                it.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
+            }
+            setSelection(frameRates.indexOf(settings.optInt("fps", 24)).coerceAtLeast(0))
+        }
+        val panel = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(dp(18), dp(8), dp(18), dp(4))
+            addView(label("د ویډیو اندازه", 12, true))
+            addView(sizePicker)
+            addView(label("په هره ثانیه کې فریمونه (FPS)", 12, true))
+            addView(fpsPicker)
+            addView(label("دا تنظیمات د راتلونکي MP4 رینډر لپاره خوندي کېږي؛ د MP4 جوړولو وروستی سیستم لا د بشپړېدو په حال کې دی.", 11))
+        }
+        AlertDialog.Builder(this).setTitle("د فلم د رینډر تنظیمات")
+            .setView(panel)
+            .setNegativeButton("لغوه", null)
+            .setPositiveButton("تنظیمات خوندي کړه") { _, _ ->
+                try {
+                    val (width, height) = dimensions[sizePicker.selectedItemPosition]
+                    val fps = frameRates[fpsPicker.selectedItemPosition]
+                    store.updateRenderSettings(projectId, width, height, fps)
+                    status.text = "د ویډیو اندازه ${width}×${height} او ${fps} FPS خوندي شول."
+                } catch (error: Exception) { toast(error.message ?: "د ویډیو تنظیمات خوندي نه شول") }
+            }.show()
     }
 
     private fun editProductionSettings() {
