@@ -538,6 +538,8 @@ class ProjectStore(context: Context) {
             .put("name", cleanName)
             .put("format", "glb")
             .put("modelPath", relativePath)
+            // glTF defines linear units in meters; keep architectural/environment assets at real scale.
+            .put("preserveModelScale", modelType in setOf("building", "vehicle", "tree", "environment"))
             .put("x", position.first).put("y", 0.0).put("z", depth).put("scale", 1.0)
             .put("rotationX", 0.0).put("rotationY", 0.0).put("rotationZ", 0.0)
         try {
