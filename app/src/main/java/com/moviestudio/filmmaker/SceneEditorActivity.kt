@@ -295,10 +295,14 @@ class SceneEditorActivity : Activity() {
         val clips = scene.optJSONArray("timeline") ?: JSONArray()
         for (i in 0 until clips.length()) {
             val clip = clips.optJSONObject(i) ?: continue
+            val selectedAnimation = clip.optString("animationName").ifBlank {
+                if (clip.optInt("animationIndex", -1) >= 0) "Animation #${clip.optInt("animationIndex") + 1}"
+                else "اتومات انتخاب"
+            }
             val lineText = if (clip.has("startTime")) {
-                "${clip.optString("action")}  •  ${clip.optString("startTime")} – ${clip.optString("endTime")}  •  سرعت ${clip.optDouble("speed", 1.0)}x"
+                "${clip.optString("action")}  •  ${clip.optString("startTime")} – ${clip.optString("endTime")}  •  سرعت ${clip.optDouble("speed", 1.0)}x\nAnimation: $selectedAnimation"
             } else {
-                "${clip.optString("action")}  •  ${clip.optInt("startFrame")}–${clip.optInt("startFrame") + clip.optInt("durationFrames")} فریم"
+                "${clip.optString("action")}  •  ${clip.optInt("startFrame")}–${clip.optInt("startFrame") + clip.optInt("durationFrames")} فریم\nAnimation: $selectedAnimation"
             }
             val line = label(lineText, 13)
             timelinePanel.addView(line)
