@@ -88,6 +88,13 @@ class SceneEditorActivity : Activity() {
         content.addView(scenePanel)
         content.addView(label("د فلم د سټوډیو تنظیمات", 17, true))
         content.addView(button("📐 د ځمکې اندازه او د فلم وخت تنظیمول") { editProductionSettings() })
+        content.addView(label("د صحنې رڼا او فضا", 15, true))
+        val lightingRow = horizontal()
+        lightingRow.addView(button("☀️ ورځ") { setSceneLighting("day", "د ورځې رڼا") }, weighted())
+        lightingRow.addView(button("🌇 ماښام") { setSceneLighting("sunset", "د ماښام رڼا") }, weighted())
+        lightingRow.addView(button("🌙 شپه") { setSceneLighting("night", "د شپې رڼا") }, weighted())
+        lightingRow.addView(button("💡 سټوډیو") { setSceneLighting("studio", "د سټوډیو رڼا") }, weighted())
+        content.addView(lightingRow)
         content.addView(label("د صحنې توکي", 17, true))
         content.addView(label("د انسان، حیوان، موټر، کور، ونې، فرنیچر او نورو شیانو حقیقي 3D ماډلونه د GLB 2.0 په بڼه وارد کړه. کارتوني نمونه‌یي شکلونه د فلم د توکو په توګه نه کارېږي.", 12))
         content.addView(button("＋ حقیقي 3D توکی واردول (GLB)") { chooseModelType() })
@@ -626,6 +633,13 @@ class SceneEditorActivity : Activity() {
                     status.text = "د کمرې ځای او شاټ وخت خوندي شو؛ د وخت له مخې اتومات کټ او MP4 رینډر لا پاتې دي."
                 } catch (error: Exception) { toast(error.message ?: "کمره ثبت نه شوه") }
             }.show()
+    }
+
+    private fun setSceneLighting(preset: String, label: String) {
+        try {
+            store.updateSceneLighting(projectId, preset)
+            status.text = "د فعاله صحنې $label تنظیمات خوندي شول؛ د 3D لید بیا پرانیستل یې عملي کوي."
+        } catch (error: Exception) { toast(error.message ?: "د صحنې رڼا بدله نه شوه") }
     }
 
     private fun editProductionSettings() {
