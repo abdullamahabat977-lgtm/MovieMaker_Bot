@@ -183,10 +183,22 @@ class SceneEditorActivity : Activity() {
                     status.text = "اوس فعاله صحنه: $name"
                 } catch (error: Exception) { toast(error.message ?: "صحنه بدله نه شوه") }
             }, LinearLayout.LayoutParams(0, dp(46), 1f))
-            row.addView(button("نوم") { renameSceneDialog(scene) }, LinearLayout.LayoutParams(dp(66), dp(46)))
-            row.addView(button("حذف") { confirmRemoveScene(scene) }, LinearLayout.LayoutParams(dp(66), dp(46)))
+            row.addView(button("↑") { moveScene(scene, -1) }, LinearLayout.LayoutParams(dp(42), dp(46)))
+            row.addView(button("↓") { moveScene(scene, 1) }, LinearLayout.LayoutParams(dp(42), dp(46)))
+            row.addView(button("نوم") { renameSceneDialog(scene) }, LinearLayout.LayoutParams(dp(54), dp(46)))
+            row.addView(button("حذف") { confirmRemoveScene(scene) }, LinearLayout.LayoutParams(dp(54), dp(46)))
             scenePanel.addView(row)
         }
+    }
+
+    private fun moveScene(scene: JSONObject, direction: Int) {
+        try {
+            val moved = store.moveScene(projectId, scene.optString("id"), direction)
+            if (moved) {
+                refreshScenePanel()
+                status.text = "د صحنو ترتیب بدل شو؛ همدا ترتیب د فلم د صحنو لېست دی."
+            }
+        } catch (error: Exception) { toast(error.message ?: "د صحنې ترتیب بدل نه شو") }
     }
 
     private fun addSceneDialog() {
