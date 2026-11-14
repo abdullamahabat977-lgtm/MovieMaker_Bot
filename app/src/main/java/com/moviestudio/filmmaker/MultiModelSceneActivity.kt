@@ -87,6 +87,7 @@ class MultiModelSceneActivity : Activity() {
     private var activeCameraShotId: String? = null
     private var sceneSequenceIds: List<String> = emptyList()
     private var autoAdvanceScenes = true
+    private var sceneCameraDistance = 6.0
     private var timelineDurationSeconds = 0.0
     private var timelinePositionSeconds = 0.0
     private var timelineStartNanos = 0L
@@ -549,8 +550,9 @@ class MultiModelSceneActivity : Activity() {
         val modelViewer = viewer ?: return
         val metrics = resources.displayMetrics
         val aspect = (metrics.widthPixels.toDouble() / metrics.heightPixels.toDouble()).coerceAtLeast(0.1)
+        val distance = sceneCameraDistance.coerceIn(4.0, 250.0)
         modelViewer.camera.lookAt(
-            0.0, 3.0, 2.0,
+            0.0, 1.0 + maxOf(2.0, distance * 0.35), -4.0 + distance,
             0.0, 1.0, -4.0,
             0.0, 1.0, 0.0
         )
@@ -689,6 +691,7 @@ class MultiModelSceneActivity : Activity() {
                 candidates.add(item to file)
             }
             omittedModelCount = objects.size - candidates.size
+            sceneCameraDistance = 6.0
             if (candidates.isEmpty()) {
                 loadingLabel?.text = "د ښودلو لپاره سم GLB فایل ونه موندل شو."
                 return
@@ -722,6 +725,13 @@ class MultiModelSceneActivity : Activity() {
             }
             if (models.isEmpty()) {
                 loadingLabel?.text = "د پروژې هېڅ GLB ماډل رینډر نه شو."
+            } else {
+                // Fit the default camera to the largest imported object; this matters for full-size buildings.
+                applyDefaultCamera()
+                val activeShot = cameraShots.firstOrNull {
+                    timelinePositionSeconds >= it.startSeconds && timelinePositionSeconds < it.endSeconds
+                }
+                activeShot?.let { applyCameraShot(it.data, showMessage = false) }
             }
         } catch (error: Exception) {
             releaseModels()
@@ -748,6 +758,10 @@ class MultiModelSceneActivity : Activity() {
         // Building, vehicle, tree and environment GLBs keep glTF's meter-based dimensions.
         // Other imported assets retain the fit-to-preview behavior unless explicitly marked.
         val objectScale = item.optDouble("scale", 1.0).toFloat().coerceIn(0.05f, 100f)
+        sceneCameraDistance = maxOf(
+            sceneCameraDistance,
+            (maxExtent * fitScale * objectScale * 1.4f).toDouble()
+        )
         val matrix = FloatArray(16)
         android.opengl.Matrix.setRotateEulerM(
             matrix, 0,
@@ -959,6 +973,10 @@ class MultiModelSceneActivity : Activity() {
 
     override fun onDestroy() {
         releaseModels()
+        sceneSkybox?.let { skybox ->
+            try { viewer?.engine?.destroySkybox(skybox) } catch (_: Exception) { }
+        }
+        sceneSkybox = null
         super.onDestroy()
     }
 
