@@ -61,6 +61,7 @@ class MultiModelSceneActivity : Activity() {
     private var timelinePositionSeconds = 0.0
     private var timelineStartNanos = 0L
     private var timelinePlaying = true
+    private var resumeTimelineAfterPause = false
     private var timelineStatus: TextView? = null
 
     private val frameCallback = object : Choreographer.FrameCallback {
@@ -225,6 +226,13 @@ class MultiModelSceneActivity : Activity() {
     override fun onResume() {
         super.onResume()
         if (viewer != null && models.isEmpty()) loadProjectModels()
+        if (resumeTimelineAfterPause && timelineClips.isNotEmpty() &&
+            timelinePositionSeconds < timelineDurationSeconds) {
+            timelinePlaying = true
+            timelineStartNanos = System.nanoTime() -
+                (timelinePositionSeconds * 1_000_000_000.0).toLong()
+        }
+        resumeTimelineAfterPause = false
         if (viewer != null && !framePosted) {
             Choreographer.getInstance().postFrameCallback(frameCallback)
             framePosted = true
@@ -486,6 +494,14 @@ class MultiModelSceneActivity : Activity() {
     }
 
     override fun onPause() {
+        if (timelinePlaying && timelineStartNanos > 0L) {
+            timelinePositionSeconds = ((System.nanoTime() - timelineStartNanos).coerceAtLeast(0L) /
+                1_000_000_000.0).coerceAtMost(timelineDurationSeconds)
+            resumeTimelineAfterPause = timelinePositionSeconds < timelineDurationSeconds
+            timelinePlaying = false
+            timelineStartNanos = 0L
+            updateTimelineStatus()
+        }
         if (framePosted) {
             Choreographer.getInstance().removeFrameCallback(frameCallback)
             framePosted = false
