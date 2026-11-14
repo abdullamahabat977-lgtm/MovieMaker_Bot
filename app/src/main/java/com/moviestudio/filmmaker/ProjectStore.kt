@@ -1348,11 +1348,30 @@ class ProjectStore(context: Context) {
             val buffers = document.optJSONArray("buffers") ?: JSONArray()
             for (index in 0 until buffers.length()) {
                 val buffer = buffers.optJSONObject(index) ?: continue
-                if (!buffer.has("uri")) {
+                if (buffer.has("uri")) {
+                    require(buffer.optString("uri").startsWith("data:")) {
+                        "دا GLB له جلا بهرني buffer فایل سره تړلی دی؛ د ټولو معلوماتو لرونکی یوځای GLB وټاکه"
+                    }
+                } else {
                     require(binaryChunkLength >= 0L) { "د GLB داخلي buffer شته، خو BIN برخه نشته" }
                     val requiredBytes = buffer.optLong("byteLength", -1L)
                     require(requiredBytes >= 0L && requiredBytes <= binaryChunkLength) {
                         "د GLB داخلي buffer د BIN برخې له اندازې لوی دی"
+                    }
+                }
+            }
+
+            // A single selected GLB cannot bring along loose image files, so reject external textures.
+            val images = document.optJSONArray("images") ?: JSONArray()
+            for (index in 0 until images.length()) {
+                val image = images.optJSONObject(index) ?: continue
+                if (image.has("uri")) {
+                    require(image.optString("uri").startsWith("data:")) {
+                        "دا GLB جلا انځور/Texture فایل غواړي؛ داسې GLB وټاکه چې Texture یې دننه Embed وي"
+                    }
+                } else {
+                    require(image.has("bufferView")) {
+                        "د GLB د Texture سرچینه نه ده ټاکل شوې"
                     }
                 }
             }
