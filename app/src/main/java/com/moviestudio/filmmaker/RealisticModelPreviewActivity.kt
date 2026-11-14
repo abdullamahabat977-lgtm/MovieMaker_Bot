@@ -107,13 +107,14 @@ class RealisticModelPreviewActivity : Activity() {
             fun controlButton(text: String, action: () -> Unit) =
                 Button(this).apply { this.text = text; isAllCaps = false; setOnClickListener { action() } }
             controls.addView(controlButton("مخکینی") { selectAnimation(-1) })
-            animationStatus = android.widget.TextView(this).apply {
+            val statusLabel = android.widget.TextView(this).apply {
                 setTextColor(android.graphics.Color.WHITE)
                 textSize = 13f
                 gravity = Gravity.CENTER
                 setPadding(10, 0, 10, 0)
             }
-            controls.addView(animationStatus, android.widget.LinearLayout.LayoutParams(
+            animationStatus = statusLabel
+            controls.addView(statusLabel, android.widget.LinearLayout.LayoutParams(
                 android.widget.LinearLayout.LayoutParams.WRAP_CONTENT,
                 android.widget.LinearLayout.LayoutParams.WRAP_CONTENT
             ))
