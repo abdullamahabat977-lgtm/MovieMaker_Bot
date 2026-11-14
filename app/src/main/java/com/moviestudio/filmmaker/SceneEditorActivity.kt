@@ -777,7 +777,7 @@ class SceneEditorActivity : Activity() {
                         )
                     }
                     refreshPanels()
-                    status.text = "د کمرې ځای او شاټ وخت خوندي شو؛ د وخت له مخې اتومات کټ او MP4 رینډر لا پاتې دي."
+                    status.text = "د کمرې شاټ خوندي شو؛ د 3D لید د Timeline د پلې پر مهال به په ټاکلي وخت اتومات فعال شي. د MP4 وروستی رینډر لا پاتې دی."
                 } catch (error: Exception) { toast(error.message ?: "کمره ثبت نه شوه") }
             }.show()
     }
