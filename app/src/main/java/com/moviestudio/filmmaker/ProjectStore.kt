@@ -749,6 +749,37 @@ class ProjectStore(context: Context) {
             .put("shadows", true)
     }
 
+    fun updateRenderSettings(
+        projectId: String,
+        width: Int,
+        height: Int,
+        fps: Int
+    ): JSONObject {
+        require((width to height) in setOf(854 to 480, 1280 to 720, 1920 to 1080)) {
+            "د ویډیو اندازه باید 480p، 720p یا 1080p وي"
+        }
+        require(fps in setOf(24, 30, 60)) { "FPS باید 24، 30 یا 60 وي" }
+        val project = load(projectId)
+        val details = project.optJSONObject("project")
+            ?: throw IllegalStateException("د پروژې تنظیمات نشته")
+        val settings = details.optJSONObject("settings")
+            ?: JSONObject().also { details.put("settings", it) }
+        val oldFps = settings.optInt("fps", 24).coerceIn(1, 120)
+        // Preserve the real-time duration of older frame-based clips before changing project FPS.
+        val scenes = project.optJSONArray("scenes") ?: JSONArray()
+        for (sceneIndex in 0 until scenes.length()) {
+            val scene = scenes.optJSONObject(sceneIndex) ?: continue
+            val clips = scene.optJSONArray("timeline") ?: continue
+            for (clipIndex in 0 until clips.length()) {
+                val clip = clips.optJSONObject(clipIndex) ?: continue
+                if (!clip.has("startOffsetSeconds") && !clip.has("fps")) clip.put("fps", oldFps)
+            }
+        }
+        settings.put("width", width).put("height", height).put("fps", fps).put("renderMode", "3d")
+        save(project)
+        return JSONObject(settings.toString())
+    }
+
     fun updateProductionSettings(
         projectId: String,
         groundWidthMeters: Double,
@@ -864,8 +895,9 @@ class ProjectStore(context: Context) {
                 existingStart = (clockSeconds(existing.optString("startTime")) - filmStart).toDouble()
                 existingEnd = (clockSeconds(existing.optString("endTime")) - filmStart).toDouble()
             } else {
-                existingStart = existing.optInt("startFrame").toDouble() / fps.toDouble()
-                existingEnd = (existing.optInt("startFrame") + existing.optInt("durationFrames")).toDouble() / fps.toDouble()
+                val existingFps = existing.optInt("fps", fps).coerceIn(1, 120)
+                existingStart = existing.optInt("startFrame").toDouble() / existingFps.toDouble()
+                existingEnd = (existing.optInt("startFrame") + existing.optInt("durationFrames")).toDouble() / existingFps.toDouble()
             }
             require(newEndOffset <= existingStart || newStartOffset >= existingEnd) {
                 "د همدې کرکټر بل حرکت له دې وخت سره ټکر لري؛ وختونه جلا کړه"
@@ -881,6 +913,7 @@ class ProjectStore(context: Context) {
             .put("durationSeconds", end - start)
             .put("startFrame", (start - filmStart) * fps)
             .put("durationFrames", (end - start) * fps)
+            .put("fps", fps)
             .put("speed", speed)
             .put("animationIndex", animationIndex)
             .put("animationName", animationName.take(80))
@@ -889,7 +922,7 @@ class ProjectStore(context: Context) {
         val sorted = JSONArray()
         ordered.sortedBy { item ->
             if (item.has("startOffsetSeconds")) item.optDouble("startOffsetSeconds")
-            else item.optInt("startFrame").toDouble() / fps.toDouble()
+            else item.optInt("startFrame").toDouble() / item.optInt("fps", fps).coerceIn(1, 120).toDouble()
         }.forEach { sorted.put(it) }
         scene.put("timeline", sorted)
         save(project)
@@ -925,12 +958,23 @@ class ProjectStore(context: Context) {
         require(clips.length() < MAX_TIMELINE_CLIPS) {
             "په یوه صحنه کې تر ۵۰۰ زیات Timeline کلیپونه نه شي ثبتېدای"
         }
-        val start = (0 until clips.length()).mapNotNull { clips.optJSONObject(it) }
-            .maxOfOrNull { it.optInt("startFrame") + it.optInt("durationFrames") } ?: 0
+        val fps = (project.optJSONObject("project")?.optJSONObject("settings")?.optInt("fps", 24) ?: 24)
+            .coerceIn(1, 120)
+        val startSeconds = (0 until clips.length()).mapNotNull { clips.optJSONObject(it) }
+            .maxOfOrNull { existing ->
+                if (existing.has("startOffsetSeconds")) {
+                    existing.optDouble("startOffsetSeconds") + existing.optDouble("durationSeconds")
+                } else {
+                    val existingFps = existing.optInt("fps", fps).coerceIn(1, 120).toDouble()
+                    (existing.optInt("startFrame") + existing.optInt("durationFrames")).toDouble() / existingFps
+                }
+            } ?: 0.0
+        val start = kotlin.math.round(startSeconds * fps).toInt()
         val clip = JSONObject()
             .put("id", "clip_" + UUID.randomUUID().toString())
             .put("objectId", objectId).put("action", action)
             .put("startFrame", start).put("durationFrames", durationFrames)
+            .put("fps", fps)
             .put("animationIndex", animationIndex)
             .put("animationName", animationName.take(80))
         clips.put(clip)
