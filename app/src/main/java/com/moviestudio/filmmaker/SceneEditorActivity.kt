@@ -2,6 +2,7 @@ package com.moviestudio.filmmaker
 
 import android.app.Activity
 import android.content.Intent
+import android.media.MediaMetadataRetriever
 import android.app.AlertDialog
 import android.graphics.Color
 import android.os.Bundle
@@ -27,6 +28,7 @@ class SceneEditorActivity : Activity() {
     private lateinit var scenePanel: LinearLayout
     private lateinit var objectPanel: LinearLayout
     private lateinit var timelinePanel: LinearLayout
+    private lateinit var audioPanel: LinearLayout
     private lateinit var cameraPanel: LinearLayout
     private lateinit var status: TextView
     private var selectedObjectId: String? = null
@@ -149,6 +151,15 @@ class SceneEditorActivity : Activity() {
         content.addView(button("🕒 د کرکټر دقیق وخت، حرکت او سرعت تنظیمول") { chooseTimedMotion() })
         timelinePanel = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
         content.addView(timelinePanel)
+
+        content.addView(label("د غږ، خبرو اترو او موسیقۍ ټریکونه", 17, true).apply { setPadding(0, dp(14), 0, dp(4)) })
+        content.addView(label("غږ فایلونه له موبایل څخه وارد کړه، د فلم په وخت کې یې ځای پر ځای کړه او د هر ټریک حجم وټاکه. فایلونه یوازې په همدې پروژې کې محلي ساتل کېږي.", 12))
+        val audioButtons = horizontal()
+        audioButtons.addView(button("＋ غږ واردول") { pickAudioFile() }, weighted())
+        audioButtons.addView(button("غږ Timeline ته") { chooseAudioClip() }, weighted())
+        content.addView(audioButtons)
+        audioPanel = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
+        content.addView(audioPanel)
 
         content.addView(label("د فلم کمرې او شاټونه", 17, true).apply { setPadding(0, dp(14), 0, dp(4)) })
         content.addView(label("د کمرې نوم، ځای، د لید هدف، FOV او د شاټ وخت ثبت کړه. د 3D صحنې په لید کې شاټونه د فلم د مهالویش له مخې اتومات بدلېږي؛ لاسي انتخاب هم شته.", 12))
@@ -298,6 +309,28 @@ class SceneEditorActivity : Activity() {
                 } catch (error: Exception) { toast(error.message ?: "حذف ناکام شو") }
             })
         }
+        audioPanel.removeAllViews()
+        val audioClips = scene.optJSONArray("audioTracks") ?: JSONArray()
+        for (index in 0 until audioClips.length()) {
+            val clip = audioClips.optJSONObject(index) ?: continue
+            val typeLabel = when (clip.optString("trackType")) {
+                "dialogue" -> "خبرې اترې"
+                "music" -> "موسیقي"
+                else -> "غږیز اغېز"
+            }
+            audioPanel.addView(label(
+                "🔊 ${clip.optString("name")} • $typeLabel • ${clip.optString("startTime")} • حجم ${(clip.optDouble("volume", 1.0) * 100).toInt()}%",
+                12
+            ))
+            audioPanel.addView(button("دا غږ کلیپ حذف کړه") {
+                try {
+                    store.removeAudioClip(projectId, clip.optString("id"))
+                    refreshPanels()
+                    status.text = "د غږ کلیپ حذف شو."
+                } catch (error: Exception) { toast(error.message ?: "د غږ کلیپ حذف نه شو") }
+            })
+        }
+        if (audioClips.length() == 0) audioPanel.addView(label("تر اوسه غږ ټریک نشته.", 12))
         cameraPanel.removeAllViews()
         val cameras = scene.optJSONArray("cameraShots") ?: JSONArray()
         for (i in 0 until cameras.length()) {
@@ -402,6 +435,87 @@ class SceneEditorActivity : Activity() {
             .show()
     }
 
+    private fun pickAudioFile() {
+        val intent = Intent(Intent.ACTION_OPEN_DOCUMENT).apply {
+            addCategory(Intent.CATEGORY_OPENABLE)
+            type = "audio/*"
+            putExtra(Intent.EXTRA_MIME_TYPES, arrayOf(
+                "audio/mpeg", "audio/mp4", "audio/x-m4a", "audio/wav",
+                "audio/x-wav", "audio/aac", "audio/ogg", "audio/flac"
+            ))
+        }
+        startActivityForResult(intent, REQUEST_IMPORT_AUDIO)
+    }
+
+    private fun chooseAudioClip() {
+        val assets = store.listAudioAssets(projectId)
+        if (assets.isEmpty()) {
+            toast("لومړی د «غږ واردول» تڼۍ وکاروه")
+            return
+        }
+        val labels = assets.map { "${it.optString("name")} • ${it.optString("format").uppercase()}" }.toTypedArray()
+        AlertDialog.Builder(this).setTitle("کوم غږ Timeline ته ورزیاتوې؟")
+            .setItems(labels) { _, which -> assets.getOrNull(which)?.let { showAudioTimingEditor(it) } }
+            .setNegativeButton("لغوه", null).show()
+    }
+
+    private fun showAudioTimingEditor(asset: JSONObject) {
+        val scene = store.activeScene(projectId)
+        val production = scene.optJSONObject("production") ?: JSONObject()
+        val start = EditText(this).apply {
+            setSingleLine(true)
+            setText(production.optString("startTime", "09:00:00"))
+            hint = "HH:mm:ss"
+        }
+        val volume = EditText(this).apply {
+            setSingleLine(true)
+            inputType = android.text.InputType.TYPE_CLASS_NUMBER or android.text.InputType.TYPE_NUMBER_FLAG_DECIMAL
+            setText("1.0")
+        }
+        val trackOptions = listOf("خبرې اترې", "موسیقي", "غږیز اغېز")
+        val trackTypes = listOf("dialogue", "music", "effect")
+        val typePicker = Spinner(this).apply {
+            adapter = ArrayAdapter(this@SceneEditorActivity, android.R.layout.simple_spinner_item, trackOptions).also {
+                it.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
+            }
+        }
+        val panel = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(dp(18), dp(8), dp(18), dp(4))
+            addView(label("د غږ پیل (HH:mm:ss)", 12, true))
+            addView(start)
+            addView(label("حجم (۰ تر ۱، لکه ۰.۸)", 12, true))
+            addView(volume)
+            addView(label("د غږ ټریک ډول", 12, true))
+            addView(typePicker)
+        }
+        AlertDialog.Builder(this).setTitle("د غږ Timeline تنظیمول")
+            .setView(panel).setNegativeButton("لغوه", null)
+            .setPositiveButton("غږ ثبت کړه") { _, _ ->
+                try {
+                    val level = volume.text.toString().toDoubleOrNull()
+                        ?: throw IllegalArgumentException("د غږ حجم سم ولیکه")
+                    val base = store.projectDirectory(projectId).canonicalFile
+                    val audioFile = java.io.File(base, asset.optString("path")).canonicalFile
+                    require(audioFile.path.startsWith(base.path + java.io.File.separator) && audioFile.isFile) {
+                        "د غږ فایل ونه موندل شو"
+                    }
+                    val retriever = MediaMetadataRetriever()
+                    val durationMillis = try {
+                        retriever.setDataSource(audioFile.absolutePath)
+                        retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION)?.toLongOrNull()
+                            ?: throw IllegalArgumentException("د غږ موده ونه پېژندل شوه")
+                    } finally { retriever.release() }
+                    store.addAudioClip(
+                        projectId, asset.optString("id"), start.text.toString().trim(),
+                        durationMillis, level, trackTypes[typePicker.selectedItemPosition]
+                    )
+                    refreshPanels()
+                    status.text = "غږ د فلم په Timeline کې ثبت شو."
+                } catch (error: Exception) { toast(error.message ?: "غږ Timeline ته ورزیات نه شو") }
+            }.show()
+    }
+
     private fun pickRealisticModel() {
         val intent = Intent(Intent.ACTION_OPEN_DOCUMENT).apply {
             addCategory(Intent.CATEGORY_OPENABLE)
@@ -444,23 +558,40 @@ class SceneEditorActivity : Activity() {
     @Deprecated("Uses the compatible document picker API for older Android versions")
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
-        if (requestCode != REQUEST_IMPORT_GLB || resultCode != RESULT_OK) return
+        if (resultCode != RESULT_OK) return
         val uri = data?.data ?: return
-        try {
-            val stream = contentResolver.openInputStream(uri) ?: throw IllegalStateException("فایل نه پرانیستل کېږي")
-            val name = contentResolver.query(uri, arrayOf(OpenableColumns.DISPLAY_NAME), null, null, null)?.use { cursor ->
-                if (cursor.moveToFirst()) cursor.getString(0) else null
-            } ?: "3D-${pendingModelType}.glb"
-            val imported = store.importSceneModel(projectId, stream, name, pendingModelType)
-            selectedObjectId = imported.optString("id")
-            selectedObject = imported
-            refreshPanels()
-            status.text = "حقیقي GLB ماډل په موبایل کې وارد او خوندي شو."
-            toast("حقیقي 3D ماډل وارد شو")
-        } catch (error: Exception) {
-            toast(error.message ?: "د حقیقي 3D ماډل واردول ناکام شول")
+        when (requestCode) {
+            REQUEST_IMPORT_GLB -> try {
+                val stream = contentResolver.openInputStream(uri)
+                    ?: throw IllegalStateException("فایل نه پرانیستل کېږي")
+                val name = queryDisplayName(uri, "3D-${pendingModelType}.glb")
+                val imported = store.importSceneModel(projectId, stream, name, pendingModelType)
+                selectedObjectId = imported.optString("id")
+                selectedObject = imported
+                refreshPanels()
+                status.text = "حقیقي GLB ماډل په موبایل کې وارد او خوندي شو."
+                toast("حقیقي 3D ماډل وارد شو")
+            } catch (error: Exception) {
+                toast(error.message ?: "د حقیقي 3D ماډل واردول ناکام شول")
+            }
+            REQUEST_IMPORT_AUDIO -> try {
+                val stream = contentResolver.openInputStream(uri)
+                    ?: throw IllegalStateException("غږ فایل نه پرانیستل کېږي")
+                val name = queryDisplayName(uri, "audio.m4a")
+                val imported = store.importAudioAsset(projectId, stream, name, contentResolver.getType(uri))
+                refreshPanels()
+                status.text = "غږ فایل په محلي پروژه کې خوندي شو: ${imported.optString("name")}"
+                toast("غږ فایل وارد شو؛ اوس یې Timeline ته ورزیات کړه")
+            } catch (error: Exception) {
+                toast(error.message ?: "د غږ فایل واردول ناکام شول")
+            }
         }
     }
+
+    private fun queryDisplayName(uri: android.net.Uri, fallback: String): String =
+        contentResolver.query(uri, arrayOf(OpenableColumns.DISPLAY_NAME), null, null, null)?.use { cursor ->
+            if (cursor.moveToFirst()) cursor.getString(0) else null
+        } ?: fallback
 
     private fun nudge(axis: String, delta: Double) {
         val item = selectedObject ?: run { toast("لومړی یو توکی وټاکه"); return }
@@ -836,5 +967,9 @@ class SceneEditorActivity : Activity() {
     private fun toast(message: String) =
         Toast.makeText(this, message, Toast.LENGTH_LONG).show()
 
-    companion object { const val EXTRA_PROJECT_ID = "project_id"; private const val REQUEST_IMPORT_GLB = 7301 }
+    companion object {
+        const val EXTRA_PROJECT_ID = "project_id"
+        private const val REQUEST_IMPORT_GLB = 7301
+        private const val REQUEST_IMPORT_AUDIO = 7302
+    }
 }
