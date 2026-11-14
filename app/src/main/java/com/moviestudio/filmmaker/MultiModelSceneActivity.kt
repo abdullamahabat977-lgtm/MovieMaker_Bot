@@ -218,9 +218,14 @@ class MultiModelSceneActivity : Activity() {
         val fitScale = if (maxExtent > 0.0001f) 2f / maxExtent else 1f
         val objectScale = item.optDouble("scale", 1.0).toFloat().coerceIn(0.25f, 3f)
         val matrix = FloatArray(16)
-        matrix[0] = fitScale * objectScale
-        matrix[5] = fitScale * objectScale
-        matrix[10] = fitScale * objectScale
+        android.opengl.Matrix.setRotateEulerM(
+            matrix, 0,
+            item.optDouble("rotationX").toFloat(),
+            item.optDouble("rotationY").toFloat(),
+            item.optDouble("rotationZ").toFloat()
+        )
+        val finalScale = fitScale * objectScale
+        for (column in 0..2) for (row in 0..2) matrix[column * 4 + row] *= finalScale
         matrix[12] = -center[0] * fitScale + item.optDouble("x").toFloat()
         matrix[13] = -center[1] * fitScale + item.optDouble("y").toFloat()
         matrix[14] = -center[2] * fitScale - 4f + item.optDouble("z").toFloat()
