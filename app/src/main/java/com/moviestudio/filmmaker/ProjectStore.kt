@@ -448,6 +448,28 @@ class ProjectStore(context: Context) {
         require(end - start <= 24 * 60 * 60) { "د فلم موده تر ۲۴ ساعتونو زیاته نه شي کېدای" }
         val project = load(projectId)
         val scene = firstScene(project)
+
+        // Do not silently invalidate camera shots or timed movement when the film clock changes.
+        val existingClips = scene.optJSONArray("timeline") ?: JSONArray()
+        for (index in 0 until existingClips.length()) {
+            val clip = existingClips.optJSONObject(index) ?: continue
+            if (!clip.has("startTime") || !clip.has("endTime")) continue
+            val clipStart = clockSeconds(clip.optString("startTime"))
+            val clipEnd = clockSeconds(clip.optString("endTime"))
+            require(clipStart >= start && clipEnd <= end) {
+                "د فلم نوی وخت د موجود Timeline حرکت له وخت سره ټکر لري؛ لومړی هغه کلیپ سم یا حذف کړه"
+            }
+        }
+        val existingCameras = scene.optJSONArray("cameraShots") ?: JSONArray()
+        for (index in 0 until existingCameras.length()) {
+            val shot = existingCameras.optJSONObject(index) ?: continue
+            val shotStart = clockSeconds(shot.optString("startTime"))
+            val shotEnd = clockSeconds(shot.optString("endTime"))
+            require(shotStart >= start && shotEnd <= end) {
+                "د فلم نوی وخت د موجودې کمرې له شاټ سره ټکر لري؛ لومړی هغه شاټ سم یا حذف کړه"
+            }
+        }
+
         scene.put("ground", JSONObject()
             .put("widthMeters", groundWidthMeters)
             .put("depthMeters", groundDepthMeters)
@@ -499,6 +521,9 @@ class ProjectStore(context: Context) {
         val fps = (project.optJSONObject("project")?.optJSONObject("settings")?.optInt("fps", 24) ?: 24)
             .coerceIn(1, 120)
         val clips = scene.optJSONArray("timeline") ?: JSONArray().also { scene.put("timeline", it) }
+        require(clips.length() < MAX_TIMELINE_CLIPS) {
+            "په یوه صحنه کې تر ۵۰۰ زیات Timeline کلیپونه نه شي ثبتېدای"
+        }
         for (index in 0 until clips.length()) {
             val existing = clips.optJSONObject(index) ?: continue
             if (existing.optString("objectId") != objectId ||
@@ -550,6 +575,9 @@ class ProjectStore(context: Context) {
             "ټاکل شوی کرکټر یا توکی په صحنه کې نشته"
         }
         val clips = scene.optJSONArray("timeline") ?: JSONArray().also { scene.put("timeline", it) }
+        require(clips.length() < MAX_TIMELINE_CLIPS) {
+            "په یوه صحنه کې تر ۵۰۰ زیات Timeline کلیپونه نه شي ثبتېدای"
+        }
         val start = (0 until clips.length()).mapNotNull { clips.optJSONObject(it) }
             .maxOfOrNull { it.optInt("startFrame") + it.optInt("durationFrames") } ?: 0
         val clip = JSONObject()
@@ -680,6 +708,7 @@ class ProjectStore(context: Context) {
         const val MAX_MODEL_BYTES = 40L * 1024L * 1024L
         const val MAX_PROJECT_MODEL_BYTES = 256L * 1024L * 1024L
         const val MAX_SCENE_OBJECTS = 32
+        const val MAX_TIMELINE_CLIPS = 500
     }
 
     private fun timestamp(): String =
