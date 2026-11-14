@@ -993,10 +993,12 @@ class SceneEditorActivity : Activity() {
 
     private fun addClip(action: String) {
         val id = selectedObjectId ?: run { toast("لومړی یو کرکټر یا توکی وټاکه"); return }
+        val currentFps = (store.load(projectId).optJSONObject("project")
+            ?.optJSONObject("settings")?.optInt("fps", 24) ?: 24).coerceIn(1, 120)
         val durationInput = EditText(this).apply {
             setSingleLine(true)
             inputType = android.text.InputType.TYPE_CLASS_NUMBER
-            setText("48")
+            setText((currentFps * 2).toString())
             hint = "د فریمونو شمېر"
         }
         val animationNames = try { store.listModelAnimations(projectId, id) }
@@ -1010,7 +1012,7 @@ class SceneEditorActivity : Activity() {
         val prompt = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
             setPadding(dp(20), dp(8), dp(20), dp(4))
-            addView(label("د کلیپ موده په فریمونو کې (۲۴ فریم = ۱ ثانیه)", 13))
+            addView(label("د کلیپ موده په فریمونو کې ($currentFps FPS؛ ${currentFps} فریم = ۱ ثانیه)", 13))
             addView(durationInput)
             addView(label("د GLB اصلي Animation وټاکه", 12, true))
             addView(animationPicker)
