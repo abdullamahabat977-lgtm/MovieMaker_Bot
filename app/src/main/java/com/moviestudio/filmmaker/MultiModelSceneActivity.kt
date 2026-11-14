@@ -921,10 +921,18 @@ class MultiModelSceneActivity : Activity() {
             val fillEntity = EntityManager.get().create()
             try {
                 LightManager.Builder(LightManager.Type.POINT)
-                    .color(0.78f, 0.84f, 1.0f)
+                    .color(
+                        config.optDouble("fillRed", 0.78).toFloat().coerceIn(0f, 1f),
+                        config.optDouble("fillGreen", 0.84).toFloat().coerceIn(0f, 1f),
+                        config.optDouble("fillBlue", 1.0).toFloat().coerceIn(0f, 1f)
+                    )
                     .intensity(fillIntensity)
-                    .position(4.0f, 5.0f, 1.5f)
-                    .falloff(15.0f)
+                    .position(
+                        config.optDouble("fillX", 4.0).toFloat().coerceIn(-1000f, 1000f),
+                        config.optDouble("fillY", 5.0).toFloat().coerceIn(-1000f, 1000f),
+                        config.optDouble("fillZ", 1.5).toFloat().coerceIn(-1000f, 1000f)
+                    )
+                    .falloff(config.optDouble("fillFalloff", 15.0).toFloat().coerceIn(1f, 1000f))
                     .castShadows(false)
                     .build(modelViewer.engine, fillEntity)
                 modelViewer.scene.addEntity(fillEntity)
