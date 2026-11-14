@@ -403,7 +403,10 @@ class SceneEditorActivity : Activity() {
             "حقیقي موټر — Car Concept (CC BY 4.0)",
             "تاریخي او سیمه‌ییزې ودانۍ (CC BY-SA 4.0)",
             "د Khronos وړیا GLB ماډلونو کتلاګ (د هر ماډل جواز وګوره)",
-            "د Poly Haven فوتوریالیستي ماډلونه (CC0؛ GLB بڼه وګوره)"
+            "د Poly Haven فوتوریالیستي ماډلونه (CC0؛ GLB بڼه وګوره)",
+            "واقعي دوه پوړیز کور (CC0، GLB، 2.7 MB)",
+            "واقعي عامه کتابتون ودانۍ (CC0، GLB، 26.4 MB)",
+            "د دوو لینونو سړک او پلي‌لارې (CC0، GLB، 6.7 MB)"
         )
         val urls = arrayOf(
             "https://www.innerscene.com/tools/library/3d-parts/daniel-3d-person-standing-casual-f788af5a",
@@ -413,7 +416,10 @@ class SceneEditorActivity : Activity() {
             "https://github.com/KhronosGroup/glTF-Sample-Assets/blob/main/Models/CarConcept/glTF-Binary/CarConcept.glb",
             "https://github.com/bilol-makhmudov/monuments",
             "https://github.khronos.org/glTF-Assets/",
-            "https://polyhaven.com/models"
+            "https://polyhaven.com/models",
+            "https://www.innerscene.com/tools/library/3d-parts/3bhk-house-on-a-60-x-120-ft-plot-3d-model-163b8736",
+            "https://www.innerscene.com/tools/library/3d-parts/library-building-362b4104",
+            "https://www.innerscene.com/tools/library/3d-parts/two-lane-straight-road-with-markings-8d2ba089"
         )
         AlertDialog.Builder(this)
             .setTitle("د حقیقي 3D ماډلونو کتابتون")
