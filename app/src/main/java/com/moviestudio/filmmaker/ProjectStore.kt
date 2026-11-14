@@ -84,6 +84,7 @@ class ProjectStore(context: Context) {
             .put("objects", JSONArray())
             .put("timeline", JSONArray())
             .put("cameraShots", JSONArray())
+            .put("audioTracks", JSONArray())
             .put("lighting", defaultLighting("day"))
         val project = JSONObject()
             .put("schemaVersion", 1)
@@ -221,6 +222,124 @@ class ProjectStore(context: Context) {
         val order = JSONArray()
         for (index in 0 until kept.length()) order.put(kept.optJSONObject(index)?.optString("id"))
         project.optJSONObject("timeline")?.put("sceneOrder", order)
+        save(project)
+    }
+
+    fun listAudioAssets(projectId: String): List<JSONObject> {
+        val assets = load(projectId).optJSONArray("assets") ?: JSONArray()
+        return (0 until assets.length()).mapNotNull { index ->
+            val asset = assets.optJSONObject(index) ?: return@mapNotNull null
+            if (asset.optString("type") == "audio") JSONObject(asset.toString()) else null
+        }
+    }
+
+    fun importAudioAsset(
+        projectId: String,
+        source: InputStream,
+        displayName: String,
+        mimeType: String?
+    ): JSONObject {
+        val extension = displayName.substringAfterLast('.', "").lowercase(Locale.US)
+        require(extension in setOf("mp3", "m4a", "wav", "aac", "ogg", "flac")) {
+            "د غږ فایل باید MP3، M4A، WAV، AAC، OGG یا FLAC وي"
+        }
+        val projectFolder = projectFolder(projectId)
+        val audioFolder = File(projectFolder, "assets/audio").apply { mkdirs() }
+        val file = File(audioFolder, "audio_" + UUID.randomUUID().toString() + "." + extension)
+        try {
+            source.use { input ->
+                file.outputStream().use { output ->
+                    val buffer = ByteArray(64 * 1024)
+                    var total = 0L
+                    while (true) {
+                        val count = input.read(buffer)
+                        if (count < 0) break
+                        total += count
+                        require(total <= MAX_AUDIO_BYTES) { "د غږ فایل له ۱۰۰ MB څخه لوی دی" }
+                        output.write(buffer, 0, count)
+                    }
+                }
+            }
+            require(file.length() > 0L) { "د غږ فایل تش دی" }
+            val project = load(projectId)
+            val assets = project.optJSONArray("assets") ?: JSONArray().also { project.put("assets", it) }
+            val asset = JSONObject()
+                .put("id", "audio_" + UUID.randomUUID().toString())
+                .put("type", "audio")
+                .put("format", extension)
+                .put("mimeType", mimeType.orEmpty().take(100))
+                .put("name", displayName.substringBeforeLast('.').take(80).ifBlank { "غږ" })
+                .put("path", "assets/audio/" + file.name)
+                .put("sizeBytes", file.length())
+            assets.put(asset)
+            save(project)
+            return JSONObject(asset.toString())
+        } catch (error: Exception) {
+            file.delete()
+            throw error
+        }
+    }
+
+    fun addAudioClip(
+        projectId: String,
+        assetId: String,
+        startTime: String,
+        durationMillis: Long,
+        volume: Double,
+        trackType: String
+    ): JSONObject {
+        require(durationMillis in 1L..(6L * 60L * 60L * 1000L)) { "د غږ موده ناسمه ده" }
+        require(volume in 0.0..1.0) { "د غږ حجم باید له ۰ تر ۱۰۰ سلنې وي" }
+        require(trackType in setOf("dialogue", "music", "effect")) { "د غږ ټریک ډول ناسم دی" }
+        val project = load(projectId)
+        val asset = listAudioAssets(projectId).firstOrNull { it.optString("id") == assetId }
+            ?: throw IllegalArgumentException("غږ فایل په پروژه کې ونه موندل شو")
+        val path = asset.optString("path")
+        val base = projectFolder(projectId).canonicalFile
+        val audioFile = File(base, path).canonicalFile
+        require(audioFile.path.startsWith(base.path + File.separator) && audioFile.isFile) {
+            "د غږ فایل له ذخیرې څخه ورک دی"
+        }
+        val scene = firstScene(project)
+        val start = clockSeconds(startTime)
+        val production = scene.optJSONObject("production")
+        val filmStart = production?.let { clockSeconds(it.optString("startTime")) } ?: start
+        val filmEnd = production?.let { clockSeconds(it.optString("endTime")) }
+        require(start >= filmStart) { "د غږ پیل باید د فلم له پیل څخه مخکې نه وي" }
+        val startOffset = (start - filmStart).toDouble()
+        val durationSeconds = durationMillis / 1000.0
+        if (filmEnd != null) require(startOffset + durationSeconds <= (filmEnd - filmStart)) {
+            "د غږ پای د فلم له ټاکلي وخت څخه بهر دی"
+        }
+        val clips = scene.optJSONArray("audioTracks") ?: JSONArray().also { scene.put("audioTracks", it) }
+        require(clips.length() < MAX_AUDIO_CLIPS) { "په یوه صحنه کې تر ۱۰۰ زیات غږ کلیپونه نه شي ثبتېدای" }
+        val clip = JSONObject()
+            .put("id", "audio_clip_" + UUID.randomUUID().toString())
+            .put("assetId", assetId)
+            .put("name", asset.optString("name"))
+            .put("path", path)
+            .put("trackType", trackType)
+            .put("startTime", startTime)
+            .put("startOffsetSeconds", startOffset)
+            .put("durationSeconds", durationSeconds)
+            .put("volume", volume)
+        clips.put(clip)
+        save(project)
+        return clip
+    }
+
+    fun removeAudioClip(projectId: String, clipId: String) {
+        val project = load(projectId)
+        val scene = firstScene(project)
+        val old = scene.optJSONArray("audioTracks") ?: JSONArray()
+        val kept = JSONArray()
+        var removed = false
+        for (index in 0 until old.length()) {
+            val clip = old.optJSONObject(index) ?: continue
+            if (clip.optString("id") == clipId) removed = true else kept.put(clip)
+        }
+        require(removed) { "د غږ کلیپ ونه موندل شو" }
+        scene.put("audioTracks", kept)
         save(project)
     }
 
@@ -836,6 +955,7 @@ class ProjectStore(context: Context) {
         if (!scene.has("objects")) scene.put("objects", JSONArray())
         if (!scene.has("timeline")) scene.put("timeline", JSONArray())
         if (!scene.has("cameraShots")) scene.put("cameraShots", JSONArray())
+        if (!scene.has("audioTracks")) scene.put("audioTracks", JSONArray())
         if (!scene.has("lighting")) scene.put("lighting", defaultLighting("day"))
         return scene
     }
@@ -918,6 +1038,8 @@ class ProjectStore(context: Context) {
         const val MAX_SCENE_OBJECTS = 32
         const val MAX_TIMELINE_CLIPS = 500
         const val MAX_SCENES = 30
+        const val MAX_AUDIO_CLIPS = 100
+        const val MAX_AUDIO_BYTES = 100L * 1024L * 1024L
     }
 
     private fun timestamp(): String =
