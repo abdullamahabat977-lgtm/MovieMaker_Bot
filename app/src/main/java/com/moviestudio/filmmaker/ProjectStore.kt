@@ -158,6 +158,27 @@ class ProjectStore(context: Context) {
         return scene
     }
 
+    fun moveScene(projectId: String, sceneId: String, direction: Int): Boolean {
+        require(direction == -1 || direction == 1) { "د صحنې د حرکت لوری ناسم دی" }
+        val project = load(projectId)
+        val old = project.optJSONArray("scenes") ?: JSONArray()
+        val ordered = (0 until old.length()).mapNotNull { old.optJSONObject(it) }.toMutableList()
+        val index = ordered.indexOfFirst { it.optString("id") == sceneId }
+        require(index >= 0) { "صحنه ونه موندل شوه" }
+        val target = index + direction
+        if (target !in ordered.indices) return false
+        val moving = ordered.removeAt(index)
+        ordered.add(target, moving)
+        val updated = JSONArray()
+        ordered.forEach { updated.put(it) }
+        project.put("scenes", updated)
+        val order = JSONArray()
+        ordered.forEach { order.put(it.optString("id")) }
+        project.optJSONObject("timeline")?.put("sceneOrder", order)
+        save(project)
+        return true
+    }
+
     fun renameScene(projectId: String, sceneId: String, name: String): JSONObject {
         val cleanName = name.trim()
         require(cleanName.isNotEmpty()) { "د صحنې نوم تش نه شي پاتې کېدای" }
