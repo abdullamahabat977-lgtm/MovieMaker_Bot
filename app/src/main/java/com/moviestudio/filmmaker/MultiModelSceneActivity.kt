@@ -892,10 +892,11 @@ class MultiModelSceneActivity : Activity() {
         if (fillIntensity > 0f) {
             val fillEntity = EntityManager.get().create()
             try {
-                LightManager.Builder(LightManager.Type.DIRECTIONAL)
+                LightManager.Builder(LightManager.Type.POINT)
                     .color(0.78f, 0.84f, 1.0f)
                     .intensity(fillIntensity)
-                    .direction(-dx, -dy, -dz)
+                    .position(4.0f, 5.0f, 1.5f)
+                    .falloff(15.0f)
                     .castShadows(false)
                     .build(modelViewer.engine, fillEntity)
                 modelViewer.scene.addEntity(fillEntity)
