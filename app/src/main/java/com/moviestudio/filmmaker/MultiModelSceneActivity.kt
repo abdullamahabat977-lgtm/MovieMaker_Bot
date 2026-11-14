@@ -306,7 +306,10 @@ class MultiModelSceneActivity : Activity() {
             val project = store.load(projectId)
             val activeId = project.optString("activeSceneId")
             val currentIndex = sceneSequenceIds.indexOf(activeId)
-            val nextId = sceneSequenceIds.getOrNull(currentIndex + 1) ?: return false
+            val nextId = sceneSequenceIds.getOrNull(currentIndex + 1) ?: run {
+                if (showMessage) Toast.makeText(this, "دا د فلم وروستۍ صحنه ده", Toast.LENGTH_SHORT).show()
+                return false
+            }
             val nextScene = store.listScenes(projectId).firstOrNull {
                 it.optString("id") == nextId
             } ?: return false
