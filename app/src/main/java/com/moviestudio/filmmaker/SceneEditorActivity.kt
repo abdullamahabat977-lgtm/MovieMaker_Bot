@@ -24,6 +24,7 @@ class SceneEditorActivity : Activity() {
     private lateinit var store: ProjectStore
     private lateinit var projectId: String
     private lateinit var previewNotice: TextView
+    private lateinit var scenePanel: LinearLayout
     private lateinit var objectPanel: LinearLayout
     private lateinit var timelinePanel: LinearLayout
     private lateinit var cameraPanel: LinearLayout
@@ -80,6 +81,11 @@ class SceneEditorActivity : Activity() {
             orientation = LinearLayout.VERTICAL
             setPadding(dp(12), dp(8), dp(12), dp(18))
         }
+        content.addView(label("د فلم صحنې", 17, true))
+        content.addView(label("فلم په جلا صحنو ووېشه؛ هره صحنه خپل 3D توکي، حرکتونه او د کمرې شاټونه لري.", 12))
+        content.addView(button("＋ نوې صحنه جوړول") { addSceneDialog() })
+        scenePanel = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
+        content.addView(scenePanel)
         content.addView(label("د فلم د سټوډیو تنظیمات", 17, true))
         content.addView(button("📐 د ځمکې اندازه او د فلم وخت تنظیمول") { editProductionSettings() })
         content.addView(label("د صحنې توکي", 17, true))
@@ -138,7 +144,7 @@ class SceneEditorActivity : Activity() {
         content.addView(timelinePanel)
 
         content.addView(label("د فلم کمرې او شاټونه", 17, true).apply { setPadding(0, dp(14), 0, dp(4)) })
-        content.addView(label("د کمرې نوم، ځای، د لید هدف، FOV او د شاټ وخت ثبت کړه. ثبت شوي شاټونه د ټولې 3D صحنې په لید کې لاسي فعالولای شې؛ د وخت له مخې اتومات بدلون او وروستی MP4 رینډر لا پاتې دي.", 12))
+        content.addView(label("د کمرې نوم، ځای، د لید هدف، FOV او د شاټ وخت ثبت کړه. د 3D صحنې په لید کې شاټونه د فلم د مهالویش له مخې اتومات بدلېږي؛ لاسي انتخاب هم شته.", 12))
         content.addView(button("＋ نوې کمره / شاټ اضافه کړه") { addCameraShotDialog() })
         cameraPanel = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
         content.addView(cameraPanel)
@@ -153,9 +159,87 @@ class SceneEditorActivity : Activity() {
         setContentView(root)
     }
 
+    private fun refreshScenePanel() {
+        scenePanel.removeAllViews()
+        val project = store.load(projectId)
+        val activeId = project.optString("activeSceneId")
+        store.listScenes(projectId).forEach { scene ->
+            val id = scene.optString("id")
+            val name = scene.optString("name", "صحنه")
+            val row = horizontal()
+            row.addView(button((if (id == activeId) "✓ " else "") + name) {
+                try {
+                    store.setActiveScene(projectId, id)
+                    selectedObjectId = null
+                    selectedObject = null
+                    refreshPanels()
+                    status.text = "اوس فعاله صحنه: $name"
+                } catch (error: Exception) { toast(error.message ?: "صحنه بدله نه شوه") }
+            }, LinearLayout.LayoutParams(0, dp(46), 1f))
+            row.addView(button("نوم") { renameSceneDialog(scene) }, LinearLayout.LayoutParams(dp(66), dp(46)))
+            row.addView(button("حذف") { confirmRemoveScene(scene) }, LinearLayout.LayoutParams(dp(66), dp(46)))
+            scenePanel.addView(row)
+        }
+    }
+
+    private fun addSceneDialog() {
+        val input = EditText(this).apply {
+            setSingleLine(true)
+            setText("نوې صحنه")
+            setSelection(text.length)
+        }
+        AlertDialog.Builder(this).setTitle("د فلم نوې صحنه")
+            .setMessage("نوې صحنه به جلا توکي، Timeline او کمرې ولري؛ د ځمکې او فلم د وخت تنظیمات به له اوسني صحنې څخه کاپي شي.")
+            .setView(input)
+            .setNegativeButton("لغوه", null)
+            .setPositiveButton("صحنه جوړه کړه") { _, _ ->
+                try {
+                    val created = store.addScene(projectId, input.text.toString())
+                    selectedObjectId = null
+                    selectedObject = null
+                    refreshPanels()
+                    status.text = "نوې صحنه «${created.optString("name")}» جوړه شوه."
+                } catch (error: Exception) { toast(error.message ?: "صحنه جوړه نه شوه") }
+            }.show()
+    }
+
+    private fun renameSceneDialog(scene: JSONObject) {
+        val input = EditText(this).apply {
+            setSingleLine(true)
+            setText(scene.optString("name"))
+            setSelection(text.length)
+        }
+        AlertDialog.Builder(this).setTitle("د صحنې نوم بدلول")
+            .setView(input)
+            .setNegativeButton("لغوه", null)
+            .setPositiveButton("خوندي کول") { _, _ ->
+                try {
+                    store.renameScene(projectId, scene.optString("id"), input.text.toString())
+                    refreshPanels()
+                    status.text = "د صحنې نوم بدل شو."
+                } catch (error: Exception) { toast(error.message ?: "نوم بدل نه شو") }
+            }.show()
+    }
+
+    private fun confirmRemoveScene(scene: JSONObject) {
+        AlertDialog.Builder(this).setTitle("صحنه حذفول")
+            .setMessage("«${scene.optString("name")}» او د هغې ټول توکي، حرکتونه او کمرې له پروژې څخه لرې شي؟ دا کار بېرته نه راګرځي.")
+            .setNegativeButton("لغوه", null)
+            .setPositiveButton("حذف") { _, _ ->
+                try {
+                    store.removeScene(projectId, scene.optString("id"))
+                    selectedObjectId = null
+                    selectedObject = null
+                    refreshPanels()
+                    status.text = "صحنه حذف شوه."
+                } catch (error: Exception) { toast(error.message ?: "صحنه حذف نه شوه") }
+            }.show()
+    }
+
     private fun refreshPanels() {
         val project = store.load(projectId)
-        val scene = project.optJSONArray("scenes")?.optJSONObject(0) ?: JSONObject()
+        refreshScenePanel()
+        val scene = store.activeScene(projectId)
         val objects = scene.optJSONArray("objects") ?: JSONArray()
         val preferredSelection = selectedObjectId
         objectPanel.removeAllViews()
@@ -228,7 +312,7 @@ class SceneEditorActivity : Activity() {
 
     private fun refreshObjectSelection() {
         val project = store.load(projectId)
-        val scene = project.optJSONArray("scenes")?.optJSONObject(0) ?: return
+        val scene = store.activeScene(projectId)
         val objects = scene.optJSONArray("objects") ?: return
         objectPanel.removeAllViews()
         for (i in 0 until objects.length()) {
@@ -485,7 +569,7 @@ class SceneEditorActivity : Activity() {
     }
 
     private fun addCameraShotDialog(existing: JSONObject? = null) {
-        val scene = store.load(projectId).optJSONArray("scenes")?.optJSONObject(0) ?: JSONObject()
+        val scene = store.activeScene(projectId)
         val production = scene.optJSONObject("production") ?: JSONObject()
         val fields = listOf(
             EditText(this).apply { setText(existing?.optString("name") ?: "اصلي کمره"); setSingleLine(true) },
