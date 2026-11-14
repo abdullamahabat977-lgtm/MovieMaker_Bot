@@ -942,21 +942,13 @@ class MultiModelSceneActivity : Activity() {
         dx /= length
         dy /= length
         dz /= length
-        val entity = EntityManager.get().create()
-        try {
-            LightManager.Builder(LightManager.Type.DIRECTIONAL)
-                .color(red, green, blue)
-                .intensity(intensity)
-                .direction(dx, dy, dz)
-                .castShadows(config.optBoolean("shadows", true))
-                .build(modelViewer.engine, entity)
-            modelViewer.scene.addEntity(entity)
-            sceneLightEntities.add(entity)
-        } catch (error: Exception) {
-            try { modelViewer.engine.destroyEntity(entity) } catch (_: Exception) { }
-            try { EntityManager.get().destroy(entity) } catch (_: Exception) { }
-            throw error
-        }
+        // Configure ModelViewer's existing key light instead of adding a second competing sun.
+        val lightManager = modelViewer.engine.lightManager
+        val keyLight = lightManager.getInstance(modelViewer.light)
+        lightManager.setColor(keyLight, red, green, blue)
+        lightManager.setIntensity(keyLight, intensity)
+        lightManager.setDirection(keyLight, dx, dy, dz)
+        lightManager.setShadowCaster(keyLight, config.optBoolean("shadows", true))
 
         // A broad, shadow-free fill light softens dark faces without replacing the key light.
         val fillIntensity = config.optDouble(
