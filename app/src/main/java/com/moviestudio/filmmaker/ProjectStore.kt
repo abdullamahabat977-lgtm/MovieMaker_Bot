@@ -15,7 +15,38 @@ import java.nio.ByteOrder
 
 /** Stores all movie projects and their assets locally on the phone only. */
 class ProjectStore(context: Context) {
-    private val root = File(context.filesDir, "MovieProjects").apply { mkdirs() }
+    // App-specific external storage needs no broad READ/WRITE storage permission.
+    // Use private internal storage only if Android cannot provide the external app directory.
+    private val root: File = createProjectRoot(context.applicationContext)
+
+    val storageDescription: String
+        get() = root.absolutePath
+
+    val storageReady: Boolean
+        get() = root.isDirectory && root.canRead() && root.canWrite()
+
+    fun projectDirectory(projectId: String): File = projectFolder(projectId)
+
+    private fun createProjectRoot(context: Context): File {
+        val base = context.getExternalFilesDir(null) ?: context.filesDir
+        val destination = File(base, "Film Studio/MovieProjects")
+        if (!destination.exists() && !destination.mkdirs()) {
+            throw IllegalStateException("د Film Studio د فایلونو فولډر نه جوړېږي؛ د موبایل ذخیره وڅېړه")
+        }
+        if (!destination.isDirectory || !destination.canRead() || !destination.canWrite()) {
+            throw IllegalStateException("اپک د Film Studio فولډر ته د لوستلو او لیکلو لاسرسی نه لري")
+        }
+
+        // Copy projects from the previous private filesDir location without overwriting newer data.
+        val legacy = File(context.filesDir, "MovieProjects")
+        if (legacy.isDirectory && legacy.canonicalFile != destination.canonicalFile) {
+            legacy.listFiles()?.filter { it.isDirectory }?.forEach { oldProject ->
+                val newProject = File(destination, oldProject.name)
+                if (!newProject.exists()) oldProject.copyRecursively(newProject, overwrite = false)
+            }
+        }
+        return destination
+    }
 
     fun list(): List<JSONObject> = root.listFiles()
         ?.filter { it.isDirectory }
