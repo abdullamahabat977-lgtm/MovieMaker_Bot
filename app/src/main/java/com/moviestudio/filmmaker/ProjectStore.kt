@@ -93,6 +93,7 @@ class ProjectStore(context: Context) {
                     .put("fps", 24).put("renderMode", "3d")))
             .put("assets", JSONArray())
             .put("scenes", JSONArray().put(scene))
+            .put("activeSceneId", "scene_1")
             .put("timeline", JSONObject().put("sceneOrder", JSONArray().put("scene_1")))
         writeSafely(File(folder, "project.json"), project.toString(2))
         return project
@@ -109,6 +110,84 @@ class ProjectStore(context: Context) {
         return (0 until objects.length()).mapNotNull { index ->
             objects.optJSONObject(index)?.let { JSONObject(it.toString()) }
         }
+    }
+
+    fun activeScene(projectId: String): JSONObject = firstScene(load(projectId))
+
+    fun listScenes(projectId: String): List<JSONObject> {
+        val scenes = load(projectId).optJSONArray("scenes") ?: JSONArray()
+        return (0 until scenes.length()).mapNotNull { index ->
+            scenes.optJSONObject(index)?.let { JSONObject(it.toString()) }
+        }
+    }
+
+    fun setActiveScene(projectId: String, sceneId: String): JSONObject {
+        val project = load(projectId)
+        val scenes = project.optJSONArray("scenes") ?: JSONArray()
+        val selected = (0 until scenes.length()).mapNotNull { scenes.optJSONObject(it) }
+            .firstOrNull { it.optString("id") == sceneId }
+            ?: throw IllegalArgumentException("غوښتل شوې صحنه ونه موندل شوه")
+        project.put("activeSceneId", sceneId)
+        save(project)
+        return selected
+    }
+
+    fun addScene(projectId: String, name: String): JSONObject {
+        val project = load(projectId)
+        val scenes = project.optJSONArray("scenes") ?: JSONArray().also { project.put("scenes", it) }
+        require(scenes.length() < MAX_SCENES) { "په یوه فلم کې تر ۳۰ زیاتې صحنې نه شي جوړېدای" }
+        val cleanName = name.trim().ifBlank { "صحنه ${scenes.length() + 1}" }.take(60)
+        val current = firstScene(project)
+        val scene = JSONObject()
+            .put("id", "scene_" + UUID.randomUUID().toString())
+            .put("name", cleanName)
+            .put("objects", JSONArray())
+            .put("timeline", JSONArray())
+            .put("cameraShots", JSONArray())
+        current.optJSONObject("ground")?.let { scene.put("ground", JSONObject(it.toString())) }
+        current.optJSONObject("production")?.let { scene.put("production", JSONObject(it.toString())) }
+        scenes.put(scene)
+        project.put("activeSceneId", scene.optString("id"))
+        val order = JSONArray()
+        for (index in 0 until scenes.length()) order.put(scenes.optJSONObject(index)?.optString("id"))
+        project.optJSONObject("timeline")?.put("sceneOrder", order)
+        save(project)
+        return scene
+    }
+
+    fun renameScene(projectId: String, sceneId: String, name: String): JSONObject {
+        val cleanName = name.trim()
+        require(cleanName.isNotEmpty()) { "د صحنې نوم تش نه شي پاتې کېدای" }
+        require(cleanName.length <= 60) { "د صحنې نوم تر ۶۰ تورو زیات نه شي کېدای" }
+        val project = load(projectId)
+        val scenes = project.optJSONArray("scenes") ?: JSONArray()
+        val scene = (0 until scenes.length()).mapNotNull { scenes.optJSONObject(it) }
+            .firstOrNull { it.optString("id") == sceneId }
+            ?: throw IllegalArgumentException("صحنه ونه موندل شوه")
+        scene.put("name", cleanName)
+        save(project)
+        return scene
+    }
+
+    fun removeScene(projectId: String, sceneId: String) {
+        val project = load(projectId)
+        val old = project.optJSONArray("scenes") ?: JSONArray()
+        require(old.length() > 1) { "وروستۍ صحنه نه شي حذف کېدای؛ لږ تر لږه یوه صحنه باید پاتې وي" }
+        val kept = JSONArray()
+        var removed = false
+        for (index in 0 until old.length()) {
+            val scene = old.optJSONObject(index) ?: continue
+            if (scene.optString("id") == sceneId) removed = true else kept.put(scene)
+        }
+        require(removed) { "صحنه ونه موندل شوه" }
+        project.put("scenes", kept)
+        if (project.optString("activeSceneId") == sceneId) {
+            project.put("activeSceneId", kept.optJSONObject(0)?.optString("id"))
+        }
+        val order = JSONArray()
+        for (index in 0 until kept.length()) order.put(kept.optJSONObject(index)?.optString("id"))
+        project.optJSONObject("timeline")?.put("sceneOrder", order)
+        save(project)
     }
 
     /** Reads embedded GLB animation names without loading the model into the renderer. */
@@ -691,9 +770,13 @@ class ProjectStore(context: Context) {
                 .put("objects", JSONArray()).put("timeline", JSONArray())
             scenes.put(scene)
         }
-        val scene = scenes.optJSONObject(0) ?: JSONObject()
+        val activeId = project.optString("activeSceneId")
+        val scene = (0 until scenes.length()).mapNotNull { scenes.optJSONObject(it) }
+            .firstOrNull { activeId.isNotBlank() && it.optString("id") == activeId }
+            ?: scenes.optJSONObject(0) ?: JSONObject()
         if (!scene.has("objects")) scene.put("objects", JSONArray())
         if (!scene.has("timeline")) scene.put("timeline", JSONArray())
+        if (!scene.has("cameraShots")) scene.put("cameraShots", JSONArray())
         return scene
     }
 
@@ -774,6 +857,7 @@ class ProjectStore(context: Context) {
         const val MAX_PROJECT_MODEL_BYTES = 256L * 1024L * 1024L
         const val MAX_SCENE_OBJECTS = 32
         const val MAX_TIMELINE_CLIPS = 500
+        const val MAX_SCENES = 30
     }
 
     private fun timestamp(): String =
