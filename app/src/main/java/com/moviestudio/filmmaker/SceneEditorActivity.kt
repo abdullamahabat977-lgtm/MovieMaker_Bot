@@ -136,7 +136,7 @@ class SceneEditorActivity : Activity() {
         content.addView(timelinePanel)
 
         content.addView(label("د فلم کمرې او شاټونه", 17, true).apply { setPadding(0, dp(14), 0, dp(4)) })
-        content.addView(label("د کمرې نوم، ځای، د لید هدف، FOV او د شاټ وخت ثبت کړه. دا مهال د کمرې شاټونه د تولید په پلان کې ساتل کېږي؛ د رینډر او ژوندۍ کمرې بدلولو سره نښلول لا پاتې دي.", 12))
+        content.addView(label("د کمرې نوم، ځای، د لید هدف، FOV او د شاټ وخت ثبت کړه. ثبت شوي شاټونه د ټولې 3D صحنې په لید کې لاسي فعالولای شې؛ د وخت له مخې اتومات بدلون او وروستی MP4 رینډر لا پاتې دي.", 12))
         content.addView(button("＋ نوې کمره / شاټ اضافه کړه") { addCameraShotDialog() })
         cameraPanel = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
         content.addView(cameraPanel)
@@ -537,7 +537,7 @@ class SceneEditorActivity : Activity() {
                         )
                     }
                     refreshPanels()
-                    status.text = "د کمرې ځای او شاټ وخت په پروژه کې ثبت شو؛ د رینډر نښلول لا پاتې دي."
+                    status.text = "د کمرې ځای او شاټ وخت خوندي شو؛ د وخت له مخې اتومات کټ او MP4 رینډر لا پاتې دي."
                 } catch (error: Exception) { toast(error.message ?: "کمره ثبت نه شوه") }
             }.show()
     }
