@@ -77,6 +77,8 @@ class SceneEditorActivity : Activity() {
             orientation = LinearLayout.VERTICAL
             setPadding(dp(12), dp(8), dp(12), dp(18))
         }
+        content.addView(label("د فلم د سټوډیو تنظیمات", 17, true))
+        content.addView(button("📐 د ځمکې اندازه او د فلم وخت تنظیمول") { editProductionSettings() })
         content.addView(label("د صحنې توکي", 17, true))
         content.addView(label("د انسان، حیوان، موټر، کور، ونې، فرنیچر او نورو شیانو حقیقي 3D ماډلونه د GLB 2.0 په بڼه وارد کړه. کارتوني نمونه‌یي شکلونه د فلم د توکو په توګه نه کارېږي.", 12))
         content.addView(button("＋ حقیقي 3D توکی واردول (GLB)") { chooseModelType() })
@@ -127,6 +129,7 @@ class SceneEditorActivity : Activity() {
         motionRow.addView(button("منډه") { addClip("run") }, weighted())
         motionRow.addView(button("خبرې") { addClip("talk") }, weighted())
         content.addView(motionRow)
+        content.addView(button("🕒 د کرکټر دقیق وخت، حرکت او سرعت تنظیمول") { chooseTimedMotion() })
         timelinePanel = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
         content.addView(timelinePanel)
 
@@ -168,10 +171,12 @@ class SceneEditorActivity : Activity() {
         val clips = scene.optJSONArray("timeline") ?: JSONArray()
         for (i in 0 until clips.length()) {
             val clip = clips.optJSONObject(i) ?: continue
-            val line = label(
-                "${clip.optString("action")}  •  ${clip.optInt("startFrame")}–${clip.optInt("startFrame") + clip.optInt("durationFrames")} فریم",
-                13
-            )
+            val lineText = if (clip.has("startTime")) {
+                "${clip.optString("action")}  •  ${clip.optString("startTime")} – ${clip.optString("endTime")}  •  سرعت ${clip.optDouble("speed", 1.0)}x"
+            } else {
+                "${clip.optString("action")}  •  ${clip.optInt("startFrame")}–${clip.optInt("startFrame") + clip.optInt("durationFrames")} فریم"
+            }
+            val line = label(lineText, 13)
             timelinePanel.addView(line)
             timelinePanel.addView(button("دا کلیپ حذف کړه") {
                 try {
@@ -412,6 +417,94 @@ class SceneEditorActivity : Activity() {
                     refreshPanels()
                     status.text = "توکی حذف شو."
                 } catch (error: Exception) { toast(error.message ?: "حذف ناکام شو") }
+            }.show()
+    }
+
+    private fun editProductionSettings() {
+        val scene = store.load(projectId).optJSONArray("scenes")?.optJSONObject(0) ?: JSONObject()
+        val ground = scene.optJSONObject("ground") ?: JSONObject()
+        val production = scene.optJSONObject("production") ?: JSONObject()
+        val width = EditText(this).apply {
+            inputType = android.text.InputType.TYPE_CLASS_NUMBER or android.text.InputType.TYPE_NUMBER_FLAG_DECIMAL
+            setText(ground.optDouble("widthMeters", 15.0).toString())
+        }
+        val depth = EditText(this).apply {
+            inputType = android.text.InputType.TYPE_CLASS_NUMBER or android.text.InputType.TYPE_NUMBER_FLAG_DECIMAL
+            setText(ground.optDouble("depthMeters", 10.0).toString())
+        }
+        val start = EditText(this).apply { setSingleLine(true); setText(production.optString("startTime", "09:00:00")) }
+        val end = EditText(this).apply { setSingleLine(true); setText(production.optString("endTime", "09:30:00")) }
+        val panel = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(dp(18), dp(8), dp(18), dp(4))
+        }
+        listOf(
+            "د ځمکې پلنوالی (متر)" to width,
+            "د ځمکې اوږدوالی (متر)" to depth,
+            "د فلم پیل (HH:mm:ss)" to start,
+            "د فلم پای (HH:mm:ss)" to end
+        ).forEach { (caption, field) ->
+            panel.addView(label(caption, 12, true))
+            panel.addView(field)
+        }
+        AlertDialog.Builder(this).setTitle("د فلم د تولید بنسټیز تنظیمات")
+            .setView(ScrollView(this).apply { addView(panel) })
+            .setNegativeButton("لغوه", null)
+            .setPositiveButton("تنظیمات خوندي کړه") { _, _ ->
+                try {
+                    val w = width.text.toString().toDoubleOrNull()
+                        ?: throw IllegalArgumentException("د ځمکې پلنوالی سم ولیکه")
+                    val d = depth.text.toString().toDoubleOrNull()
+                        ?: throw IllegalArgumentException("د ځمکې اوږدوالی سم ولیکه")
+                    val saved = store.updateProductionSettings(
+                        projectId, w, d, start.text.toString().trim(), end.text.toString().trim()
+                    )
+                    val area = saved.optJSONObject("ground")?.optDouble("areaSquareMeters") ?: (w * d)
+                    status.text = "د ځمکې ساحه ${area} m² او د فلم وخت خوندي شو."
+                    refreshPanels()
+                } catch (error: Exception) { toast(error.message ?: "تنظیمات خوندي نه شول") }
+            }.show()
+    }
+
+    private fun chooseTimedMotion() {
+        val id = selectedObjectId ?: run { toast("لومړی کرکټر یا توکی وټاکه"); return }
+        val labels = arrayOf("ولاړ", "قدم وهل", "منډه", "خبرې", "ځانګړی حرکت")
+        val actions = arrayOf("idle", "walk", "run", "talk", "custom")
+        AlertDialog.Builder(this).setTitle("د کوم حرکت وخت تنظیموې؟")
+            .setItems(labels) { _, which -> showTimedMotionEditor(id, actions[which]) }
+            .setNegativeButton("لغوه", null).show()
+    }
+
+    private fun showTimedMotionEditor(objectId: String, action: String) {
+        val start = EditText(this).apply { setSingleLine(true); setText("09:01:00"); hint = "09:01:00" }
+        val end = EditText(this).apply { setSingleLine(true); setText("09:05:06"); hint = "09:05:06" }
+        val speed = EditText(this).apply {
+            setSingleLine(true)
+            inputType = android.text.InputType.TYPE_CLASS_NUMBER or android.text.InputType.TYPE_NUMBER_FLAG_DECIMAL
+            setText("1.0")
+        }
+        val panel = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(dp(18), dp(8), dp(18), dp(4))
+        }
+        listOf("د حرکت پیل (HH:mm:ss)" to start, "د حرکت پای/سکون (HH:mm:ss)" to end, "د حرکت سرعت (۰.۱ تر ۵)" to speed)
+            .forEach { (caption, field) ->
+                panel.addView(label(caption, 12, true))
+                panel.addView(field)
+            }
+        AlertDialog.Builder(this).setTitle("د کرکټر د حرکت دقیق مهالویش")
+            .setView(panel).setNegativeButton("لغوه", null)
+            .setPositiveButton("Timeline ته ثبت کړه") { _, _ ->
+                try {
+                    val velocity = speed.text.toString().toDoubleOrNull()
+                        ?: throw IllegalArgumentException("د حرکت سرعت سم ولیکه")
+                    store.addTimedTimelineClip(
+                        projectId, objectId, action,
+                        start.text.toString().trim(), end.text.toString().trim(), velocity
+                    )
+                    refreshPanels()
+                    status.text = "حرکت د ټاکلي ساعت، پای او سرعت سره ثبت شو؛ د حقیقي skeletal playback نښلول لا پاتې دي."
+                } catch (error: Exception) { toast(error.message ?: "د حرکت مهالویش ثبت نه شو") }
             }.show()
     }
 
