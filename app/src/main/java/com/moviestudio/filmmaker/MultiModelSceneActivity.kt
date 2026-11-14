@@ -29,12 +29,23 @@ import org.json.JSONObject
  */
 class MultiModelSceneActivity : Activity() {
     private data class SceneModel(
+        val objectId: String,
         val name: String,
         val asset: FilamentAsset,
         val resources: ResourceLoader,
         val animator: com.google.android.filament.gltfio.Animator?,
         var lightsAdded: Boolean = false,
-        var animationStartNanos: Long = 0L
+        var animationStartNanos: Long = 0L,
+        var lastTimelineClipId: String? = null
+    )
+
+    private data class PlaybackClip(
+        val id: String,
+        val objectId: String,
+        val action: String,
+        val startSeconds: Double,
+        val endSeconds: Double,
+        val speed: Float
     )
 
     private var viewer: ModelViewer? = null
@@ -45,6 +56,12 @@ class MultiModelSceneActivity : Activity() {
     private var projectId: String = ""
     private var framePosted = false
     private var omittedModelCount = 0
+    private var timelineClips: List<PlaybackClip> = emptyList()
+    private var timelineDurationSeconds = 0.0
+    private var timelinePositionSeconds = 0.0
+    private var timelineStartNanos = 0L
+    private var timelinePlaying = true
+    private var timelineStatus: TextView? = null
 
     private val frameCallback = object : Choreographer.FrameCallback {
         override fun doFrame(frameTimeNanos: Long) {
@@ -65,14 +82,44 @@ class MultiModelSceneActivity : Activity() {
                     readyCount++
                     val animator = model.animator
                     if (animator != null && animator.animationCount > 0) {
-                        if (model.animationStartNanos == 0L) model.animationStartNanos = frameTimeNanos
-                        val elapsed = (frameTimeNanos - model.animationStartNanos) / 1_000_000_000f
-                        val duration = animator.getAnimationDuration(0)
-                        val time = if (duration > 0f) elapsed % duration else elapsed
-                        animator.applyAnimation(0, time)
-                        animator.updateBoneMatrices()
+                        if (timelineClips.isNotEmpty()) {
+                            val activeClip = timelineClips.firstOrNull {
+                                it.objectId == model.objectId &&
+                                    timelinePositionSeconds >= it.startSeconds &&
+                                    timelinePositionSeconds < it.endSeconds
+                            }
+                            if (activeClip != null) {
+                                val animationIndex = resolveAnimationIndex(animator, activeClip.action)
+                                val duration = animator.getAnimationDuration(animationIndex)
+                                val clipTime = ((timelinePositionSeconds - activeClip.startSeconds) * activeClip.speed).toFloat()
+                                val animationTime = if (duration > 0f) clipTime % duration else clipTime
+                                animator.applyAnimation(animationIndex, animationTime)
+                                animator.updateBoneMatrices()
+                                model.lastTimelineClipId = activeClip.id
+                            } else if (model.lastTimelineClipId != null) {
+                                animator.applyAnimation(0, 0f)
+                                animator.updateBoneMatrices()
+                                model.lastTimelineClipId = null
+                            }
+                        } else {
+                            // Keep the previous preview behavior for projects without timeline clips.
+                            if (model.animationStartNanos == 0L) model.animationStartNanos = frameTimeNanos
+                            val elapsed = (frameTimeNanos - model.animationStartNanos) / 1_000_000_000f
+                            val duration = animator.getAnimationDuration(0)
+                            val time = if (duration > 0f) elapsed % duration else elapsed
+                            animator.applyAnimation(0, time)
+                            animator.updateBoneMatrices()
+                        }
                     }
                 }
+            }
+            if (timelineClips.isNotEmpty() && timelinePlaying) {
+                if (timelineStartNanos == 0L) timelineStartNanos = frameTimeNanos -
+                    (timelinePositionSeconds * 1_000_000_000.0).toLong()
+                timelinePositionSeconds = ((frameTimeNanos - timelineStartNanos).coerceAtLeast(0L) / 1_000_000_000.0)
+                    .coerceAtMost(timelineDurationSeconds)
+                if (timelinePositionSeconds >= timelineDurationSeconds) timelinePlaying = false
+                updateTimelineStatus()
             }
             loadingLabel?.text = "د 3D توکو چمتووالی: $readyCount / ${models.size}" +
                 if (omittedModelCount > 0) " • $omittedModelCount نور د حافظې د حد له امله نه ښودل کېږي" else ""
@@ -138,6 +185,35 @@ class MultiModelSceneActivity : Activity() {
                 FrameLayout.LayoutParams.WRAP_CONTENT, FrameLayout.LayoutParams.WRAP_CONTENT,
                 Gravity.BOTTOM or Gravity.END
             ).apply { bottomMargin = 24; marginEnd = 16 })
+            val playbackControls = android.widget.LinearLayout(this).apply {
+                orientation = android.widget.LinearLayout.VERTICAL
+                setPadding(10, 8, 10, 8)
+                setBackgroundColor(0xAA17243A.toInt())
+            }
+            timelineStatus = TextView(this).apply {
+                text = "Timeline نه دی لوډ شوی"
+                setTextColor(android.graphics.Color.WHITE)
+                textSize = 12f
+            }
+            playbackControls.addView(timelineStatus)
+            val playbackButtons = android.widget.LinearLayout(this).apply {
+                orientation = android.widget.LinearLayout.HORIZONTAL
+            }
+            playbackButtons.addView(Button(this).apply {
+                text = "پلې / درول"
+                isAllCaps = false
+                setOnClickListener { toggleTimelinePlayback() }
+            })
+            playbackButtons.addView(Button(this).apply {
+                text = "له پیل څخه"
+                isAllCaps = false
+                setOnClickListener { restartTimeline() }
+            })
+            playbackControls.addView(playbackButtons)
+            frame.addView(playbackControls, FrameLayout.LayoutParams(
+                FrameLayout.LayoutParams.WRAP_CONTENT, FrameLayout.LayoutParams.WRAP_CONTENT,
+                Gravity.BOTTOM or Gravity.START
+            ).apply { bottomMargin = 24; marginStart = 16 })
             setContentView(frame)
             title = "د صحنې حقیقي 3D لید"
         } catch (error: Exception) {
@@ -181,6 +257,73 @@ class MultiModelSceneActivity : Activity() {
         }
     }
 
+    private fun resolveAnimationIndex(
+        animator: com.google.android.filament.gltfio.Animator,
+        action: String
+    ): Int {
+        val keywords = when (action.lowercase()) {
+            "idle" -> listOf("idle", "stand", "rest", "wait", "breath")
+            "walk" -> listOf("walk", "walking")
+            "run" -> listOf("run", "running", "jog")
+            "talk" -> listOf("talk", "speak", "speech", "gesture")
+            else -> emptyList()
+        }
+        if (keywords.isEmpty()) return 0
+        for (index in 0 until animator.animationCount) {
+            val name = animator.getAnimationName(index).lowercase()
+            if (keywords.any { keyword -> name.contains(keyword) }) return index
+        }
+        // A single-animation GLB has no ambiguity, regardless of its animation label.
+        return 0
+    }
+
+    private fun toggleTimelinePlayback() {
+        if (timelineClips.isEmpty()) {
+            Toast.makeText(this, "د دې پروژې Timeline تش دی؛ لومړی حرکتونه ثبت کړه", Toast.LENGTH_LONG).show()
+            return
+        }
+        if (timelinePlaying) {
+            timelinePlaying = false
+            timelineStartNanos = 0L
+        } else if (timelinePositionSeconds >= timelineDurationSeconds) {
+            restartTimeline()
+            return
+        } else {
+            timelinePlaying = true
+            timelineStartNanos = System.nanoTime() -
+                (timelinePositionSeconds * 1_000_000_000.0).toLong()
+        }
+        updateTimelineStatus()
+    }
+
+    private fun restartTimeline() {
+        if (timelineClips.isEmpty()) {
+            Toast.makeText(this, "د دې پروژې Timeline تش دی", Toast.LENGTH_SHORT).show()
+            return
+        }
+        timelinePositionSeconds = 0.0
+        timelineStartNanos = 0L
+        timelinePlaying = true
+        models.forEach { it.lastTimelineClipId = null }
+        updateTimelineStatus()
+    }
+
+    private fun updateTimelineStatus() {
+        val total = timelineDurationSeconds.coerceAtLeast(0.0)
+        val current = timelinePositionSeconds.coerceAtLeast(0.0)
+        val state = when {
+            timelineClips.isEmpty() -> "Timeline تش دی"
+            timelinePlaying -> "چلېږي"
+            current >= total -> "پای ته ورسېد"
+            else -> "درېدلی"
+        }
+        timelineStatus?.text = String.format(
+            java.util.Locale.US,
+            "Timeline: %s  •  %.1f / %.1f ثانیې",
+            state, current, total
+        )
+    }
+
     private fun applyCameraShot(shot: JSONObject) {
         val modelViewer = viewer ?: return
         val eyeX = shot.optDouble("x", 0.0)
@@ -204,7 +347,34 @@ class MultiModelSceneActivity : Activity() {
     private fun loadProjectModels() {
         val modelViewer = viewer ?: return
         try {
-            val objects = ProjectStore(this).listSceneObjects(projectId)
+            val store = ProjectStore(this)
+            val project = store.load(projectId)
+            val scene = project.optJSONArray("scenes")?.optJSONObject(0)
+            val projectFps = (project.optJSONObject("project")?.optJSONObject("settings")?.optInt("fps", 24) ?: 24)
+                .coerceIn(1, 120)
+            val rawClips = scene?.optJSONArray("timeline") ?: org.json.JSONArray()
+            timelineClips = (0 until rawClips.length()).mapNotNull { index ->
+                val clip = rawClips.optJSONObject(index) ?: return@mapNotNull null
+                val start = if (clip.has("startOffsetSeconds")) clip.optDouble("startOffsetSeconds")
+                    else clip.optInt("startFrame").toDouble() / projectFps.toDouble()
+                val duration = if (clip.has("durationSeconds")) clip.optDouble("durationSeconds")
+                    else clip.optInt("durationFrames").toDouble() / projectFps.toDouble()
+                if (clip.optString("objectId").isBlank() || duration <= 0.0) return@mapNotNull null
+                PlaybackClip(
+                    clip.optString("id"),
+                    clip.optString("objectId"),
+                    clip.optString("action", "custom"),
+                    start.coerceAtLeast(0.0),
+                    (start + duration).coerceAtLeast(0.0),
+                    clip.optDouble("speed", 1.0).toFloat().coerceIn(0.1f, 5f)
+                )
+            }.sortedBy { it.startSeconds }
+            timelineDurationSeconds = timelineClips.maxOfOrNull { it.endSeconds } ?: 0.0
+            timelinePositionSeconds = 0.0
+            timelineStartNanos = 0L
+            timelinePlaying = timelineClips.isNotEmpty()
+            updateTimelineStatus()
+            val objects = store.listSceneObjects(projectId)
                 .filter { it.optString("modelPath").isNotBlank() }
             omittedModelCount = 0
             if (objects.isEmpty()) {
@@ -246,7 +416,7 @@ class MultiModelSceneActivity : Activity() {
                     applySceneTransform(modelViewer, createdAsset, item)
                     val animator = createdAsset.instance.animator
                     createdAsset.releaseSourceData()
-                    models.add(SceneModel(item.optString("name"), createdAsset, createdResources, animator))
+                    models.add(SceneModel(item.optString("id"), item.optString("name"), createdAsset, createdResources, animator))
                 } catch (error: Exception) {
                     resourceLoader?.asyncCancelLoad()
                     resourceLoader?.destroy()
