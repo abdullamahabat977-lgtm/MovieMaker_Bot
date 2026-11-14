@@ -866,11 +866,15 @@ class MultiModelSceneActivity : Activity() {
 
     private fun applySceneLighting(modelViewer: ModelViewer, scene: JSONObject) {
         val config = scene.optJSONObject("lighting") ?: JSONObject()
+        val preset = config.optString("preset", "day")
+        val defaultSkyRed = if (preset == "night") 0.025 else if (preset == "sunset") 0.28 else 0.12
+        val defaultSkyGreen = if (preset == "night") 0.035 else if (preset == "sunset") 0.12 else 0.16
+        val defaultSkyBlue = if (preset == "night") 0.10 else if (preset == "sunset") 0.07 else 0.22
         val sky = com.google.android.filament.Skybox.Builder()
             .color(
-                config.optDouble("skyRed", 0.12).toFloat().coerceIn(0f, 1f),
-                config.optDouble("skyGreen", 0.16).toFloat().coerceIn(0f, 1f),
-                config.optDouble("skyBlue", 0.22).toFloat().coerceIn(0f, 1f),
+                config.optDouble("skyRed", defaultSkyRed).toFloat().coerceIn(0f, 1f),
+                config.optDouble("skyGreen", defaultSkyGreen).toFloat().coerceIn(0f, 1f),
+                config.optDouble("skyBlue", defaultSkyBlue).toFloat().coerceIn(0f, 1f),
                 1.0f
             )
             .build(modelViewer.engine)
@@ -908,7 +912,10 @@ class MultiModelSceneActivity : Activity() {
         }
 
         // A broad, shadow-free fill light softens dark faces without replacing the key light.
-        val fillIntensity = config.optDouble("fillIntensityCandela", config.optDouble("fillIntensityLux", 9000.0))
+        val fillIntensity = config.optDouble(
+            "fillIntensityCandela",
+            config.optDouble("fillIntensityLux", if (preset == "night") 900.0 else 9000.0)
+        )
             .toFloat().coerceIn(0f, 60000f)
         if (fillIntensity > 0f) {
             val fillEntity = EntityManager.get().create()
