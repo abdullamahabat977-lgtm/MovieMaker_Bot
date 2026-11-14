@@ -98,6 +98,8 @@ class SceneEditorActivity : Activity() {
         lightingRow.addView(button("🌙 شپه") { setSceneLighting("night", "د شپې رڼا") }, weighted())
         lightingRow.addView(button("💡 سټوډیو") { setSceneLighting("studio", "د سټوډیو رڼا") }, weighted())
         content.addView(lightingRow)
+        content.addView(label("د رڼا پرمختللي تنظیمات: شدت، RGB رنګ، لوری، مرستندویه رڼا او سیوري.", 12))
+        content.addView(button("⚙️ د رڼا دقیق تنظیمات") { editAdvancedLighting() })
         content.addView(label("د صحنې توکي", 17, true))
         content.addView(label("د انسان، حیوان، موټر، کور، ونې، فرنیچر او نورو شیانو حقیقي 3D ماډلونه د GLB 2.0 په بڼه وارد کړه. کارتوني نمونه‌یي شکلونه د فلم د توکو په توګه نه کارېږي. د صحنو ترتیب د فلم د پرله‌پسې پلې کېدو ترتیب دی؛ په 3D لید کې اتومات صحنه‌بدلون فعال یا بندولای شې.", 12))
         content.addView(button("＋ حقیقي 3D توکی واردول (GLB)") { chooseModelType() })
@@ -840,6 +842,64 @@ class SceneEditorActivity : Activity() {
             store.updateSceneLighting(projectId, preset)
             status.text = "د فعاله صحنې $label تنظیمات خوندي شول؛ د 3D لید بیا پرانیستل یې عملي کوي."
         } catch (error: Exception) { toast(error.message ?: "د صحنې رڼا بدله نه شوه") }
+    }
+
+    private fun editAdvancedLighting() {
+        val lighting = store.activeScene(projectId).optJSONObject("lighting") ?: JSONObject()
+        val keys = listOf(
+            "intensityLux", "red", "green", "blue",
+            "directionX", "directionY", "directionZ", "fillIntensityLux"
+        )
+        val captions = listOf(
+            "د اصلي رڼا شدت (۵۰۰–۱۲۰۰۰۰ Lux)",
+            "سور رنګ (۰–۱)", "شین رنګ (۰–۱)", "آبي رنګ (۰–۱)",
+            "د رڼا لوری X (-۱ تر ۱)", "د رڼا لوری Y (-۱ تر ۱)", "د رڼا لوری Z (-۱ تر ۱)",
+            "مرستندویه رڼا (۰–۶۰۰۰۰ Lux)"
+        )
+        val defaults = listOf(85000.0, 1.0, 0.96, 0.88, -0.30, -0.90, -0.30, 9000.0)
+        val fields = keys.mapIndexed { index, key ->
+            EditText(this).apply {
+                setSingleLine(true)
+                inputType = android.text.InputType.TYPE_CLASS_NUMBER or
+                    android.text.InputType.TYPE_NUMBER_FLAG_SIGNED or
+                    android.text.InputType.TYPE_NUMBER_FLAG_DECIMAL
+                setText(lighting.optDouble(key, defaults[index]).toString())
+            }
+        }
+        val shadowPicker = Spinner(this).apply {
+            adapter = ArrayAdapter(this@SceneEditorActivity, android.R.layout.simple_spinner_item,
+                listOf("سیوري فعال", "سیوري بند")).also {
+                it.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
+            }
+            setSelection(if (lighting.optBoolean("shadows", true)) 0 else 1)
+        }
+        val panel = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(dp(18), dp(8), dp(18), dp(4))
+        }
+        fields.forEachIndexed { index, field ->
+            panel.addView(label(captions[index], 12, true))
+            panel.addView(field)
+        }
+        panel.addView(label("د سیورو کیفیت", 12, true))
+        panel.addView(shadowPicker)
+        panel.addView(label("دا تنظیمات یوازې په فعاله صحنه کې خوندي کېږي. د 3D لید بیا پرانیستل یې ښکاره کوي.", 11))
+        AlertDialog.Builder(this).setTitle("د رڼا او چاپېریال پرمختللي تنظیمات")
+            .setView(ScrollView(this).apply { addView(panel) })
+            .setNegativeButton("لغوه", null)
+            .setPositiveButton("تنظیمات خوندي کړه") { _, _ ->
+                try {
+                    val changes = JSONObject()
+                    fields.forEachIndexed { index, field ->
+                        val value = field.text.toString().toDoubleOrNull()
+                            ?: throw IllegalArgumentException("د ${captions[index]} شمېره ناسمه ده")
+                        changes.put(keys[index], value)
+                    }
+                    changes.put("shadows", shadowPicker.selectedItemPosition == 0)
+                    store.updateSceneLighting(projectId, changes)
+                    status.text = "د اصلي او مرستندویه رڼا، رنګ، لوري او سیورو تنظیمات خوندي شول."
+                } catch (error: Exception) { toast(error.message ?: "د رڼا تنظیمات خوندي نه شول") }
+            }.show()
     }
 
     private fun editRenderSettings() {
