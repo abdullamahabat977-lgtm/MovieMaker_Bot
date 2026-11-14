@@ -319,6 +319,59 @@ class ProjectStore(context: Context) {
         }
     }
 
+    fun addCameraShot(
+        projectId: String,
+        name: String,
+        x: Double, y: Double, z: Double,
+        targetX: Double, targetY: Double, targetZ: Double,
+        fieldOfView: Double,
+        startTime: String,
+        endTime: String
+    ): JSONObject {
+        require(fieldOfView in 20.0..100.0) { "د کمرې FOV باید له ۲۰ تر ۱۰۰ درجو وي" }
+        listOf(x, y, z, targetX, targetY, targetZ).forEach {
+            require(it.isFinite() && it in -1000.0..1000.0) { "د کمرې موقعیت له ټاکلي حد څخه بهر دی" }
+        }
+        val start = clockSeconds(startTime)
+        val end = clockSeconds(endTime)
+        require(end > start) { "د کمرې د شاټ پای وخت باید د پیل له وخت وروسته وي" }
+        val project = load(projectId)
+        val scene = firstScene(project)
+        val production = scene.optJSONObject("production")
+        if (production != null) {
+            val filmStart = clockSeconds(production.optString("startTime"))
+            val filmEnd = clockSeconds(production.optString("endTime"))
+            require(start >= filmStart && end <= filmEnd) { "د کمرې شاټ باید د فلم د ټاکلي وخت دننه وي" }
+        }
+        val shot = JSONObject()
+            .put("id", "camera_" + UUID.randomUUID().toString())
+            .put("name", name.trim().ifBlank { "کمره" }.take(60))
+            .put("x", x).put("y", y).put("z", z)
+            .put("targetX", targetX).put("targetY", targetY).put("targetZ", targetZ)
+            .put("fieldOfView", fieldOfView)
+            .put("startTime", startTime).put("endTime", endTime)
+        val cameras = scene.optJSONArray("cameraShots") ?: JSONArray().also { scene.put("cameraShots", it) }
+        require(cameras.length() < 32) { "په یوه صحنه کې تر ۳۲ زیات د کمرې شاټونه نه شي ثبتېدای" }
+        cameras.put(shot)
+        save(project)
+        return shot
+    }
+
+    fun removeCameraShot(projectId: String, cameraId: String) {
+        val project = load(projectId)
+        val scene = firstScene(project)
+        val old = scene.optJSONArray("cameraShots") ?: JSONArray()
+        val kept = JSONArray()
+        var removed = false
+        for (index in 0 until old.length()) {
+            val shot = old.optJSONObject(index) ?: continue
+            if (shot.optString("id") == cameraId) removed = true else kept.put(shot)
+        }
+        require(removed) { "د کمرې شاټ ونه موندل شو" }
+        scene.put("cameraShots", kept)
+        save(project)
+    }
+
     fun updateProductionSettings(
         projectId: String,
         groundWidthMeters: Double,
