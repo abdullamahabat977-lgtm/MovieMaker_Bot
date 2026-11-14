@@ -197,7 +197,7 @@ class MultiModelSceneActivity : Activity() {
             targetX, targetY, targetZ,
             0.0, 1.0, 0.0
         )
-        modelViewer.camera.setProjection(fov, aspect, 0.1, 1000.0)
+        modelViewer.camera.setProjection(fov, aspect, 0.1, 1000.0, com.google.android.filament.Camera.Fov.VERTICAL)
         Toast.makeText(this, "د «${shot.optString("name", "کمره")}» شاټ فعال شو", Toast.LENGTH_SHORT).show()
     }
 
