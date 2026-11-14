@@ -124,7 +124,7 @@ class SceneEditorActivity : Activity() {
         content.addView(editRow)
 
         content.addView(label("د حرکت Timeline", 17, true).apply { setPadding(0, dp(14), 0, dp(4)) })
-        content.addView(label("دا مهال د Timeline کلیپونه یوازې د حرکت پلان ثبتوي؛ که وارد شوی GLB خپل هډوکي او animation ولري، لومړی حرکت یې په 3D مخکتنه کې پلی کېږي.", 12))
+        content.addView(label("د ثبت شوو Timeline کلیپونو حرکتونه په حقیقي 3D صحنه کې د وارد شوي GLB د animation نومونو له مخې پلی کېږي؛ د حرکت لپاره ماډل باید خپل skeletal animation ولري.", 12))
         val motionRow = horizontal()
         motionRow.addView(button("ولاړ") { addClip("idle") }, weighted())
         motionRow.addView(button("قدم") { addClip("walk") }, weighted())
@@ -625,7 +625,7 @@ class SceneEditorActivity : Activity() {
                         start.text.toString().trim(), end.text.toString().trim(), velocity
                     )
                     refreshPanels()
-                    status.text = "حرکت د ټاکلي ساعت، پای او سرعت سره ثبت شو؛ د حقیقي skeletal playback نښلول لا پاتې دي."
+                    status.text = "حرکت د ټاکلي ساعت، پای او سرعت سره Timeline ته ثبت شو؛ د 3D صحنې د لید له «پلې / درول» کنټرول څخه یې وګوره."
                 } catch (error: Exception) { toast(error.message ?: "د حرکت مهالویش ثبت نه شو") }
             }.show()
     }
