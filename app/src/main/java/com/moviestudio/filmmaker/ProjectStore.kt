@@ -174,13 +174,23 @@ class ProjectStore(context: Context) {
         val old = project.optJSONArray("scenes") ?: JSONArray()
         require(old.length() > 1) { "وروستۍ صحنه نه شي حذف کېدای؛ لږ تر لږه یوه صحنه باید پاتې وي" }
         val kept = JSONArray()
-        var removed = false
+        var removedScene: JSONObject? = null
         for (index in 0 until old.length()) {
             val scene = old.optJSONObject(index) ?: continue
-            if (scene.optString("id") == sceneId) removed = true else kept.put(scene)
+            if (scene.optString("id") == sceneId) removedScene = scene else kept.put(scene)
         }
-        require(removed) { "صحنه ونه موندل شوه" }
+        require(removedScene != null) { "صحنه ونه موندل شوه" }
         project.put("scenes", kept)
+        val removedObjectIds = removedScene?.optJSONArray("objects")?.let { objects ->
+            (0 until objects.length()).mapNotNull { objects.optJSONObject(it)?.optString("id") }.toSet()
+        } ?: emptySet()
+        val assets = project.optJSONArray("assets") ?: JSONArray()
+        val retainedAssets = JSONArray()
+        for (index in 0 until assets.length()) {
+            val asset = assets.optJSONObject(index) ?: continue
+            if (asset.optString("id") !in removedObjectIds) retainedAssets.put(asset)
+        }
+        project.put("assets", retainedAssets)
         if (project.optString("activeSceneId") == sceneId) {
             project.put("activeSceneId", kept.optJSONObject(0)?.optString("id"))
         }
