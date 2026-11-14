@@ -378,9 +378,11 @@ class MultiModelSceneActivity : Activity() {
                 )
             }.sortedBy { it.startSeconds }
             timelineDurationSeconds = timelineClips.maxOfOrNull { it.endSeconds } ?: 0.0
-            timelinePositionSeconds = 0.0
-            timelineStartNanos = 0L
-            timelinePlaying = timelineClips.isNotEmpty()
+            if (timelineClips.isEmpty()) {
+                timelinePositionSeconds = 0.0
+                timelineStartNanos = 0L
+                timelinePlaying = false
+            }
             updateTimelineStatus()
             val objects = store.listSceneObjects(projectId)
                 .filter { it.optString("modelPath").isNotBlank() }
