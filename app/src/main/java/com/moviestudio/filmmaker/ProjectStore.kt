@@ -248,10 +248,14 @@ class ProjectStore(context: Context) {
         val source = (0 until objects.length()).mapNotNull { objects.optJSONObject(it) }
             .firstOrNull { it.optString("id") == objectId }
             ?: throw IllegalArgumentException("د صحنې توکی ونه موندل شو")
+        val ground = firstScene(project).optJSONObject("ground") ?: JSONObject()
+        val halfWidth = (ground.optDouble("widthMeters", 6.0) / 2.0).coerceAtLeast(0.5)
+        val halfDepth = (ground.optDouble("depthMeters", 6.0) / 2.0).coerceAtLeast(0.5)
         val copy = JSONObject(source.toString())
             .put("id", "object_" + UUID.randomUUID().toString())
             .put("name", source.optString("name") + " - کاپي")
-            .put("x", (source.optDouble("x") + 0.35).coerceAtMost(3.0))
+            .put("x", (source.optDouble("x") + 0.35).coerceIn(-halfWidth, halfWidth))
+            .put("z", (source.optDouble("z") + 0.35).coerceIn(-halfDepth, halfDepth))
         objects.put(copy)
         val assets = project.optJSONArray("assets") ?: JSONArray()
         val sourceAsset = (0 until assets.length()).mapNotNull { assets.optJSONObject(it) }
@@ -522,15 +526,20 @@ class ProjectStore(context: Context) {
 
     fun addTimelineClip(projectId: String, objectId: String, action: String, durationFrames: Int = 48): JSONObject {
         require(action in setOf("idle", "walk", "run", "talk", "custom")) { "د حرکت ډول ناسم دی" }
+        require(durationFrames in 1..2400) { "د Timeline موده باید له ۱ تر ۲۴۰۰ فریمونو وي" }
         val project = load(projectId)
         val scene = firstScene(project)
+        val objects = scene.optJSONArray("objects") ?: JSONArray()
+        require((0 until objects.length()).any { objects.optJSONObject(it)?.optString("id") == objectId }) {
+            "ټاکل شوی کرکټر یا توکی په صحنه کې نشته"
+        }
         val clips = scene.optJSONArray("timeline") ?: JSONArray().also { scene.put("timeline", it) }
         val start = (0 until clips.length()).mapNotNull { clips.optJSONObject(it) }
             .maxOfOrNull { it.optInt("startFrame") + it.optInt("durationFrames") } ?: 0
         val clip = JSONObject()
             .put("id", "clip_" + UUID.randomUUID().toString())
             .put("objectId", objectId).put("action", action)
-            .put("startFrame", start).put("durationFrames", durationFrames.coerceIn(1, 2400))
+            .put("startFrame", start).put("durationFrames", durationFrames)
         clips.put(clip)
         save(project)
         return clip
