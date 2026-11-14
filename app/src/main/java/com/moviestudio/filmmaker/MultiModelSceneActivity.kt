@@ -216,7 +216,8 @@ class MultiModelSceneActivity : Activity() {
         val half = box.halfExtent
         val maxExtent = 2f * maxOf(half[0], half[1], half[2])
         val fitScale = if (maxExtent > 0.0001f) 2f / maxExtent else 1f
-        val objectScale = item.optDouble("scale", 1.0).toFloat().coerceIn(0.25f, 3f)
+        // Keep renderer scale limits consistent with ProjectStore's editable 0.05..100 range.
+        val objectScale = item.optDouble("scale", 1.0).toFloat().coerceIn(0.05f, 100f)
         val matrix = FloatArray(16)
         android.opengl.Matrix.setRotateEulerM(
             matrix, 0,
@@ -226,9 +227,15 @@ class MultiModelSceneActivity : Activity() {
         )
         val finalScale = fitScale * objectScale
         for (column in 0..2) for (row in 0..2) matrix[column * 4 + row] *= finalScale
-        matrix[12] = -center[0] * fitScale + item.optDouble("x").toFloat()
-        matrix[13] = -center[1] * fitScale + item.optDouble("y").toFloat()
-        matrix[14] = -center[2] * fitScale - 4f + item.optDouble("z").toFloat()
+
+        // Translate the rotated/scaled model center to its scene position. Using only
+        // fitScale here leaves off-center GLB origins orbiting when the object rotates.
+        val centerX = matrix[0] * center[0] + matrix[4] * center[1] + matrix[8] * center[2]
+        val centerY = matrix[1] * center[0] + matrix[5] * center[1] + matrix[9] * center[2]
+        val centerZ = matrix[2] * center[0] + matrix[6] * center[1] + matrix[10] * center[2]
+        matrix[12] = -centerX + item.optDouble("x").toFloat()
+        matrix[13] = -centerY + item.optDouble("y").toFloat()
+        matrix[14] = -centerZ - 4f + item.optDouble("z").toFloat()
         matrix[15] = 1f
         val transforms = modelViewer.engine.transformManager
         transforms.setTransform(transforms.getInstance(asset.root), matrix)
