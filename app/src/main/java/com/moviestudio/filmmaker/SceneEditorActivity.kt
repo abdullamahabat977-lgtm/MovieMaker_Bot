@@ -720,11 +720,19 @@ class SceneEditorActivity : Activity() {
                     return
                 }
                 val named = selectedUris.map { it to queryDisplayName(it, "environment.ktx") }
-                val iblEntry = named.firstOrNull { it.second.lowercase().contains("ibl") } ?: named[0]
-                val skyEntry = named.firstOrNull { it.second.lowercase().contains("skybox") }
-                    ?: named.firstOrNull { it.first != iblEntry.first }
-                if (skyEntry == null || skyEntry.first == iblEntry.first) {
-                    toast("د IBL او Skybox دوه جلا فایلونه وټاکه")
+                val namedIbl = named.filter { it.second.lowercase().contains("ibl") }
+                val namedSkybox = named.filter { it.second.lowercase().contains("skybox") }
+                val iblEntry: Pair<android.net.Uri, String>
+                val skyEntry: Pair<android.net.Uri, String>
+                if (namedIbl.size == 1 && namedSkybox.size == 1) {
+                    iblEntry = namedIbl[0]
+                    skyEntry = namedSkybox[0]
+                } else if (namedIbl.isEmpty() && namedSkybox.isEmpty()) {
+                    // If a provider hides filenames, use the order explained in the picker instructions.
+                    iblEntry = named[0]
+                    skyEntry = named[1]
+                } else {
+                    toast("د فایل نومونه باید یو کې IBL او بل کې Skybox ولري؛ سم دوه فایلونه وټاکه")
                     return
                 }
                 try {
