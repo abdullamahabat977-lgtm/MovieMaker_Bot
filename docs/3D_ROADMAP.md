@@ -19,22 +19,27 @@
 - د پروژې محلي JSON فایل او خوندي لیکل.
 - د هرې پروژې لومړنۍ صحنه، 720p او 24 FPS تنظیم.
 - د صحنې ایډیټر د پروژې له لېست څخه پرانیستل.
-- د حقیقي GLB ماډلونو محلي واردول، انتخاب، نوم بدلول، موقعیت/اندازه بدلول، کاپي او حذف.
+- د حقیقي GLB ماډلونو محلي واردول، انتخاب، نوم بدلول، موقعیت/اندازه بدلول، د X/Y/Z پر محور څرخول، دقیق عددي transform، کاپي او حذف.
 - د GLB اصلي texture او PBR موادو ساتل؛ د مصنوعي کارتوني پوستکي/کمیس رنګ‌بدلوونکي لرې کول.
-- د Timeline د حرکت کلیپونو ثبت، ترتیب او حذف.
+- د Timeline د حرکت کلیپونو ثبت، ترتیب او حذف؛ د کلیپ د مودې ټاکل په فریمونو کې.
 - د GL view د Activity lifecycle اداره.
 - د Filament ګډ GLB scene renderer: تر ۸ ماډلونو او ۸۰ MB پورې؛ د اصلي mesh، PBR موادو، textures او د هر ماډل transform ساتل.
 - د جلا GLB مخکتنې embedded skeletal animation ټاکل، درول او بیا چلول.
 
 ### پاتې پړاوونه
-1. د ګډ scene renderer د حافظې، رڼا، سیوري او animation فعالیت لا ښه کول.
-2. په ګډ 3D لید کې د انتخاب/ټچ له لارې د توکي ټاکل او مستقل transform کنټرول.
-3. د Timeline له لارې د embedded animation انتخاب، د حرکتونو blend او keyframe کنټرول؛ له GLB بهر د نوي skeletal rig جوړول.
+1. د ګډ scene renderer کې د ټچ له لارې د ماډل پېژندنه/انتخاب او د انتخاب شوي ماډل د transform live update.
+2. د حقیقي GLB ماډلونو قانوني، جواز-روښانه starter pack جوړول؛ اوسنی catalogue یوازې نومونه او تشریحات دي، نه حقیقي 3D فایلونه.
+3. د Timeline له لارې د embedded animation انتخاب، د حرکتونو blend، د keyframe editor او له GLB بهر د نوي skeletal rig جوړول.
 4. د کمرې شاټونه، رڼا، مواد او scene settings.
 5. د غږ او ډیالوګ ټریکونه، waveform او sync.
 6. د څو صحنو Timeline او د صحنو ترمنځ انتقال.
 7. د فریم رینډر، H.264/MP4 صادرول او د موبایل د ذخیرې مدیریت.
 8. د ټیټ حافظې Android موبایل پر حقیقي وسیله د اوږدې مودې ازموینه.
+
+## د APK جوړولو موقتي تګلاره
+
+- د پراختیا په موده کې اتومات push-triggered build بند دی؛ workflow یوازې په لاس د workflow_dispatch له لارې چلېږي.
+- تر هغه نوې APK نه جوړېږي چې د حقیقي assets، scene editing، animation/timeline، camera/light، audio، multi-scene او export اصلي برخې د ازموینې وړ نه وي.
 
 ## د کیفیت اصول
 
