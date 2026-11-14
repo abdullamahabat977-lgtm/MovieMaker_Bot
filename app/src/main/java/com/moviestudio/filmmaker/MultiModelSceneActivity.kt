@@ -738,8 +738,15 @@ class MultiModelSceneActivity : Activity() {
         val center = box.center
         val half = box.halfExtent
         val maxExtent = 2f * maxOf(half[0], half[1], half[2])
-        val fitScale = if (maxExtent > 0.0001f) 2f / maxExtent else 1f
-        // Keep renderer scale limits consistent with ProjectStore's editable 0.05..100 range.
+        val fitScale = if (item.optBoolean("preserveModelScale", false)) {
+            1f
+        } else if (maxExtent > 0.0001f) {
+            2f / maxExtent
+        } else {
+            1f
+        }
+        // Building, vehicle, tree and environment GLBs keep glTF's meter-based dimensions.
+        // Other imported assets retain the fit-to-preview behavior unless explicitly marked.
         val objectScale = item.optDouble("scale", 1.0).toFloat().coerceIn(0.05f, 100f)
         val matrix = FloatArray(16)
         android.opengl.Matrix.setRotateEulerM(
