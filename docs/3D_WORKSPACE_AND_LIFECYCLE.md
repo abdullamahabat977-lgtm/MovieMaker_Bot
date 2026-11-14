@@ -1,49 +1,42 @@
 # 3D Workspace and Android Lifecycle
 
-## Current architecture
+## اوسنی جوړښت
 
-- `MainActivity` exposes the 3D preview from both home states (linked and not linked), so the local preview can open without an account or network connection.
-- Local project creation/listing and the built-in starter asset catalogue are also available before account linking; only account, balance and permission services need the network.
-- `Scene3DActivity` remains the standalone procedural preview page.
-- `SceneEditorActivity` opens a saved project and owns its `Scene3DView`, object controls and local timeline panels.
-- Both GL Activities forward `onResume`/`onPause` to the `GLSurfaceView`; the scene editor guards repeated pause/resume calls.
-- The 3D workspace is a full Activity page, not an AlertDialog.
-- The Activity provides its own toolbar/back button; Android system Back finishes the Activity normally.
-- `Scene3DView` uses OpenGL ES 2.0 and requests an RGB565/depth16 EGL framebuffer to improve compatibility with lower-end mobile GPUs.
-- The default scene now renders a static low-poly humanoid built from reusable cube and octahedron meshes; the toolbar controls can switch to the diagnostic cube.
-- The mannequin is a first procedural 3D mesh, not yet a rigged character: GLB import, skeletal animation, project persistence and editable transforms remain future work.
-- The standalone preview provides four skin-tone choices and six shirt-color choices.
-- The project editor persists object type, label, position, scale, skin palette and shirt palette in the local project JSON.
-- The project editor stores basic `idle`, `walk`, `run` and `talk` timeline clips as frame ranges. This is clip metadata only; skeletal animation playback is not implemented yet.
-- The editor preview displays the selected procedural character or cube with its saved transform. It does not yet render every scene object simultaneously.
-- The starter catalogue contains metadata and 2D illustrated previews; those thumbnails are not 3D model files.
-- OpenGL ES 2.0 is declared as an optional device feature. The Activity checks runtime support before creating the renderer.
-- Projects, user-created assets and movie exports remain local to the phone.
+- `MainActivity` د کور پاڼه، د پروژو لېست، محلي asset catalogue او د حساب لینک اداره کوي.
+- `SceneEditorActivity` د پروژې لومړۍ صحنه، د GLB توکو لېست، محلي ذخیره، موقعیت، اندازه، څرخول او Timeline metadata اداره کوي.
+- `RealisticModelPreviewActivity` د یوه GLB ماډل mesh، PBR مواد، textures او embedded skeletal animations د Filament له لارې ښيي.
+- `MultiModelSceneActivity` د پروژې څو وارد شوي GLB ماډلونه په یوه Filament scene کې ښيي؛ اوسنی حد ۸ ماډلونه او ۸۰ MB دی.
+- د کاروونکي پروژې، ماډلونه او د فلم فایلونه د موبایل په داخلي ذخیره کې ساتل کېږي؛ د فلم فایلونه کلاوډ ته نه ځي.
+- د asset catalogue اوس د توکو نومونه او توضیحات لري، خو د انسانانو، حیواناتو، موټرو او ودانیو حقیقي GLB فایلونه لا د اپ دننه نه دي برابر شوي.
+- د صحنې توکي په GLB 2.0 بڼه واردېږي؛ د هر فایل حد ۴۰ MB، د پروژې ټول GLB فایلونه ۲۵۶ MB، او په یوه صحنه کې ۳۲ توکي دي.
+- د Scene Editor له لارې د X/Y/Z موقعیت، اندازه، د X/Y/Z محورونو څرخول او دقیق عددي بدلونونه خوندي کېږي.
+- د Timeline کلیپونه د action، object، start frame او duration frame metadata ثبتوي. د کلیپونو playback لا د GLB skeletal animations سره نه دی تړل شوی.
+- د GLB preview کې embedded animations ټاکل، درول او بیا چلول شوني دي.
+- د ګډ scene renderer کې د توکو touch picking او د انتخاب شوي ماډل live transform لا نه دي بشپړ شوي.
+- د کمرې او رڼا بشپړ editor، غږ/ډیالوګ tracks، multi-scene timeline، frame renderer او MP4 export لا نه دي جوړ شوي.
 
-## Lifecycle rules
+## د APK د جوړولو تګلاره
 
-1. Create the GL view inside the owning Activity's `onCreate`.
-2. Call `super.onResume()`, then forward `onResume()` to the GL view once.
-3. Forward `onPause()` to the GL view once, then call `super.onPause()`.
-4. Keep the GL surface in an Activity layout, never in a short-lived AlertDialog.
-5. Test opening the project editor, system Back, toolbar Back, background/foreground, and repeated open/close cycles.
+د پراختیا پر مهال د اتومات push-triggered APK build مخه نیول شوې ده. د GitHub Actions workflow یوازې د لاس په workflow_dispatch چلول کېږي. تر څو د اصلي فلم جوړولو برخې د ازموینې وړ نه وي، نوې APK مه جوړوئ.
 
-## Device test checklist
+## Lifecycle او د حافظې اصول
 
-- Launch the app and open the 3D workspace.
-- Confirm the page fills the available screen and shows the low-poly character/grid.
-- Switch between the character and diagnostic cube controls; both should render without recreating the Activity.
-- Change each skin-tone and shirt-color swatch; verify the character updates and the cube remains unchanged.
-- Drag with one finger and pinch with two fingers.
-- Use the toolbar Back button and Android system Back; the app should return to the home screen without closing.
-- Reopen the 3D page several times.
-- Switch to another app and return; rendering should resume.
-- If it still closes, capture Android crash/logcat output for the `MovieStudio3D` tag and the fatal exception stack trace. CI compilation alone does not prove runtime stability.
+1. د Filament viewer او SurfaceView جوړول د Activity د ژوند دورې دننه وساتئ.
+2. د Activity د pause پر مهال frame callback بند او د GLB resource loader سرچینې خوشې کړئ.
+3. د بیا resume پر مهال viewer او ماډلونه په کنټرول شوې توګه بېرته چمتو کړئ.
+4. د ماډلونو د حافظې حدونه مراعات کړئ؛ د ناکام ماډل له امله نور سالم ماډلونه مه بندوئ.
+5. د پروژې فایلونه د خوندي temporary/backup لیکلو له لارې تازه کړئ.
 
-## Reference projects reviewed
+## د وسیلې د ازموینې چک لېست
 
-- Android Open Source Project GLSurfaceView activity sample: demonstrates Activity `onResume`/`onPause` forwarding to the GL view. Apache-2.0 notice applies to AOSP source files; inspect the exact file header before copying source.
-- Google Filament Android samples: useful future reference for model rendering, textures, lighting and glTF loading. Review the repository's current license and third-party asset licenses before reuse.
-- SceneView Android SDK and samples: uses Filament on Android and demonstrates glTF/GLB models, camera controls, animation and lifecycle-managed scene resources. The SceneView repository states Apache-2.0 for its project code, while bundled sample models and third-party assets may have separate licenses.
+- د Android ES 3.0 ملاتړ او د Filament initialization تاییدول.
+- یو GLB واردول، جلا preview کول او embedded animation بدلول/درول/چلول.
+- څو GLB ماډلونه په ګډه صحنه کې ښودل او د حدونو د پوره کېدو چلند کتل.
+- د موقعیت، اندازې او درې واړو rotation محورونو بدلون، د اپ بیا پرانیستل او د معلوماتو دوام تاییدول.
+- د Timeline کلیپ د مختلف duration frame سره ثبت او حذفول.
+- Activity ته څو ځله داخلېدل، system Back، background/foreground او memory pressure ازمویل.
+- د ټیټ حافظې Android وسیلې پر حقیقي hardware ازموینه؛ د CI compile د device test بدیل نه دی.
 
-No renderer migration is approved by this document. Keep the lightweight OpenGL ES prototype until a candidate engine is evaluated against minSdk 23, Gradle/Kotlin compatibility, APK size, memory use and the target phone's GPU, then built and tested on-device.
+## د ازموینې او ادعا اصول
+
+تر هغې چې APK په حقیقي وسیله نصب او وازمویل نه شي، د موبایل د نصب، ثبات یا د رینډر د کیفیت بریالیتوب مه ادعا کوئ. د GLB د حقیقي ظاهري کیفیت مسؤلیت د وارد شوي ماډل په geometry، texture، material او rig کیفیت پورې تړلی دی.
