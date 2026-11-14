@@ -425,6 +425,17 @@ class ProjectStore(context: Context) {
         val filmEnd = clockSeconds(production.optString("endTime"))
         require(start >= filmStart && end <= filmEnd) { "د حرکت وخت باید د فلم د ټاکلي وخت دننه وي" }
         val fps = project.optJSONObject("project")?.optJSONObject("settings")?.optInt("fps", 24) ?: 24
+        val clips = scene.optJSONArray("timeline") ?: JSONArray().also { scene.put("timeline", it) }
+        for (index in 0 until clips.length()) {
+            val existing = clips.optJSONObject(index) ?: continue
+            if (existing.optString("objectId") != objectId ||
+                !existing.has("startTime") || !existing.has("endTime")) continue
+            val existingStart = clockSeconds(existing.optString("startTime"))
+            val existingEnd = clockSeconds(existing.optString("endTime"))
+            require(end <= existingStart || start >= existingEnd) {
+                "د همدې کرکټر بل حرکت له دې وخت سره ټکر لري؛ وختونه جلا کړه"
+            }
+        }
         val clip = JSONObject()
             .put("id", "clip_" + UUID.randomUUID().toString())
             .put("objectId", objectId)
@@ -437,8 +448,13 @@ class ProjectStore(context: Context) {
             .put("durationFrames", (end - start) * fps)
             .put("speed", speed)
             .put("timingMode", "film_clock")
-        val clips = scene.optJSONArray("timeline") ?: JSONArray().also { scene.put("timeline", it) }
-        clips.put(clip)
+        val ordered = (0 until clips.length()).mapNotNull { clips.optJSONObject(it) } + clip
+        val sorted = JSONArray()
+        ordered.sortedBy { item ->
+            if (item.has("startOffsetSeconds")) item.optInt("startOffsetSeconds")
+            else item.optInt("startFrame") / fps
+        }.forEach { sorted.put(it) }
+        scene.put("timeline", sorted)
         save(project)
         return clip
     }
