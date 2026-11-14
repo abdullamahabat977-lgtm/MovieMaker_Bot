@@ -290,6 +290,97 @@ class ProjectStore(context: Context) {
         }
     }
 
+    /**
+     * Imports a Filament cmgen KTX1 IBL + skybox pair and attaches it to the active scene.
+     * Finished environment files remain inside the local project, never in cloud storage.
+     */
+    fun importEnvironmentMap(
+        projectId: String,
+        iblSource: InputStream,
+        iblDisplayName: String,
+        skyboxSource: InputStream,
+        skyboxDisplayName: String
+    ): JSONObject {
+        val base = projectFolder(projectId).canonicalFile
+        val directory = File(base, "assets/environments").apply { mkdirs() }
+        val token = UUID.randomUUID().toString()
+        val iblFile = File(directory, "ibl_$token.ktx")
+        val skyboxFile = File(directory, "skybox_$token.ktx")
+
+        fun copyKtx(source: InputStream, destination: File) {
+            source.use { input ->
+                destination.outputStream().use { output ->
+                    val buffer = ByteArray(64 * 1024)
+                    var total = 0L
+                    while (true) {
+                        val count = input.read(buffer)
+                        if (count < 0) break
+                        total += count
+                        require(total <= MAX_ENVIRONMENT_BYTES) {
+                            "د چاپېریال KTX فایل باید له ۴۰ MB څخه کوچنی وي"
+                        }
+                        output.write(buffer, 0, count)
+                    }
+                }
+            }
+            require(destination.length() in 64L..MAX_ENVIRONMENT_BYTES) {
+                "د KTX چاپېریال فایل اندازه ناسمه ده"
+            }
+            val identifier = byteArrayOf(
+                0xAB.toByte(), 0x4B.toByte(), 0x54.toByte(), 0x58.toByte(),
+                0x20.toByte(), 0x31.toByte(), 0x31.toByte(), 0xBB.toByte(),
+                0x0D.toByte(), 0x0A.toByte(), 0x1A.toByte(), 0x0A.toByte()
+            )
+            FileInputStream(destination).use { input ->
+                val header = ByteArray(identifier.size)
+                input.readFully(header)
+                require(header.contentEquals(identifier)) {
+                    "دا د KTX 1 چاپېریال فایل نه دی؛ د Filament IBL او Skybox KTX فایلونه وټاکه"
+                }
+            }
+        }
+
+        try {
+            copyKtx(iblSource, iblFile)
+            copyKtx(skyboxSource, skyboxFile)
+            val project = load(projectId)
+            val scene = firstScene(project)
+            val lighting = scene.optJSONObject("lighting") ?: defaultLighting("day")
+            val oldIbl = lighting.optString("environmentIblPath")
+            val oldSkybox = lighting.optString("environmentSkyboxPath")
+            val iblPath = "assets/environments/${iblFile.name}"
+            val skyboxPath = "assets/environments/${skyboxFile.name}"
+            lighting.put("environmentIblPath", iblPath)
+                .put("environmentSkyboxPath", skyboxPath)
+                .put("environmentIntensityLux", 30000.0)
+            scene.put("lighting", lighting)
+            val assets = project.optJSONArray("assets") ?: JSONArray().also { project.put("assets", it) }
+            assets.put(JSONObject()
+                .put("id", "environment_ibl_$token").put("type", "environment_ibl")
+                .put("name", iblDisplayName.take(100)).put("path", iblPath)
+                .put("sizeBytes", iblFile.length()))
+            assets.put(JSONObject()
+                .put("id", "environment_skybox_$token").put("type", "environment_skybox")
+                .put("name", skyboxDisplayName.take(100)).put("path", skyboxPath)
+                .put("sizeBytes", skyboxFile.length()))
+            save(project)
+            listOf(oldIbl, oldSkybox).filter { it.isNotBlank() }.forEach { oldPath ->
+                val oldFile = File(base, oldPath).canonicalFile
+                if (oldFile.path.startsWith(base.path + File.separator) && oldFile.isFile &&
+                    oldFile != iblFile && oldFile != skyboxFile) oldFile.delete()
+            }
+            return JSONObject()
+                .put("iblPath", iblPath)
+                .put("skyboxPath", skyboxPath)
+                .put("iblBytes", iblFile.length())
+                .put("skyboxBytes", skyboxFile.length())
+        } catch (error: Exception) {
+            iblFile.delete()
+            skyboxFile.delete()
+            throw error
+        }
+    }
+
     fun addAudioClip(
         projectId: String,
         assetId: String,
@@ -1207,6 +1298,7 @@ class ProjectStore(context: Context) {
         const val MAX_SCENES = 30
         const val MAX_AUDIO_CLIPS = 100
         const val MAX_AUDIO_BYTES = 100L * 1024L * 1024L
+        const val MAX_ENVIRONMENT_BYTES = 40L * 1024L * 1024L
     }
 
     private fun timestamp(): String =
