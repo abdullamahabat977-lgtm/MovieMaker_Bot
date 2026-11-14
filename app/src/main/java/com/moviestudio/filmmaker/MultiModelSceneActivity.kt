@@ -125,7 +125,7 @@ class MultiModelSceneActivity : Activity() {
                     }
                 }
             }
-            if (timelineClips.isNotEmpty() && timelinePlaying) {
+            if ((timelineClips.isNotEmpty() || cameraShots.isNotEmpty()) && timelinePlaying) {
                 if (timelineStartNanos == 0L) timelineStartNanos = frameTimeNanos -
                     (timelinePositionSeconds * 1_000_000_000.0).toLong()
                 timelinePositionSeconds = ((frameTimeNanos - timelineStartNanos).coerceAtLeast(0L) / 1_000_000_000.0)
