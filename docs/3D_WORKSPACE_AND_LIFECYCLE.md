@@ -6,14 +6,17 @@
 - `SceneEditorActivity` د پروژې لومړۍ صحنه، د GLB توکو لېست، محلي ذخیره، موقعیت، اندازه، څرخول او Timeline metadata اداره کوي.
 - `RealisticModelPreviewActivity` د یوه GLB ماډل mesh، PBR مواد، textures او embedded skeletal animations د Filament له لارې ښيي.
 - `MultiModelSceneActivity` د پروژې څو وارد شوي GLB ماډلونه په یوه Filament scene کې ښيي؛ اوسنی حد ۸ ماډلونه او ۸۰ MB دی.
-- د کاروونکي پروژې، ماډلونه او د فلم فایلونه د موبایل په داخلي ذخیره کې ساتل کېږي؛ د فلم فایلونه کلاوډ ته نه ځي.
-- د asset catalogue اوس د توکو نومونه او توضیحات لري، خو د انسانانو، حیواناتو، موټرو او ودانیو حقیقي GLB فایلونه لا د اپ دننه نه دي برابر شوي.
+- د کاروونکي پروژې، ماډلونه او د فلم فایلونه د `Film Studio/MovieProjects` په app-specific shared internal-storage فولډر کې ساتل کېږي؛ د Android له خوا د دې فولډر لپاره اپک ته د لوستلو/لیکلو لاسرسی ورکول کېږي او عمومي storage permission نه غواړي. که external app directory نه وي، private internal fallback کارېږي.
+- د پخوانۍ `filesDir/MovieProjects` ذخیرې پروژې نوي فولډر ته کاپي کېږي؛ اصلي پخوانی فولډر د انتقال پر مهال نه حذفېږي.
+- د آنلاین ماډل کتابتون د انسان، ودانیو، موټر او تاریخي ودانیو سرچینې پرانیزي؛ کارن GLB ډاونلوډوي او بیا یې د اپ د واردولو له لارې محلي پروژې ته نقلوي. د starter pack GLB فایلونه لا د APK دننه نه دي.
 - د صحنې توکي په GLB 2.0 بڼه واردېږي؛ د هر فایل حد ۴۰ MB، د پروژې ټول GLB فایلونه ۲۵۶ MB، او په یوه صحنه کې ۳۲ توکي دي.
 - د Scene Editor له لارې د X/Y/Z موقعیت، اندازه، د X/Y/Z محورونو څرخول او دقیق عددي بدلونونه خوندي کېږي.
-- د Timeline کلیپونه د action، object، start frame او duration frame metadata ثبتوي. د کلیپونو playback لا د GLB skeletal animations سره نه دی تړل شوی.
+- د ځمکې پلنوالی/اوږدوالی، ساحه او د فلم د پیل/پای ساعتونه په صحنه کې ساتل کېږي.
+- Timeline کلیپونه د action، object، frame duration، HH:mm:ss پیل/پای او speed metadata ثبتوي. د کلیپونو playback لا د GLB skeletal animations سره نه دی تړل شوی.
+- د کمرې شاټونو نوم، ځای، د لید هدف، FOV او د شاټ وخت ثبتېږي؛ د کمرې ژوندی preview او رینډر نښلول لا پاتې دي.
 - د GLB preview کې embedded animations ټاکل، درول او بیا چلول شوني دي.
 - د ګډ scene renderer کې د توکو touch picking او د انتخاب شوي ماډل live transform لا نه دي بشپړ شوي.
-- د کمرې او رڼا بشپړ editor، غږ/ډیالوګ tracks، multi-scene timeline، frame renderer او MP4 export لا نه دي جوړ شوي.
+- د کمرې ژوندی بدلول/preview او د رینډر سره نښلول، د رڼا بشپړ editor، غږ/ډیالوګ tracks، multi-scene timeline، frame renderer او MP4 export لا نه دي جوړ شوي.
 
 ## د APK د جوړولو تګلاره
 
