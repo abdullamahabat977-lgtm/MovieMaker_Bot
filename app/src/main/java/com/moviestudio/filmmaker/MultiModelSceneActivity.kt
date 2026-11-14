@@ -578,10 +578,11 @@ class MultiModelSceneActivity : Activity() {
             val rawClips = scene?.optJSONArray("timeline") ?: org.json.JSONArray()
             timelineClips = (0 until rawClips.length()).mapNotNull { index ->
                 val clip = rawClips.optJSONObject(index) ?: return@mapNotNull null
+                val clipFps = clip.optInt("fps", projectFps).coerceIn(1, 120)
                 val start = if (clip.has("startOffsetSeconds")) clip.optDouble("startOffsetSeconds")
-                    else clip.optInt("startFrame").toDouble() / projectFps.toDouble()
+                    else clip.optInt("startFrame").toDouble() / clipFps.toDouble()
                 val duration = if (clip.has("durationSeconds")) clip.optDouble("durationSeconds")
-                    else clip.optInt("durationFrames").toDouble() / projectFps.toDouble()
+                    else clip.optInt("durationFrames").toDouble() / clipFps.toDouble()
                 if (clip.optString("objectId").isBlank() || duration <= 0.0) return@mapNotNull null
                 PlaybackClip(
                     clip.optString("id"),
